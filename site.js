@@ -16,8 +16,9 @@ window.SS_SITE = {
     pacing: "entry.1584703091", unbalanced: "entry.842879544", notes: "entry.1329073961", code: "entry.1661233936"
   },
   // the answer choices, copied word for word from the form (a choice that differs from the form is not recorded)
-  fairChoices: ["Mixed: most things feel about right. A little bit of swing and a few over/underpowered cards."],
+  fairChoices: ["Well balanced: Game systems felt right. I felt like I could win even when I lost.", "Mixed: most things feel about right. A little bit of swing and a few over/underpowered cards.", "Unbalanced: Felt too swingy, many aspects were over or underpowered, costs were all over the place."],
   unbalancedChoices: ["Card/Unit Costs", "Damage Output / Scaling", "Resource Generation", "Turn Order / Initiative", "Effects / Class Abilities"],
+  ends: {"overall": ["Poor", "Excellent"], "pacing": ["Too Slow", "Too Fast"]},   // the words at each end of the 1 to 5 scales
   required: []
 };
 

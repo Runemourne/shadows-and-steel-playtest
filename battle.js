@@ -1011,17 +1011,17 @@ function lastStoredGame() {   // the newest game kept in this browser, for Send 
   return dbReady().then(function (d) { if (!d) return null; return d.collection("games").orderBy("savedAt", "desc").limit(1).get().then(function (s) { return s.docs.length ? s.docs[0].data() : null; }); }).catch(function () { return null; }); }
 function gameNow() {   // what Send notes carries about the game: the one on the table, or the newest one kept in this browser
   if (G.info && !G.replay) return api("/play/record", {}).then(function (r) { var o = G.over;
-    return { record: r, notes: G.notes.slice(), tutorial: !!(G.info.tutorial), you: G.info.you, bot: G.info.bot, terrain: G.info.terrain, finished: !!o, winner: o ? o.winner : "", how: o ? o.how : "", round: (G.view && G.view.round) || 0, id: gameId || "" }; }, function () { return null; });
+    return { record: r, notes: G.notes.slice(), tutorial: !!(G.info.tutorial), spectate: !!G.info.spectate, you: G.info.you, bot: G.info.bot, terrain: G.info.terrain, finished: !!o, winner: o ? o.winner : "", how: o ? o.how : "", round: (G.view && G.view.round) || 0, id: gameId || "" }; }, function () { return null; });
   return lastStoredGame().then(function (g) { if (!g) return null; var r = null; try { r = JSON.parse(g.record || "null"); } catch (e) { }
-    return { record: r, notes: g.notes || [], tutorial: !!(r && r.tutorial), you: g.you, bot: g.bot, terrain: g.terrain, finished: g.finished, winner: g.winner, how: g.how, round: g.round, id: "", saved: g.savedAt }; }); }
+    return { record: r, notes: g.notes || [], tutorial: !!(r && r.tutorial), spectate: !!g.spectate, you: g.you, bot: g.bot, terrain: g.terrain, finished: g.finished, winner: g.winner, how: g.how, round: g.round, id: "", saved: g.savedAt }; }); }
 function gameLine(g) { if (!g) return "No game played on this device yet.";
-  var what = g.tutorial ? "Basic Training" : "Play the bot"; var res = g.finished ? (/^Nobody/.test(g.winner) ? "a draw" : (g.winner === "You" ? "you won" : g.winner + " won")) + (g.how ? " (" + g.how + ")" : "") + " in round " + g.round : "not finished, round " + (g.round || 1);
+  var what = g.tutorial ? "Basic Training" : g.spectate ? "Watched the bot play itself" : "Play the bot"; var res = g.finished ? (/^Nobody/.test(g.winner) ? "a draw" : (g.winner === "You" ? "you won" : g.winner + " won")) + (g.how ? " (" + g.how + ")" : "") + " in round " + g.round : "not finished, round " + (g.round || 1);
   return what + ": " + (g.you || "") + " against " + (g.bot || "") + " on " + (g.terrain || "") + ", " + res + "."; }
 function notesOf(list) { return (list || []).map(function (n, i) { return (i + 1) + ". Round " + n.round + ", " + n.phase + (n.card ? " · " + n.card : "") + " [" + n.kind + "]: " + n.text; }).join("\n"); }
 function sendForm(root) {
   if (!root || !SITE) return; var S = SITE, A = { overall: "", fair: "", pacing: "", unb: [] }, who = ""; try { who = localStorage.getItem("ss.tester") || ""; A = Object.assign(A, JSON.parse(localStorage.getItem("ss.answers") || "{}")); } catch (e) { }
   var req = S.required || [], star = function (k) { return req.indexOf(k) >= 0 ? " <i>*</i>" : ""; };
-  var scale = function (k) { return '<div class="scale" data-k="' + k + '">' + [1, 2, 3, 4, 5].map(function (v) { return '<button class="ghost" data-v="' + v + '" aria-pressed="' + (String(A[k]) === String(v)) + '">' + v + "</button>"; }).join("") + "</div>"; };
+  var scale = function (k) { return '<div class="scale" data-k="' + k + '">' + [1, 2, 3, 4, 5].map(function (v) { return '<button class="ghost" data-v="' + v + '" aria-pressed="' + (String(A[k]) === String(v)) + '">' + v + "</button>"; }).join("") + "</div>" + ((S.ends || {})[k] ? '<p class="qh">1 = ' + esc(S.ends[k][0]) + ", 5 = " + esc(S.ends[k][1]) + "</p>" : ""); };
   root.innerHTML = '<div class="sf"><p class="qh">Your answers, your notes and this game\'s record go to the project team\'s form. No sign-in, and no email address is collected.</p><p class="gn" data-g="1">Looking for your game…</p>' +
     '<p class="q">What is your playtester handle or name?' + star("name") + '</p><input type="text" data-f="name" maxlength="80" autocomplete="nickname" value="' + esc(who) + '">' +
     '<p class="q">How would you rate your overall experience with the playtest build?' + star("overall") + "</p>" + scale("overall") +
