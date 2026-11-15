@@ -1058,7 +1058,7 @@ function sendForm(root) {
       var form = new URLSearchParams(); P.pairs.forEach(function (x) { form.append(x[0], x[1]); });
       fetch(S.form.action, { method: "POST", mode: "no-cors", body: form }).then(function () {
         b.textContent = "Send again"; b.disabled = false; st.className = "st ok"; st.textContent = "Sent. Thank you! Your notes are on their way to the team.";
-        try { localStorage.setItem("ss.lastSent", new Date().toISOString()); } catch (e) { } feed("Notes sent to the team.");
+        try { localStorage.setItem("ss.lastSent", new Date().toISOString()); localStorage.removeItem("ss.answers"); } catch (e) { }   /* the name is remembered; the answers start fresh for the next game */ feed("Notes sent to the team.");
       }, function () { b.textContent = "Try again"; b.disabled = false; st.className = "st bad"; st.textContent = "Could not send: check the internet connection, then try again. Or open “A copy of what is sent” below, copy it and send it to the person who gave you this link."; root.querySelector("details").open = true; });
     } });
 }
