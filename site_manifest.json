@@ -1,0 +1,737 @@
+{
+"build": "Battlefield v0.17.2 (playtest website, 2026-11-15) \u00b7 Basic Training v0.2 \u00b7 cards v0.15, decks v0.15",
+"files": {
+".nojekyll": [
+0,
+"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+],
+"art.js": [
+1885092,
+"895d2abdb81b0e6736cd97e3c5647cc960f869a55ab867771b240b05780c8f20"
+],
+"art/hi/CAP-102.jpg": [
+158676,
+"6bbd81056d826a6cc71d5909409c56b8e3514f4beff66fd02b5aa5b805750990"
+],
+"art/hi/CAP-103.jpg": [
+154744,
+"34cb12dad3a750beb9b863293fc49b63915884c3c2c6f48a4c63161e1340e775"
+],
+"art/hi/CAP-107.jpg": [
+145792,
+"fe2216db08a929598e78ba26d842124e938afce96abf675485399ef4f9601098"
+],
+"art/hi/CAP-108.jpg": [
+125154,
+"f41856399ece25c8837aff1274f2d9c3d6384efb71703eedcc3c58e22bd13974"
+],
+"art/hi/CAP-109.jpg": [
+118516,
+"abe92efad96823dffeb57dbaf1e79f896d3e6729d481542eed634a04a5585297"
+],
+"art/hi/CAP-110.jpg": [
+129389,
+"d2eb372f3b84cda1c77fc38507e979fc986c5511f77557663073c243608e8448"
+],
+"art/hi/CAP-111.jpg": [
+187031,
+"83d29ea070fad5fd539d3848e7348ccbf77a9f40559d3d5b476991e45d6f1c31"
+],
+"art/hi/CAP-115.jpg": [
+132280,
+"96eb32fac1ab01a667452816f24a6ca46e97806c1bf232aa8e55c34da69042cf"
+],
+"art/hi/CAP-116.jpg": [
+99789,
+"ce095df612ac92a081d7223ff2f12b779503d406d3c4e4a59d63ddecc122566b"
+],
+"art/hi/CAP-117.jpg": [
+135959,
+"7f5b30270b9b18a9a7c9257aad12631363d2e24a0e02dbfb9263da269326bd2c"
+],
+"art/hi/CAP-202.jpg": [
+114410,
+"46ca88eafe56e791d68e175445fee33e44df28218de8a32e43b567588613ee74"
+],
+"art/hi/CAP-204.jpg": [
+82807,
+"78f02633d47d17d52d967e1d4a2a7adf81a95edd9007f7c393227218b9beacd1"
+],
+"art/hi/CAP-205.jpg": [
+111054,
+"649d006ed0e43571eb1375c227a9e9ef3b087139c1db76510a9b013f9382a6cb"
+],
+"art/hi/CAP-207.jpg": [
+123289,
+"8a532fde23ae7304da4a2ef175214c543d21667f201985fdbdf223a0ef1b3043"
+],
+"art/hi/CAP-209.jpg": [
+114933,
+"176354a774d715d7be091d7daba2ca931882d7a597fa9a20fbb74d13654adb75"
+],
+"art/hi/CAP-210.jpg": [
+137088,
+"aa14367f30cf1281d7a162d92a2ec883f3b0d82684477bbca7e5364da02f10a6"
+],
+"art/hi/CAP-211.jpg": [
+143025,
+"0ef49c13fb693cfe8308e122eb8d9836eff4df743a4ec25bbcb963953b46fb8c"
+],
+"art/hi/CAP-212.jpg": [
+148935,
+"fbeb5c3cf8a56cf157ceab4d304eaee60dac2056ecb854fe6c3d1f7346029b4d"
+],
+"art/hi/CAP-213.jpg": [
+115215,
+"79947644a1c56e7597c77a3bbda0e65e46ae25ca54c3fbbf8621a139e380998d"
+],
+"art/hi/CAP-214.jpg": [
+146505,
+"01ce8696099334e67141acf98d3cd9d7a20b62d563b8dab3386af46e3cb566bb"
+],
+"art/hi/CAP-302.jpg": [
+142258,
+"43f18ca9627aa44780c113558c2aa56f31538b9fe6d4c53b1ba1911a6c6f74ae"
+],
+"art/hi/CAP-303.jpg": [
+111309,
+"21df2be2b42fd76cca244c21b8c13bbd35c9be17973685b4212338522e53856c"
+],
+"art/hi/CAP-305.jpg": [
+111136,
+"b535da61c0a7b19f34f252b2f2b223b1a2f446fca5c9fd82ba11a90d5d0f04bd"
+],
+"art/hi/CAP-308.jpg": [
+119174,
+"c1bbbd4a7adce6909a21fa57b95f0769b4db1445a481c61b683905f776ed1157"
+],
+"art/hi/CAP-309.jpg": [
+107791,
+"ae2ab04dcc40d8f944a41a466b4e798b5ce830a9a82fb163f25f53235cbe8a1c"
+],
+"art/hi/CAP-310.jpg": [
+104626,
+"3708c1fe21f0fdae303d74aab2351a427e13050c9bba786877be88e736cb4cfe"
+],
+"art/hi/CAP-311.jpg": [
+103922,
+"a46fca086920391d52cebbfd3dca887040a18264c2a1af84cbd7f032bd0794ca"
+],
+"art/hi/Concept_KILL CHAIN.jpg": [
+156842,
+"7986154d8e4f1f95ae1001abbf088728a26a55f55f1d07246e4350d60915e10f"
+],
+"art/hi/EFF-104.jpg": [
+176130,
+"df7f842d1ca06db85bf2ef3e5efad17ad3a965a95d89a5656cf5e6cb9fd68160"
+],
+"art/hi/EFF-105.jpg": [
+108177,
+"e92530ea76b666048e96bc83eecadf43ea447e4ca3cbfcd42d2234cd1cba4b33"
+],
+"art/hi/EFF-109.jpg": [
+140479,
+"467b2310bbac4f1d16d2f986c962407321c2865c3435cf7023824e3b9afd0416"
+],
+"art/hi/EFF-110.jpg": [
+143645,
+"4787db81f7f0ca924fb4cefcc7f43410f7d337605a25deaa7a8a4236c293c1ca"
+],
+"art/hi/EFF-111.jpg": [
+129748,
+"41ffdf4155bec0a9d709e2e1b40684e54e4cc543a9342556c2bfb783fcdf01de"
+],
+"art/hi/EFF-112.jpg": [
+134015,
+"0fdd8f5aa04c331011fb72554bd8c726e2fcac7cfa467087ae54e575469eb486"
+],
+"art/hi/EFF-113.jpg": [
+127168,
+"1aeba6c855af3bdca8d399336e282a7d02669ddbc00c94469016bc67a49aca4a"
+],
+"art/hi/EFF-114.jpg": [
+125228,
+"d9486ba9f166c0f844db475f4c774f16b4b723afede6d7bede49b64c9ec286ab"
+],
+"art/hi/EFF-205.jpg": [
+121717,
+"8133f73c3544476c14cf7befbedd0ee44f406e2d59987abdc5e828e5ef1282a8"
+],
+"art/hi/EFF-209.jpg": [
+116248,
+"0d92a2ae76eed809735c4be0c2dc3d519b3f44a34fdce2cce71e571d2466a383"
+],
+"art/hi/EFF-210.jpg": [
+160575,
+"400a175efa04846145858cb9d0719895bd9894e9c1b4a725b26a5efaa254781e"
+],
+"art/hi/EFF-211.jpg": [
+145036,
+"ec32554b731101198e90ee59e4cd679ee72705d5ff1c5db940b4680cc2726145"
+],
+"art/hi/EFF-213.jpg": [
+108908,
+"405ce53b94f3e7cf84b4607474bc2f93adb05470baacc6ffb588e7547bb01c67"
+],
+"art/hi/EFF-214.jpg": [
+92224,
+"f248145383b84c280dd070c971846fd2496715a4c39f15927248c623f91cf0c0"
+],
+"art/hi/EFF-301.jpg": [
+160005,
+"4e34a1ee6a40239774f9dde30086ed80441a07dd1247c285bd0504cef0c69959"
+],
+"art/hi/index.json": [
+484,
+"4883d21f1269ea29cefa597f1b53426114a94de72bfd16b3440fd11894066d43"
+],
+"audio/fx/alert_hhour.mp3": [
+17657,
+"1d31b0eab3879822d4885c5ae0c2b1bb38ccacf39a6dd447bf51b2cd016eefd2"
+],
+"audio/fx/alert_reaction.mp3": [
+14209,
+"23f246bc1cce09df9b4c3366fb7a79567b24d1c6e45c7cd0974a2d2565039d24"
+],
+"audio/fx/boom_1.mp3": [
+44090,
+"02c3a128b4ea24a78803003557aaf8c6f032831599f9c277327a32b09c34cccd"
+],
+"audio/fx/boom_2.mp3": [
+46284,
+"a7790f09609cc179e41122a659396a1e9bd91c0aa780b38dc1b3322333937084"
+],
+"audio/fx/boom_3.mp3": [
+45030,
+"13be93633d0172c795b829453be40b61cfb7541fb816ff3dbe6c1ddd3418328c"
+],
+"audio/fx/boom_big_1.mp3": [
+49732,
+"3301f52dee946ae8f027b7dbf89d85ba4a87da0a48b460ecfa29cda33489cacb"
+],
+"audio/fx/boom_big_2.mp3": [
+50673,
+"d5aac9229480b358a3df8b45de4ddb7e84d1a860af4808ae1621dd434be2d261"
+],
+"audio/fx/boom_big_3.mp3": [
+50673,
+"05c75d7885a85c7017562293489e154b4b409d87e93f734cb2816962e3d341c3"
+],
+"audio/fx/burst_1.mp3": [
+27476,
+"fcebb2ff72556617efe544838c83eaae75c6c8bcc9a59188eb4db54160babc11"
+],
+"audio/fx/burst_2.mp3": [
+25909,
+"0ab5693a15918bcc019d1c23349216b0a6a41c03c00f3fbddd8d6a04b5ba3209"
+],
+"audio/fx/cannon_1.mp3": [
+36253,
+"fec5eb1d2a4fd037ed3a06d610878b459ce048d2dffbedacc332d6944cf95e7d"
+],
+"audio/fx/cannon_2.mp3": [
+34372,
+"52ba901331711e0bd839a194da540caf7f3deb738e0d51d7a3ee1cc81e2f5305"
+],
+"audio/fx/card_draw_1.mp3": [
+10789,
+"d80368fd4c0cec1d302fb3c07a141afda7932c45c8e37797aafd33ada3893c9c"
+],
+"audio/fx/card_draw_2.mp3": [
+11729,
+"c3a58b9235e69be22867af7095efac5747aa7e46b64761290f5dbfe894771689"
+],
+"audio/fx/card_draw_3.mp3": [
+12669,
+"0695f061855b21c18ccff39114699d83b47531344e491bf326e030f51da217df"
+],
+"audio/fx/card_draw_4.mp3": [
+12669,
+"04c45cf459cb53f1b1618d52d4c185d87a39be34e201dab5dfa71fe0da6c6d5f"
+],
+"audio/fx/card_draw_5.mp3": [
+9848,
+"7f5539e693f893a2d6c539f17fd8e2a295d016d834b768a462c67b30ff7f13c4"
+],
+"audio/fx/card_draw_6.mp3": [
+10475,
+"3d3ce65d292c3282ebb589a8ab6b255576cd44d1509ade4b701a3cd11d59175f"
+],
+"audio/fx/card_place_1.mp3": [
+9221,
+"ba05918d36c20c2f4fde66bb68da7687d47ed028b9b9ce62171dbdf54e9bc8d7"
+],
+"audio/fx/card_place_2.mp3": [
+8594,
+"1207437d5db4ee8f7ecb162c600cc0ed9b746e5bc6f970f5203351f5669fc9da"
+],
+"audio/fx/card_place_3.mp3": [
+8908,
+"7936274c0553374c0984dd484fea7bc7b8ebf7d340741062155c89439b3cb224"
+],
+"audio/fx/card_place_4.mp3": [
+8281,
+"c53f467bae4569d5b65d7936041f720d4fef401580325ac2fc41dfb81f3f83d2"
+],
+"audio/fx/card_place_5.mp3": [
+10789,
+"08b56c263ec1848b17a6619e3817b3c3a7c9a9ba30c713bb52098f494613498f"
+],
+"audio/fx/card_place_6.mp3": [
+7967,
+"fc2d97189ad6f3cafe982324ae2593ada97b0c77a678c2e2688ff5c7f6d8464f"
+],
+"audio/fx/card_slide_1.mp3": [
+10162,
+"afd1f3bd3121980f622766560aad99a6f68f3cb58f020449cf8e56fec78610c1"
+],
+"audio/fx/card_slide_2.mp3": [
+9848,
+"761fa93e979edb73c0ff518c50618159d659069e14be8b57f4703d28d8787392"
+],
+"audio/fx/card_slide_3.mp3": [
+8281,
+"6717f875e9d2d6652bb930c895eeb8788ff52de8c33106a6f4e3ed944442834d"
+],
+"audio/fx/engine_1.mp3": [
+30611,
+"c2b1fb32396ca48febe355727e1ca0e45e76277c30131a658a76a026bb84d358"
+],
+"audio/fx/engine_2.mp3": [
+30611,
+"ecb44acbe2f6fdfdd0bef09edefcc3dbfa02febda21d183b8386fce2c090e4c2"
+],
+"audio/fx/engine_3.mp3": [
+30611,
+"6ab1131cb620e66737b2026aa76b2e1a57e3cc045e507a904707b51e54731dbf"
+],
+"audio/fx/hf.mp3": [
+28315,
+"25a27474acdadbe0e20bd05159c3c4dd1b85afdef1bcadb43f174d9a9029e673"
+],
+"audio/fx/impact_1.mp3": [
+22460,
+"0c246c56f094fa4a6e74b2a5ff1d4eb4b17ec9eb8f8e29e60acd2f4735ffb667"
+],
+"audio/fx/impact_2.mp3": [
+22774,
+"625d46751a7068109bcda2be35fb995a11f4136de917e412e194d13df8a3e259"
+],
+"audio/fx/impact_3.mp3": [
+22774,
+"beeefc90e64d08e71e4e821745b73c578fd7d381c63c75c14d7c89302ec9e312"
+],
+"audio/fx/launch_1.mp3": [
+37507,
+"c3012cc64d63c30369e3b61dc88fb97263f5cbb424ba8e2a048e3dd9e745c575"
+],
+"audio/fx/launch_2.mp3": [
+39074,
+"a909bd75efdc480b43f25da1bd5100083025fcd0bc29a404297f0b1a024e88e5"
+],
+"audio/fx/missile.mp3": [
+47851,
+"d23898b068f59cd96611c68be95beeca1f951ead3b687ea71e4f213dd9cdd981"
+],
+"audio/fx/round.mp3": [
+25202,
+"85f8056a8801fb1755cbb9ec9598f286fa5a308624de855450e90718a88b8f4b"
+],
+"audio/fx/shuffle_1.mp3": [
+20506,
+"dbe20a5dee5227a166576c4005a3a0b5e7eb699c2afb4b77f09caf6c6ae4505e"
+],
+"audio/fx/shuffle_2.mp3": [
+13610,
+"980bb783ce3d8b66f35e1732865cbdd568f887d096dbd2bb2a21b9ae3040b3c8"
+],
+"audio/fx/ui_ability.mp3": [
+9253,
+"d885ac14ef516d1d416de1364bedf8dfcb567cc9ccb48c719ee92daae7894ddd"
+],
+"audio/fx/ui_cancel.mp3": [
+11134,
+"f60df1a6ddfcd7c1f188205519c918adfb2d7b8fd1a016f78f5d9c04a81c7820"
+],
+"audio/fx/ui_close.mp3": [
+8977,
+"48552fa9a9b1199cc232f8a80b2a133f3a294368e37507e866bbb6c95435e19c"
+],
+"audio/fx/ui_confirm.mp3": [
+11134,
+"7e8de98c65223b29ab2b31ef0f2c407015f76221a83e8807178ac65d04994c00"
+],
+"audio/fx/ui_open.mp3": [
+8977,
+"103cf10eede4b26f297580a85ae43be9587a74f226beaeaa257d86c3f35c8166"
+],
+"audio/fx/ui_ping.mp3": [
+9236,
+"8db4998c30965864f43d3b3305741fcf0cd5be1c4b2d9ea21e6eed328e8e58c2"
+],
+"audio/fx/ui_turn.mp3": [
+11134,
+"812d099f447c80d240254af61b48f2a24005d776bd815ffd6bd86c5128ae46c0"
+],
+"audio/fx/ui_zoom.mp3": [
+10817,
+"77b916b7e716aaba5062513cf9a3979cffc5096bd3a665701c2948342eed1ee0"
+],
+"audio/fx/whistle.mp3": [
+21520,
+"7ad53f83c6b45a57b3f19f71c594675e7818913149a6ba77b37224cd2da2460c"
+],
+"audio/manifest.json": [
+4641,
+"39e47657ca963c2de047cbee292261390df35a60f53e48099a83778e67f80e86"
+],
+"audio/music/approach.mp3": [
+1062555,
+"bc7ff2576a198a85e737a09ef0cf63ed3b625d8b7d082217ada50d8dffb34466"
+],
+"audio/music/contact.mp3": [
+1141184,
+"0f5f470c00ad08fb0c60a3288d77cb11abb7a339561c9a899635d726b8d42ca6"
+],
+"audio/music/debrief.mp3": [
+1469282,
+"ed5e5533752b0ab56c4775f1155d0c50c5ab23d4bc6fe7e4f36af5a945994dc8"
+],
+"audio/music/final.mp3": [
+1073265,
+"9743d573abdd08cdba3916eee4429bcf660b0d214a731d4be2d555c1f36896da"
+],
+"audio/music/intense.mp3": [
+1126555,
+"8e14b9f724b23dd98942d6abb2bdb9c6132f7e0cefe0587f5db4240456544ca8"
+],
+"audio/music/menu.mp3": [
+1446555,
+"c4b16b0cebbed47468f341a5a9afe71ccc7a14cb57d6e3b8528ebf462f6f9003"
+],
+"audio/music/stand.mp3": [
+879175,
+"c92bd3b7d61a39fec852e5ef191d7880d8793d06ac3eef1d5e50dcd4e6025bba"
+],
+"audio/vox/abort_mission.mp3": [
+11123,
+"1b6dd44054ba1fdf802e4c92d72fb3d1232ad9e2b1e7181a1ae1b9b911bb69a6"
+],
+"audio/vox/advancing.mp3": [
+10862,
+"5c55606155b2983629a06cf7efbf67fb24a736000a1dd50181298fac1f704b1c"
+],
+"audio/vox/awaiting_orders.mp3": [
+11776,
+"ed11e6e9bcb4d91308e3ac9e3bbeba14a9ff0a78973c3181d220eca9a64e29cc"
+],
+"audio/vox/bombs_away.mp3": [
+10600,
+"85c3592550e52a2469297e50fa5cbb3b839ee57e69fb81704bb604a304db95a9"
+],
+"audio/vox/contact.mp3": [
+10862,
+"ee97f0fc5d4df29feda0796eacdf60722d4968561d136408f68f204217ab82e6"
+],
+"audio/vox/copy_that_1.mp3": [
+9947,
+"17391c24988d51470732e80d9d61fc7c527c5d2f45d06b9d2dc1fc8d25b5e558"
+],
+"audio/vox/enemy_neutralized.mp3": [
+12429,
+"8612e2ff921902b4b1c30eef7fa312e0c2d9df946627fd44611d6ef82691b446"
+],
+"audio/vox/enemy_spotted_1.mp3": [
+11253,
+"7bf14894a7230192694c3a06e950fbc24e1d06215a2b3a6213812d3e36fe3d9d"
+],
+"audio/vox/engaging.mp3": [
+10992,
+"5e2e0a8451aca61b498e9f20f358d5d30b81b4fc80366ebb436ef6c6c2564b3b"
+],
+"audio/vox/engaging_target.mp3": [
+12168,
+"a15f2f436a3a7bb47b87d04a360649d2f410421a0af499b585745d78ccee90fb"
+],
+"audio/vox/fall_back.mp3": [
+10600,
+"3a68f33fdf75973c046a6b91f8b9f53cfe15c4a6bec1df63b66bd532948343cd"
+],
+"audio/vox/fire_in_the_hole.mp3": [
+12298,
+"e69bee37eb1f60154dc1eb922b91dd10609ee3564ba3a48415343b38a3684c40"
+],
+"audio/vox/here_they_come_1.mp3": [
+10600,
+"1ce9c871f9c43e0a945749cb73e51b755c6d0d29ca01590009edf3bac026ccd2"
+],
+"audio/vox/hold_your_ground.mp3": [
+11384,
+"96aa4f023b23e81c6e27e1bf9fd63b6c9f10f9a824918e1b9c588188aae66c1a"
+],
+"audio/vox/hostiles_detected.mp3": [
+12821,
+"c9bb33b851e41db5119ab2744535cd0705936e97c76fb78e3338a4ba1a8110ab"
+],
+"audio/vox/i_sense_danger.mp3": [
+11384,
+"fa27c83c3463b2e79301cbf79a0323e9368f7d02f56b0b76ed4b7334b4f2257c"
+],
+"audio/vox/in_position.mp3": [
+10862,
+"38f3855b591e8621eb706e755045bea2df0e2b38d336f36f17d06c5649f851ea"
+],
+"audio/vox/incoming.mp3": [
+10208,
+"298392547f35bc8693b70431caf38b4a1e5a132288b41c44e6c9f838262e63d4"
+],
+"audio/vox/incoming_fire.mp3": [
+12559,
+"0c34786159a1ce719521c4fcee13fe7da601f9db3b5d6fc16abb8c26795f5d4f"
+],
+"audio/vox/its_showtime_1.mp3": [
+11906,
+"5a4f26a8278c617fef6609b4ef3f66289a048b9fdb397306094171542cf94d05"
+],
+"audio/vox/lock_and_load.mp3": [
+10731,
+"591e3e7a75e2f25a0b5ff08c8985b1987f4492b4649693d32fb4bcd39ae4b308"
+],
+"audio/vox/man_down.mp3": [
+12037,
+"3081441ce4a48c2284dda329670dc7f16f1e42836d92c2405b59abf35b4bff10"
+],
+"audio/vox/missiles_ready.mp3": [
+11123,
+"758696524b9334774a16f33fcdc4b4a07087e1f8e6bd3edea65142ab01d1c195"
+],
+"audio/vox/mission_accomplished.mp3": [
+12690,
+"a5a68ae65bca3426cabf09a83624a6efb3ff4e6e463091fff00b2b689d82f36f"
+],
+"audio/vox/mission_failed.mp3": [
+11515,
+"f33b710a37995e9f7f2a953f97430a190e6c89a0825928c8c720d9f90ad31b5a"
+],
+"audio/vox/move_out.mp3": [
+10470,
+"22b671e0e7e852a636f4cd01ba818144e2b7d3199ebcc7beafde5264171c1286"
+],
+"audio/vox/moving_into_position.mp3": [
+12821,
+"39a0c8664023e5687c9bfe949d4922a97c713c5eee73f7ec9b9f0d402e3fdb8a"
+],
+"audio/vox/network_infiltrated.mp3": [
+12168,
+"3253d9025b93ed16c19d3087b1659f44bee5e2d9d6c610cd0913aa90230568fe"
+],
+"audio/vox/never_surrender.mp3": [
+11645,
+"a27e9a3497786131d60e27ed3a98dd7718c88f0f41867e993794fa188b0198b0"
+],
+"audio/vox/objective_lost.mp3": [
+12298,
+"9f11b94f5bef54e15c7601532a16cbc8f22b052fe6f95ae2ee06fdfaedd882d4"
+],
+"audio/vox/open_fire.mp3": [
+10992,
+"c686e0487783298c46e41135e1305ae8b0c3916807439de9f9ba1c2c91810e2a"
+],
+"audio/vox/our_base_is_under_attack.mp3": [
+14127,
+"eab5d65b9131853f419ef154dd26206752be7afd9e26102db5c2fafbf0834b43"
+],
+"audio/vox/ready_commander.mp3": [
+11123,
+"0e2da59bf09c5bb64d7aae4f2e489dbf41466cfe6e94851bfd1d2686f7cd99af"
+],
+"audio/vox/roger_that.mp3": [
+9686,
+"3f3cc02bc62801b1d02069929e64bbe6932cdedbf8603f2376315ccfecafd666"
+],
+"audio/vox/signal_lost.mp3": [
+11384,
+"f93c2b98d6ea1b7937b365df175a8ebf9bf2e51b5d66172bd7a7d2430b89fd4e"
+],
+"audio/vox/standing_by.mp3": [
+11123,
+"6178051ed855123efd507f96d715cfda9e4ec929861016aade1a66f7d3ed268e"
+],
+"audio/vox/status_report.mp3": [
+11776,
+"0dc5d1f66ec98ad92f8e21375d5bd6563d12d931fd6c71f154bb6e7cf8bb72c8"
+],
+"audio/vox/taking_casualties.mp3": [
+13213,
+"bf7af64ff3388801fb7f595f92890925424e493fdfe837fd6eedb2b4b1118b24"
+],
+"audio/vox/taking_fire.mp3": [
+11253,
+"8d9ccbc78325a8b31dd90c98f3f5460c6328f860a7f7ae78ccc51876deee16e9"
+],
+"audio/vox/tango_down.mp3": [
+11384,
+"e5923c9c6016e2127210bfa4a1d35671a6b4307f53461b7fa2e674e31ced03ae"
+],
+"audio/vox/target_acquired.mp3": [
+11384,
+"fc9586acded41e872391081bee04946288508d107dbb0d1741af3ad6a841bc30"
+],
+"audio/vox/target_destroyed.mp3": [
+12298,
+"a4e1e65d20732b9635c3f75ae8a03d2109a0f91a626cb09d9a105d062f364bcd"
+],
+"audio/vox/target_down.mp3": [
+11645,
+"90efac04c717ab8349ea4e7ba7c6d3c9238d0b3309c31ee75e0747a231164545"
+],
+"audio/vox/the_cavalry_has_arrived_1.mp3": [
+13996,
+"9cdcd96e7e06e5aae6b3ee61afea43b52387014160132e2e9644a3b4b74e4f0e"
+],
+"audio/vox/transmission_received.mp3": [
+13082,
+"098d64a35eae24bf76b714c3708f00d1efe59319da06c949895d9ccdc039a71c"
+],
+"audio/vox/under_heavy_fire.mp3": [
+12821,
+"d82e5016659afdd0a3c1c690bd4c1750040e429e1b9bfe0825e5ed4e835c0925"
+],
+"audio/vox/unit_ready.mp3": [
+10731,
+"9e135cb7b5feb4afdbfe440753bbba871280c67875acaacd116439754f330f88"
+],
+"audio/vox/visual_on_target.mp3": [
+12821,
+"b8055dfe82ef34d770467dced989f64869be461968555b5eea87fa42874825df"
+],
+"audio/vox/we_did_it.mp3": [
+9947,
+"0cf33f63382aed4d89fbe6ee13a85e172994200cd5dcfd9972af2bcdf11e2706"
+],
+"audio/vox/weapons_free.mp3": [
+11253,
+"775002faf91e505bccc8f81159dee2271047012401b2ce7abd770218d532c966"
+],
+"audio/vox/weapons_hot.mp3": [
+10339,
+"eb8c50f715d52a53c2d68b018a328c98e66986acaec7182bd5f3b97d04502c1d"
+],
+"audio/vox/weve_been_detected.mp3": [
+11906,
+"4c9eada2ee5f6c3face54b3a18d407872d81a42f87e268a72ef523e73650cde2"
+],
+"battle.js": [
+197491,
+"c7dc159e5c156eaeb42a1b1afda2f29f9980ce7254148e9d1a8b295d01607cba"
+],
+"brand.js": [
+25649,
+"f41cce32429a3051163d23fc86879705722090c2720f0caa2bb2e2359cbd20b4"
+],
+"cardface.js": [
+17706,
+"d6d680457c2aeda794309bd0a273bccc8bbac7b60a7052b488342a5e2f7018c9"
+],
+"gamefiles/SS_Merged_Cards_v0.15.csv.txt": [
+28052,
+"a98680e99259d1383507662c6de6a04f2919434b16445a9f21a2d2635bf13e1f"
+],
+"gamefiles/SS_Merged_Decks_v0.15.csv.txt": [
+4450,
+"3800f24caf22e7b61e27ad0fe0016c9385e4ffc24cd7071acdc2c70ad29e8848"
+],
+"gamefiles/basic_training.json.txt": [
+15610,
+"6e1eddf11d61e4ce45fb4db9c586be7b0085a4ca1e51af63ee80227c03f6cfc1"
+],
+"gamefiles/browser_play.py.txt": [
+42444,
+"7c8096589fc23e99571e96d1b40ed6060137e176335be35a846ea4db9f95a345"
+],
+"gamefiles/manifest.json": [
+967,
+"680f134d14f03bb4e4f0e44a00005d5796510cb7c43cc09f9b15cba92a1d104f"
+],
+"gamefiles/merged_engine.py.txt": [
+101161,
+"044cb2bf8c2c00169913dae8c8714ba1d84e7e7114e0dd1db5045df5b806ff01"
+],
+"heights.js": [
+43686,
+"9ead3fd8b37e76cf2cc592dedc4ad87885b1af8f13963e4de7548b687f7b14db"
+],
+"index.html": [
+38046,
+"b47e5e15e67b8df9a55712bd31ad87effee7153be543eaecc0118ef0e55260bd"
+],
+"pyodide/pyodide-lock.json": [
+119077,
+"5dc2fc119108bc148c7457dc86e7675b5c87e1cafd420b9c34c1eaef7b36c010"
+],
+"pyodide/pyodide.asm.mjs": [
+1250344,
+"f7cdc8ece80678ceb712f8e65ebe6d3a83203a180c399865f49612a051693635"
+],
+"pyodide/pyodide.asm.wasm": [
+9598218,
+"cc36e3cab04fdfc9a63ff13eb52eae2b911bf46c025cc7b281f394bd3de1d5e6"
+],
+"pyodide/pyodide.mjs": [
+17931,
+"6f1d60f7bf529beb300f0f47983c921d3982363640ba20af0e38efdddbc66109"
+],
+"pyodide/python_stdlib.wasm": [
+2545637,
+"fa1957e5777068fc4f7437f96d860ae2fbe9c19732ba06c84e004ec16dd7dd7a"
+],
+"robots.txt": [
+26,
+"331ea9090db0c9f6f597bd9840fd5b171830f6e0b3ba1cb24dfa91f0c95aedc1"
+],
+"site.js": [
+4772,
+"cc8954a4bafc6dedb0f09760c2d3c27e467f457fd64aecee7460eb051ead0a9c"
+],
+"sound.js": [
+8870,
+"cf41abcad9ae601e1306da51aa412c61f545785396ff1de60eca1c1af3c2df71"
+],
+"terrain.jpg": [
+263427,
+"cec871ab19e910f952bcfbdf336bd58fafdeb573f945802a47626c7d6cc4d83e"
+],
+"terrain.js": [
+11616,
+"c055f17ca2673b28cfed040b379970cdfdc4b9a7e0435542c90602dae2de12ec"
+],
+"terrain/desert.jpg": [
+345693,
+"adcb3b92fcc7a5c81c5d1e5911156247c1d2dd37365c0903cb90ec7c88cd9270"
+],
+"terrain/desert.json": [
+43776,
+"014de9a08c94aaefdde53a606ad8e028a7db60d1fd47e73aa3c5571d5bd7742a"
+],
+"terrain/mountain.jpg": [
+304883,
+"b03985195cccf25a3e3735dce715d7246c3202769472a9f143696d6a40c96ff0"
+],
+"terrain/mountain.json": [
+43775,
+"32b245146c5d1f9c3a6980cf0b4f4afcd68293838f3c4f5f710d33528bb9100c"
+],
+"terrain/urban.jpg": [
+387631,
+"3495e40aad93aceb032260d800d80b545408a62bcf420990ddfe187c59e2912d"
+],
+"terrain/urban.json": [
+70750,
+"18b8c608ca34cde57ed86e86682234e5d5b46a9e73e227faeabb44d2681dcadd"
+],
+"three.min.js": [
+603445,
+"9274bbcec8d96168626c732b5d31c775aa8cfb7eaa0599bec0c175908a2c1ce2"
+]
+}
+}
