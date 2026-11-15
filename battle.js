@@ -993,7 +993,7 @@ function siteWelcome() {
     (seen ? '<p><button class="ghost" id="wHide">Hide this</button></p>' : "") + "</div>";
 }
 function sendCss() { if ($("sendCss")) return; var st = document.createElement("style"); st.id = "sendCss"; st.textContent =
-  "#send{position:fixed;inset:0;z-index:14;background:#111612;overflow-y:auto;touch-action:pan-y;display:none;padding:14px}#send .sb{max-width:720px;margin:0 auto}#send #sendX{position:sticky;top:0;float:right;z-index:1}" +
+  "#send button,.sf button{font-family:Barlow,system-ui,sans-serif;font-weight:600;text-transform:none;letter-spacing:0;font-size:calc(14px * var(--ts))}#send{position:fixed;inset:0;z-index:14;background:#111612;overflow-y:auto;touch-action:pan-y;display:none;padding:14px}#send .sb{max-width:720px;margin:0 auto}#send #sendX{position:sticky;top:0;float:right;z-index:1}" +
   ".sf{font-size:calc(14px * var(--ts));line-height:1.4}.sf .q{margin:14px 0 6px;font-weight:600;color:var(--ink)}.sf .q i{font-style:normal;color:var(--amber)}.sf .qh{color:var(--dim);font-size:calc(12.5px * var(--ts));margin:-2px 0 6px}" +
   ".sf input[type=text],.sf textarea{width:100%;font:calc(15px * var(--ts)) Barlow,system-ui,sans-serif;background:#18201b;color:var(--ink);border:1px solid var(--line);padding:8px;user-select:text;-webkit-user-select:text}.sf textarea{height:18vh;min-height:90px}" +
   ".sf .scale{display:flex;gap:6px;flex-wrap:wrap}.sf .scale button{min-width:44px;min-height:44px}.sf .scale button[aria-pressed=true],.sf .opt button[aria-pressed=true]{background:var(--amber);color:#141915;border-color:var(--amber)}" +
