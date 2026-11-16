@@ -72,9 +72,9 @@ function musicTick() {
     if (k > .55 && b % 2 === 1) { var n = AC.createBufferSource(); n.buffer = noiseBuf; var nf = AC.createBiquadFilter(); nf.type = "bandpass"; nf.frequency.value = 1900; var ng = AC.createGain(); ng.gain.setValueAtTime(.0001, w); ng.gain.exponentialRampToValueAtTime(.05 * k, w + .01); ng.gain.exponentialRampToValueAtTime(.0001, w + .09); n.connect(nf); nf.connect(ng); ng.connect(musBus); n.start(w); n.stop(w + .12); }
     MUS.next += per; }
 }
-function musicState(v) { if (!v) { MUS.target = 0; return; } var low = Math.min(v.you.hf, v.bot.hf), stand = v.contact && (v.you.marker === 1 || v.bot.marker === v.Z); MUS.target = Math.max(0, Math.min(1, (20 - low) / 20 * .55 + (v.contact ? .2 : 0) + (stand ? .3 : 0))); G.stand = stand; if (G.started && !G.over) setMood(moodOf(v), stand || v.round >= v.last); }
+function musicState(v) { if (!v) { MUS.target = 0; return; } var low = Math.min(v.you.hf, v.bot.hf), stand = v.contact && (v.you.marker === 1 || v.bot.marker === v.Z); MUS.target = Math.max(0, Math.min(1, (20 - low) / 20 * .55 + (v.contact ? .2 : 0) + (stand ? .3 : 0))); G.stand = stand; if (G.started && !G.over && !G.dir) setMood(moodOf(v), stand || v.round >= v.last); }   // v0.19.3: never in the opening's scene 3 (it kept Final Stand playing on the Main Menu)
 function unlock() {
-  try { if (!AC) audioInit(); if (AC && AC.state !== "running") AC.resume(); if (SND && AC) { SND.bless(); if (!G.sndLoad) { G.sndLoad = true; SND.preloadAll(); } if (!G.started && !G.view && !G.replay && !G.opening) setMood("menu", true); }
+  try { if (!AC) audioInit(); if (AC && AC.state !== "running") AC.resume(); if (SND && AC) { SND.bless(); if (!G.sndLoad) { G.sndLoad = true; SND.preloadAll(); } if (!G.started && !G.view && !G.replay && !G.opening && !G.battleMus) setMood("menu", true); }
     if (!silentEl) { var n = 4410, b = new ArrayBuffer(44 + n * 2), v = new DataView(b), w = function (o, s) { for (var i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
       w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 44100, true); v.setUint32(28, 88200, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
       silentEl = new Audio(URL.createObjectURL(new Blob([b], { type: "audio/wav" }))); silentEl.loop = true; silentEl.setAttribute("playsinline", ""); }
@@ -942,7 +942,7 @@ function showSettings() { audioInit(); unlock(); SFX.open && SFX.open();
     segRow("badges", "Attack badges", "The attack value on cards on the table.", [[true, "On"], [false, "Off"]]) +
     "<h4>Accessibility</h4>" + segRow("captions", "Captions for radio calls", "Shows each radio call as text, also when the voices are off.", [[false, "Off"], [true, "On"]]) +
     '<h4>About</h4><div class="about"><div class="logos">' + L.map(function (x) { return '<img class="' + x.key + '" alt="' + esc(x.alt) + '" src="' + x.src + '">'; }).join("") + "</div>" +
-    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.19.2" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
+    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.19.3" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
     "<p><b>Sound</b></p><ul>" + CR.map(function (c) { return "<li>" + esc(c.source) + ": " + esc(c.what) + "</li>"; }).join("") + "</ul>" + (MU.length ? "<p>Music: " + esc(MU.join(", ")) + ".</p>" : "") +
     "<p><b>Card art</b>: made for the project (Art Pass v6.0 and earlier passes); some cards show Beta 3 art until the next Art Pass.</p></div></div>";
   el.style.display = "block"; el.scrollTop = 0;
@@ -1194,14 +1194,14 @@ function trainBody(el, d) {   /* v0.17 (Stage D): Basic Training on the Main Men
 }
 function logoBand() { var L = window.SS_LOGOS || []; return L.length ? '<div class="logos" aria-label="U.S. Army, U.S. Army War College, Department of Strategic Wargaming">' + L.map(function (x) { return '<img class="' + x.key + '" alt="' + esc(x.alt) + '" src="' + x.src + '">'; }).join("") + "</div>" : ""; }
 function showSetup() {
-  reset(); render(); $("bot").style.visibility = "hidden"; $("debrief").style.display = "none";   // the setup screen covers the table: keep the game buttons out from behind it
+  G.battleMus = false; reset(); render(); $("bot").style.visibility = "hidden"; $("debrief").style.display = "none";   // the setup screen covers the table: keep the game buttons out from behind it
   api("/play").then(function (d) {
     G.meta = d.meta || {}; G.bases = d.bases || {}; G.faces = d.faces || {}; G.builds = d.builds || []; G.gloss = (G.builds[0] || {}).glossary || d.glossary || G.gloss; G.decklists = (G.builds[0] || {}).decklists || G.decklists; G.buildOn = null; handCv = {}; MUS.on = false; MUS.target = 0; $("vig").className = "fx"; if (d.game) { $("cover").style.display = "none"; return poll(); }
     G.setupData = d; var cs = d.concepts; if (!SET.you) SET.you = cs[0].name; if (!SET.bot) SET.bot = (cs[1] || cs[0]).name;
     $("cover").style.display = "block"; $("cover").classList.add("map");
     $("cover").firstElementChild.innerHTML = '<canvas class="contours" id="suMap"></canvas><div class="su"><header class="su-h"><h1 class="t">Shadows <span>&amp;</span> Steel</h1>' +
       '<div class="seg" data-set="mode"><button data-v="train" aria-pressed="' + (SET.mode === "train") + '">Basic Training</button><button data-v="bot" aria-pressed="' + (SET.mode === "bot") + '">Play the bot</button><button data-v="watch" aria-pressed="' + (SET.mode === "watch") + '">Watch the bot play itself</button><button data-v="replays" aria-pressed="' + (SET.mode === "replays") + '">Saved replays</button></div><button class="ghost gear" id="suFM">Field Manual</button><button class="ghost gear" id="suLib">Card library</button><button class="ghost gear" id="suGear">⚙ Settings</button>' + (LOCAL ? '<button class="ghost gear" id="suQuit">Quit</button>' : "") + (SITE ? '<button class="ghost gear" id="suSend">✉ Send notes</button>' : "") + '</header>' + (SITE ? siteWelcome() : "") +
-      '<div id="suBody"></div><footer class="su-f">Tap a card to read it during the game; glowing cards can act. The ☰ menu holds notes, the battle log, saving a replay and Settings. Cards: ' + esc(d.cards || "") + ". Decks: " + esc(d.decks || "") + ". Battlefield table v0.19.2.</footer>" + logoBand() + "</div>";
+      '<div id="suBody"></div><footer class="su-f">Tap a card to read it during the game; glowing cards can act. The ☰ menu holds notes, the battle log, saving a replay and Settings. Cards: ' + esc(d.cards || "") + ". Decks: " + esc(d.decks || "") + ". Battlefield table v0.19.3.</footer>" + logoBand() + "</div>";
     setupBody(d); requestAnimationFrame(function () { contourMap($("suMap"), SET.terrain); if (window.SSOpening && window.SSOpening.menuShown) window.SSOpening.menuShown(); });
   }, function (e) { $("cover").style.display = "block"; $("cover").firstElementChild.innerHTML = "<h1 class='t'>Shadows &amp; Steel</h1><p class='lead'>The game engine did not start.</p><pre>" + esc(e.message) + "</pre>"; });
 }
@@ -1213,6 +1213,7 @@ $("cover").addEventListener("click", function (e) {
     if (grp.dataset.set === "terrain") { var tn = SET.terrain || "OPEN PLAIN"; TER.set(tn); TER.load(tn).then(function () { var m = $("suMap"); if (m) contourMap(m, SET.terrain); }, function () { }); }
     return setupBody(d); }
   if (b.id === "pgo") { audioInit(); unlock(); b.disabled = true; b.textContent = "Setting up…";
+    if (SND && AC && !G.muted) { G.battleMus = true; setMood("approach", true); }   // v0.19.3: the battle music starts with the battle, on this tap (a phone allows a new track only from a tap)
     api("/play/start", SET.mode === "train" ? { tutorial: "basic" } : { build: "", spectate: SET.mode === "watch" ? "1" : "", you: SET.you, bot: SET.bot, terrain: SET.terrain, first: SET.first, concepts: SET.concepts, forced_discard: SET.fd, instant_end: SET.end })
       .then(function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); }, function (e) { b.disabled = false; b.textContent = "Start the game"; $("serr").textContent = e.message; }); }
 });

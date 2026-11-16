@@ -1,5 +1,5 @@
 {
-"build": "Battlefield v0.19.2 (playtest website, 2026-11-16) \u00b7 Basic Training v0.3.2 \u00b7 cards v0.16, decks v0.16",
+"build": "Battlefield v0.19.3 (playtest website, 2026-11-16) \u00b7 Basic Training v0.3.2 \u00b7 cards v0.16, decks v0.16",
 "files": {
 ".nojekyll": [
 0,
@@ -622,8 +622,8 @@
 "4c9eada2ee5f6c3face54b3a18d407872d81a42f87e268a72ef523e73650cde2"
 ],
 "battle.js": [
-210537,
-"018fc1cd4224e59ec7e1478b4956231e54facc5df587bf2769895a3ce7aedb99"
+210870,
+"31110aae20494674dad01291eac0201ce3d378ac2d7d5b57a2cda074d440dbb6"
 ],
 "brand.js": [
 25649,
@@ -651,7 +651,7 @@
 ],
 "gamefiles/manifest.json": [
 967,
-"8c47966f11830aa06d8eb1bc413bb4a33c3b754acb9be52d318b6eccabee42c0"
+"a3682276f785d05f0570582c0262aba9fef09c58c272ba12bbd45daae945c69e"
 ],
 "gamefiles/merged_engine.py.txt": [
 116945,
@@ -662,12 +662,12 @@
 "9ead3fd8b37e76cf2cc592dedc4ad87885b1af8f13963e4de7548b687f7b14db"
 ],
 "index.html": [
-43958,
-"6bf171dab65aeb928f66a61976ca6baa806658876b6963e6ef7ccd9d156c90c6"
+44191,
+"c5eb44cff9aedb30ce5cfa8150a08174af91d651d2ed9cb443635a00d73d0c1a"
 ],
 "opening/opening.js": [
-16787,
-"ba66fcdb561f10d84e299455278fdb6b20f1d9cf55a893dbf6b5d4f0be32d788"
+17864,
+"e63cd9503191176535ea1b95c53829e156e7993a3386cb8b05a745ce3e4d22d5"
 ],
 "opening/opening.json": [
 4636,
@@ -719,11 +719,11 @@
 ],
 "site.js": [
 5090,
-"700fe9bfefd31e2525248da1e1f6c41b7d5ad8ef166201d42b7cc3f7cfefbb31"
+"ecdaecd72b4dfa89f3091d4be573bd7fec53f689f2febfcc97c5615776ed0d01"
 ],
 "sound.js": [
-10573,
-"1aa89f33cd6256d30049d1220a6d4549a5131785b695bc2230c0a9ccdc0d5444"
+11743,
+"6af795e6e65bb008023f5419aa86800a2b23c6c823d4a84c7e8f80a116777b92"
 ],
 "terrain.jpg": [
 263427,

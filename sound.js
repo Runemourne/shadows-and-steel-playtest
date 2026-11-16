@@ -1,6 +1,8 @@
 // Shadows & Steel: recorded sound for the Battlefield table. Music that follows the battle, effects, and radio voices.
 // audio/manifest.json (made by make_audio.py) lists the files and what each is for. battle.js asks for sounds by name;
 // when a file is missing or not loaded yet (a saved replay file carries no audio), battle.js plays its generated sound instead.
+// v0.19.3: when a phone refuses to start the next mood's track outside a tap, the track that was playing keeps playing and the
+// change is made on the player's next tap, instead of the music going quiet or never changing.
 (function () {
 "use strict";
 var COOL = { orders: 40, deploy: 16, attack: 9, fires: 9, kill: 5, loss: 5, hit: 12, incoming: 9, contact: 90, spotted: 10, unknown: 20, detected: 15,
@@ -45,7 +47,7 @@ function create(o) {   // o.ctx() -> AudioContext or null; o.bus(name) -> GainNo
   }
 
   /* music: two players that crossfade; each mood loops until the battle changes */
-  var mus = { el: [], g: [], cur: -1, mood: "", duck: null, on: false }, SILENT = "";
+  var mus = { el: [], g: [], cur: -1, mood: "", duck: null, on: false, retry: "" }, SILENT = "";
   function silent() {   // a short silent clip, so a player can be started on a tap before it has music to play
     if (SILENT) return SILENT; var n = 800, b = new ArrayBuffer(44 + n * 2), v = new DataView(b), w = function (o, t) { for (var i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
     w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
@@ -61,14 +63,20 @@ function create(o) {   // o.ctx() -> AudioContext or null; o.bus(name) -> GainNo
   function bless() {   // phones let a page start audio only from a tap: start (and hold) both players now so later changes can play
     if (!players()) return; mus.el.forEach(function (a, i) { if (i === mus.cur || a.dataset.blessed) return; a.dataset.blessed = "1"; a.muted = true; if (!a.getAttribute("src")) a.src = silent();
       var p = a.play(); if (p && p.then) p.then(function () { if (i !== mus.cur) a.pause(); a.muted = false; }, function () { a.muted = false; a.dataset.blessed = ""; }); else { a.pause(); a.muted = false; } });
+    if (mus.retry) { var r = mus.retry; mus.retry = ""; music(r); }   // v0.19.3: this tap may start the mood the browser refused earlier
   }
   function music(mood, fade, fromStart) {   // true when this mood has a track (it plays now or is already playing). fromStart (v0.18): play it again from 0
     var m = man && man.music && man.music[mood]; if (!m || !players()) return false;
     if (mood === mus.mood && fromStart && mus.cur >= 0) { if (window.SS_SOUNDLOG) window.SS_SOUNDLOG.push([performance.now(), m.file, "music", 1, 0]); var ca = mus.el[mus.cur], cg = mus.g[mus.cur], cn = C().currentTime; try { ca.currentTime = 0; } catch (e) { } cg.gain.cancelScheduledValues(cn); cg.gain.setValueAtTime(1, cn); var p1 = ca.play(); if (p1 && p1.catch) p1.catch(function () { }); mus.on = true; return true; }
     if (mood === mus.mood) { if (mus.cur >= 0 && mus.el[mus.cur].paused) { var p0 = mus.el[mus.cur].play(); if (p0 && p0.catch) p0.catch(function () { }); } return true; }
-    var c = C(), now = c.currentTime, fd = fade == null ? 2.5 : fade, nx = mus.cur < 0 ? 0 : 1 - mus.cur, a = mus.el[nx], g = mus.g[nx];
+    if (mood === mus.retry) return true;   // refused once already: it waits for the next tap (bless)
+    var c = C(), now = c.currentTime, fd = fade == null ? 2.5 : fade, nx = mus.cur < 0 ? 0 : 1 - mus.cur, a = mus.el[nx], g = mus.g[nx], pc = mus.cur, pm = mus.mood; mus.retry = "";
     if (mus.cur >= 0) { var og = mus.g[mus.cur], oa = mus.el[mus.cur]; og.gain.cancelScheduledValues(now); og.gain.setValueAtTime(Math.max(og.gain.value, .0001), now); og.gain.exponentialRampToValueAtTime(.0001, now + fd); setTimeout(function () { if (mus.el[mus.cur] !== oa) oa.pause(); }, fd * 1000 + 200); }
-    a.src = base + m.file; try { a.currentTime = 0; } catch (e) { } var p = a.play(); if (p && p.catch) p.catch(function () { });
+    a.src = base + m.file; try { a.currentTime = 0; } catch (e) { } var p = a.play();
+    if (p && p.catch) p.catch(function (err) {   // v0.19.3: refused (a phone outside a tap): keep the old track playing, and try again on the next tap
+      if (!err || err.name !== "NotAllowedError" || mus.cur !== nx || mus.mood !== mood) return; mus.retry = mood; if (pc < 0) return;
+      var n2 = C().currentTime, og2 = mus.g[pc], oa2 = mus.el[pc]; og2.gain.cancelScheduledValues(n2); og2.gain.setValueAtTime(Math.max(og2.gain.value, .0001), n2); og2.gain.exponentialRampToValueAtTime(1, n2 + .3);
+      g.gain.cancelScheduledValues(n2); g.gain.setValueAtTime(.0001, n2); mus.cur = pc; mus.mood = pm; if (oa2.paused) { var q = oa2.play(); if (q && q.catch) q.catch(function () { }); } });
     g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(.0001, now); g.gain.exponentialRampToValueAtTime(1, now + fd);
     mus.cur = nx; mus.mood = mood; mus.on = true; if (window.SS_SOUNDLOG) window.SS_SOUNDLOG.push([performance.now(), m.file, "music", 1, 0]); return true;
   }

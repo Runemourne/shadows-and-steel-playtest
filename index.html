@@ -256,8 +256,10 @@ html.rm *{animation-duration:.01ms!important;transition:none!important}
 .su .train .lead2{font-size:calc(16px * var(--ts));line-height:1.45;margin:4px 0 8px;max-width:640px}.su .train .tl{margin:6px 0 8px 20px;padding:0;font-size:calc(14px * var(--ts));line-height:1.6;color:var(--ink)}
 /* v0.18: the animated opening (opening/opening.js, RD-151): the film, its live layers, scene 3 on the table, the hand-off to the Main Menu */
 #op{position:fixed;inset:0;z-index:30;background:#000;overflow:hidden;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
-#op.table{background:transparent}#op.table #opV{opacity:0}
+#op.table{background:transparent}#op.table #opV,#op.table #opAmb{opacity:0}
 #op video,#opPoster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+#op video{object-fit:contain}   /* v0.19.3: the film is shown whole, never cropped */
+#opAmb{position:absolute;left:-10%;top:-10%;width:120%;height:120%;filter:blur(24px) brightness(.45) saturate(.85);display:block}
 #opPoster{position:absolute;inset:0;transition:opacity .6s}#opPoster.off{opacity:0;pointer-events:none}
 #opPoster h1{position:absolute;left:0;right:0;bottom:24%;margin:0;text-align:center;font-size:calc(clamp(34px,7vw,76px) * var(--tsz));color:#fff;text-shadow:0 0 26px rgba(0,0,0,.8),0 3px 0 #000}
 #op h1 span{color:var(--amber)}

@@ -1,4 +1,8 @@
-// Shadows & Steel: the animated opening (RD-151; Animated Opening Storyboard v0.2, Build Handoff v0.1). Version 0.1, 15 November 2026.
+// Shadows & Steel: the animated opening (RD-151; Animated Opening Storyboard v0.2, Build Handoff v0.1). Version 0.2, 16 November 2026.
+// v0.2 (Battlefield v0.19.3): the whole picture on every screen. The wide film plays on every screen, shown whole (letterboxed,
+// never cropped), with a soft blurred copy of the picture filling the bars; the tall film (a centre crop that lost the second
+// shooter and the muzzle flash) is no longer used. The tags and the card still follow the screen's shape, and turning a
+// phone mid-film re-lays them.
 // Scenes 1 and 2 are a film (opening_wide.mp4 or opening_tall.mp4, no sound track). This file plays over it, from opening.json:
 // the music (Last Duel), the radio calls and effects through the game's own sound (so the Sound sliders, Mute and Radio captions
 // work), the Class tags and the MOVEMENT TO CONTACT card as live layers, then scene 3 live on the table from Basic Training's own
@@ -16,17 +20,18 @@ if (!D || document.getElementById("ss-replay") || !D.PREF.opening || D.reducedMo
 var G = SS.G, SND = SS.SND, J = null, S3 = null, $ = function (id) { return document.getElementById(id); };
 var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
 var ease = function (k) { k = Math.max(0, Math.min(1, k)); return k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; };
-var cut = innerHeight > innerWidth ? "tall" : "wide"; O.cut = cut; O.on = true; O.state = "poster"; G.opening = true;
+var cut = innerHeight > innerWidth ? "tall" : "wide"; O.cut = cut; O.film = "wide";   // cut: how the tags and card are laid out; the film is always the wide one (v0.2)
+addEventListener("resize", function () { cut = innerHeight > innerWidth ? "tall" : "wide"; O.cut = cut; }); O.on = true; O.state = "poster"; G.opening = true;
 
 /* ---------- the layers ---------- */
 var root = document.createElement("div"); root.id = "op"; root.setAttribute("role", "dialog"); root.setAttribute("aria-label", "Opening film. Tap or press any key to continue; Esc or Skip goes to the Main Menu.");
 var TITLE = '<h1 class="t">Shadows <span>&amp;</span> Steel</h1>';
-root.innerHTML = '<video id="opV" muted playsinline preload="auto" aria-hidden="true"></video><div id="opPoster"><img alt="" src="' + BASE + "poster_" + cut + '.jpg">' + TITLE + "</div>" +
+root.innerHTML = '<canvas id="opAmb" width="32" height="18" aria-hidden="true"></canvas><video id="opV" muted playsinline preload="auto" aria-hidden="true"></video><div id="opPoster"><img alt="" src="' + BASE + "poster_" + cut + '.jpg">' + TITLE + "</div>" +
   '<div id="opPaint"></div><div id="opTags" aria-hidden="true"></div><canvas id="opCard" aria-hidden="true"></canvas><div id="opTitle">' + TITLE + '<p id="opHook"></p></div>' +
   '<canvas id="opMap" class="contours"></canvas><div id="opFade"></div>' +
   '<div id="opBar"><button id="opMute" aria-label="Mute"></button><button id="opSkip">Skip ›</button></div><p id="opPrompt">Tap or press any key to continue</p>';
 document.body.appendChild(root); document.body.classList.add("op-on");
-var vid = $("opV"), tagsEl = $("opTags"), card = $("opCard"), paint = $("opPaint"), map = $("opMap"), fade = $("opFade"), title = $("opTitle"), hook = $("opHook"), prompt = $("opPrompt");
+var amb = $("opAmb"), ambX = amb.getContext("2d"), ambN = 0, vid = $("opV"), tagsEl = $("opTags"), card = $("opCard"), paint = $("opPaint"), map = $("opMap"), fade = $("opFade"), title = $("opTitle"), hook = $("opHook"), prompt = $("opPrompt");
 function muteIcon() { var m = G.muted, b = $("opMute"); b.setAttribute("aria-pressed", m); b.setAttribute("aria-label", m ? "Sound off: tap to turn it on" : "Mute");
   b.innerHTML = '<svg viewBox="0 0 24 24" width="1.25em" height="1.25em" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 4V5L7 9z"/>' + (m ? '<path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" fill="none"/>' : '<path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none"/>') + "</svg>"; }
 muteIcon();
@@ -43,7 +48,7 @@ if (O.sound) D.unlock();   // the game's sound, the music players and the record
 (new Image()).src = "art/hi/CAP-102.jpg";   // the HOPLITE painting of scene 3, ready before it is needed
 var getJ = function (f) { return fetch(BASE + f).then(function (r) { if (!r.ok) throw new Error(f); return r.json(); }); };
 var cueFiles = [];
-var films = fetch(BASE + "opening_" + cut + ".mp4").then(function (r) { if (!r.ok) throw new Error("the film"); return r.blob(); });
+var films = fetch(BASE + "opening_wide.mp4").then(function (r) { if (!r.ok) throw new Error("the film"); return r.blob(); });
 Promise.all([getJ("opening.json"), getJ("scene3.json").catch(function () { return null; }), films]).then(function (a) {
   J = a[0]; S3 = a[1]; vid.src = URL.createObjectURL(a[2]);
   cueFiles = J.cues.map(function (c) { return c[2]; }).concat((J.scene3.schedule || []).filter(function (s) { return s[2].file; }).map(function (s) { return s[2].file; }));
@@ -78,6 +83,7 @@ function fire(c) {   // [time, "vox" or "fx", file, caption or volume]
 }
 function tick() {
   requestAnimationFrame(tick); if (!J || (O.state !== "film" && O.state !== "table")) return;
+  if (O.state === "film" && (ambN++ % 4 === 0)) try { ambX.drawImage(vid, 0, 0, 32, 18); } catch (e) { }   // the blurred fill behind the letterboxed film
   var t = clock(); O.t = Math.round(t * 100) / 100; if (t < lastT - 1) { ci = 0; si = 0; } lastT = t;
   while (ci < J.cues.length && J.cues[ci][0] <= t) { if (t - J.cues[ci][0] < 1.2) fire(J.cues[ci]); ci++; }
   if (O.state === "table") { var sc = J.scene3.schedule; while (si < sc.length && sc[si][0] <= t) { act(sc[si], t); si++; } }
@@ -109,7 +115,8 @@ function camera(raw, base, tgt) {   // the scripted camera: keys of [time, look-
 }
 
 /* ---------- the live layers: the Class tags, the card, the HOPLITE painting, the title ---------- */
-function filmRect() { var fw = cut === "wide" ? 1280 : 720, fh = cut === "wide" ? 720 : 1280, s = Math.max(innerWidth / fw, innerHeight / fh), w = fw * s, h = fh * s; return { x: (innerWidth - w) / 2, y: (innerHeight - h) / 2, w: w, h: h, u: Math.max(w, h) / 1280 }; }
+function filmRect() {   // where the layers are laid out: on a wide screen, the film itself (shown whole); on an upright screen, the screen
+  var fw = cut === "wide" ? 1280 : 720, fh = cut === "wide" ? 720 : 1280, s = cut === "wide" ? Math.min(innerWidth / fw, innerHeight / fh) : Math.max(innerWidth / fw, innerHeight / fh), w = fw * s, h = fh * s; return { x: (innerWidth - w) / 2, y: (innerHeight - h) / 2, w: w, h: h, u: Math.max(w, h) / 1280 }; }
 function clearLayers() { tagsEl.style.display = "none"; tagsEl.innerHTML = ""; card.style.display = "none"; title.style.opacity = 0; hook.style.opacity = 0; paint.style.display = "none"; }
 var cardDrawn = false;
 function drawTheCard() {
