@@ -1,6 +1,6 @@
 {
  "name": "Basic Training",
- "version": "0.3.2",
+ "version": "0.3.3",
  "game": {
   "seed": 1945,
   "terrain": "OPEN PLAIN",
@@ -418,12 +418,12 @@
    "card": "EFF-102",
    "pages": [
     {
-     "t": "Not every card is a force. The word above this card's name says EFFECT · ORDER: an Order happens at once, then goes to your discard pile.",
+     "t": "Not every card is a force. The word above this card's name says EFFECT · ORDER. Every Effect goes to the Mission Track; an Order lands at H-Hour, so it happens right away, then goes to your discard pile. Its glance face says H-HOUR.",
      "spot": "hand"
     },
     "Its REQUIRES line needs a friendly FIRES card in play. Your {CAP-103} is a FIRES card, so it meets the requirement."
    ],
-   "do": "Play {EFF-102}: tap it in your hand."
+   "do": "Play {EFF-102}: drag it onto the Mission Track, or tap it in your hand."
   },
   {
    "kind": "action",

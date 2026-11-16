@@ -1,5 +1,5 @@
 {
-"build": "Battlefield v0.19.3 (playtest website, 2026-11-16) \u00b7 Basic Training v0.3.2 \u00b7 cards v0.16, decks v0.16",
+"build": "Battlefield v0.19.4 (playtest website, 2026-11-16) \u00b7 Basic Training v0.3.3 \u00b7 cards v0.16, decks v0.16",
 "files": {
 ".nojekyll": [
 0,
@@ -622,16 +622,16 @@
 "4c9eada2ee5f6c3face54b3a18d407872d81a42f87e268a72ef523e73650cde2"
 ],
 "battle.js": [
-210870,
-"31110aae20494674dad01291eac0201ce3d378ac2d7d5b57a2cda074d440dbb6"
+215076,
+"c2e94594fdfc275a43585f75d161a9c2160d65ac8edc6fde4b8f7264c6aeb503"
 ],
 "brand.js": [
 25649,
 "f41cce32429a3051163d23fc86879705722090c2720f0caa2bb2e2359cbd20b4"
 ],
 "cardface.js": [
-24090,
-"aed32b5e6710d98a49cdb6266360c5d8261f2da109de0bb1c226cdecc2c6118e"
+24191,
+"87bc273f4174535d699e4f9b86f64abeba06612a0a315bebf62c9d83673fde3f"
 ],
 "gamefiles/SS_Merged_Cards_v0.16.csv.txt": [
 32052,
@@ -642,16 +642,16 @@
 "3feb7a92eca785d4bbb7801176bc52aaf5aec9ae415cb8f65c0609333330607b"
 ],
 "gamefiles/basic_training.json.txt": [
-21556,
-"c576aaab51967cc287f0b8817c9676cdf0f90aa854dc5b824ba763a07770b521"
+21686,
+"ed68711a0581a7736d56ba4297ecfc1654ebce871116c892057ea671c76d34cb"
 ],
 "gamefiles/browser_play.py.txt": [
-48194,
-"10b9e857acbe1c8aed02dabc6a5441100d63fa0fa8ed68c3d87c8c1b5a2c370c"
+48490,
+"f5e3ba4c2a5e706a4b58c82a3147d450f24ce850ddde9d1628e769e53ed98329"
 ],
 "gamefiles/manifest.json": [
 967,
-"a3682276f785d05f0570582c0262aba9fef09c58c272ba12bbd45daae945c69e"
+"2097a80acc615692c227670f7f3e4ee7ab512c69fffbace08ffcc807ffcb3607"
 ],
 "gamefiles/merged_engine.py.txt": [
 116945,
@@ -662,8 +662,8 @@
 "9ead3fd8b37e76cf2cc592dedc4ad87885b1af8f13963e4de7548b687f7b14db"
 ],
 "index.html": [
-44191,
-"c5eb44cff9aedb30ce5cfa8150a08174af91d651d2ed9cb443635a00d73d0c1a"
+45115,
+"3f7c92733f5d8592ff850c0c86c778a90c5f37b6f6fa9882ea5e3df314aba87b"
 ],
 "opening/opening.js": [
 17864,
@@ -719,7 +719,7 @@
 ],
 "site.js": [
 5090,
-"ecdaecd72b4dfa89f3091d4be573bd7fec53f689f2febfcc97c5615776ed0d01"
+"00bb2082a75574f43fc682c5a4333d5ebd626160271c4844717d0dfab9fef309"
 ],
 "sound.js": [
 11743,

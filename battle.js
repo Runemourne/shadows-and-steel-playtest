@@ -445,6 +445,8 @@ $("zoom").onclick = function () { $("zoom").style.display = "none"; };
 $("zPick").onclick = function (e) { e.stopPropagation(); $("zoom").style.display = "none"; var f = G.zoomPick; G.zoomPick = null; if (f) f(); };
 
 /* ================= moments: a played card shown large, short radio-style callouts, the aiming line ================= */
+function isOrder(name) { var f = (G.faces || {})[name]; return !!(f && !(f.cap !== false && (f.cap || f.dur > 0)) && f.sub !== "Reaction" && !(+f.timer > 0)); }   // v0.19.4: an Order is an Effect with no timer
+function hhPulse() { if (G.skip) return; var m = $("mtrack"); m.classList.remove("hh"); void m.offsetWidth; m.classList.add("hh"); setTimeout(function () { m.classList.remove("hh"); }, 1600 / G.speed); }   // the Order lands at H-Hour on the Mission Track, then acts
 function showcase(name, label, hot) {
   var f = (G.faces || {})[name]; if (!f || G.skip) return 0; var el = $("show"); if (f.id && CF.hi) CF.hi(f.id);
   try { $("showImg").src = drawCard(f, 1.6, {}).toDataURL("image/jpeg", .9); } catch (e) { return 0; }
@@ -642,19 +644,38 @@ var drag = null, dragged = false;
 function handDown(e, c, ix, im) { if (!G.pend || G.playing || G.busy || isMulti(G.pend)) return; drag = { kind: "card", c: c, ix: ix, x: e.clientX, y: e.clientY, im: im, on: false }; }
 function infOpt(uid) { var M = maps(), l = M.src[uid] || []; for (var k = 0; k < l.length; k++) if (/to infiltrate/.test(G.pend.options[l[k]])) return l[k]; return -1; }   /* an Operator's INFILTRATE option */
 function ghostAt(x, y) { var g = $("dragGhost"); g.style.left = x + "px"; g.style.top = y + "px"; }
+/* v0.19.4 (his 16 Nov note): while you drag, the places that take the card light up, and a line under the card says what letting go will do */
+function shortOpt(t) { return String(t).split(/ \(|: /)[0]; }
+function dragStartHints(d) { var M = maps(), pend = G.pend, l = d.kind === "card" ? (M.card[d.c.id] || []) : (M.src[d.uid] || []);
+  d.canTrack = d.kind === "card" ? l.some(function (i) { return /^Play /.test(pend.options[i]); }) : infOpt(d.uid) >= 0; $("mtrack").classList.toggle("can", !!d.canTrack); document.body.classList.add("dragging"); }
+function dragTip(d, x, y) { var g = $("dragGhost"), tip = g.querySelector(".dtip"); if (!tip) { tip = document.createElement("div"); tip.className = "dtip"; g.appendChild(tip); }   // dtip, not tip: Settings > Tips hides .tip
+  var M = maps(), pend = G.pend, over = document.elementFromPoint(x, y), onTrack = !!(over && over.closest && over.closest("#mtrack")), onHand = !!(over && over.closest && over.closest("#hand")), o = objAt(x, y), t = "", ok = false;
+  if (!pend) t = "";
+  else if (d.kind === "card" && !(M.card[d.c.id] || []).length) t = "This card cannot be played right now";
+  else if (d.kind === "card" && onHand) t = "Let go: back to your hand";
+  else if (onTrack) { ok = !!d.canTrack; t = ok ? (d.kind === "card" ? "Let go: to the Mission Track" : "Let go: infiltrate the Mission Track") : "This does not go on the Mission Track"; }
+  else if (o && M.dsts[o.uid] && (d.kind === "unit" || (M.card[d.c.id] || []).some(function (i) { return M.dsts[o.uid].indexOf(i) >= 0; }))) { var dd = M.dsts[o.uid]; ok = true; t = dd.length === 1 ? "Let go: " + shortOpt(pend.options[dd[0]]) + (o.u && o.u.name && shortOpt(pend.options[dd[0]]).indexOf(o.u.name) < 0 ? " → " + o.u.name : "") : "Let go: choose how, on " + (o.u && o.u.name || "this card"); }
+  else if (d.kind === "card") { var pick = (M.card[d.c.id] || []).filter(function (i) { return !(pend.meta[i] || {}).dst; }), up = pick.filter(function (i) { return !/face down|decoy/.test(pend.options[i]) && !/^Play /.test(pend.options[i]); });
+    if (d.canTrack && !up.length) t = "Drag it onto the Mission Track"; else if (up.length === 1) { ok = true; t = "Let go: " + shortOpt(pend.options[up[0]]); } else if (pick.length) { ok = true; t = "Let go: choose how to play it"; } else t = "Drag it onto a target"; }
+  else t = d.canTrack ? "Drag onto a target or the Mission Track" : "Drag it onto a target";
+  tip.textContent = t; tip.style.display = t ? "" : "none"; g.classList.toggle("ok", ok); tip.style.marginLeft = "0px"; if (t) { var tr = tip.getBoundingClientRect(), sh = tr.left < 6 ? 6 - tr.left : tr.right > innerWidth - 6 ? innerWidth - 6 - tr.right : 0; if (sh) tip.style.marginLeft = Math.round(sh) + "px"; } }   // kept on screen near the edges (the Mission Track sits at the left)
+function dragEndHints() { $("mtrack").classList.remove("can"); document.body.classList.remove("dragging"); var g = $("dragGhost"); g.classList.remove("ok", "unit"); }
 addEventListener("pointermove", function (e) {
   if (!drag) return;
   if (!drag.on && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 12) {
     drag.on = true; clearTimeout(holdT); down = null;
     if (drag.kind === "card") { var g = $("dragGhost"); g.innerHTML = ""; var im = new Image(); im.src = drag.im.src; g.appendChild(im); g.style.display = "block"; var M = maps(); if (M.card[drag.c.id]) { G.sel = drag.c.id; render(); } }
+    if (drag.kind === "unit") { var gu = $("dragGhost"), ou = O[drag.uid]; gu.innerHTML = ""; gu.classList.add("unit"); try { var iu = new Image(); iu.src = drawCard(ou.u, 1, { side: ou.side, glance: PREF.glance }).toDataURL("image/jpeg", .85); gu.appendChild(iu); } catch (e2) { } gu.style.display = "block"; }   // v0.19.4: a table card you drag now travels with the pointer too
+    if (drag.kind !== "marker") dragStartHints(drag);
   }
   if (!drag.on) return; e.preventDefault();
-  if (drag.kind === "card") { ghostAt(e.clientX, e.clientY); var over = document.elementFromPoint(e.clientX, e.clientY); $("mtrack").classList.toggle("drop", !!(over && over.closest && over.closest("#mtrack"))); var ho = objAt(e.clientX, e.clientY), M2 = maps(); G.hoverDst = ho && M2.dsts[ho.uid] ? ho.uid : null; }
+  if (drag.kind !== "marker") { ghostAt(e.clientX, e.clientY); dragTip(drag, e.clientX, e.clientY); }
+  if (drag.kind === "card") { ghostAt(e.clientX, e.clientY); var over = document.elementFromPoint(e.clientX, e.clientY); $("mtrack").classList.toggle("drop", !!drag.canTrack && !!(over && over.closest && over.closest("#mtrack"))); var ho = objAt(e.clientX, e.clientY), M2 = maps(); G.hoverDst = ho && M2.dsts[ho.uid] ? ho.uid : null; }
   if (drag.kind === "unit") { var ho2 = objAt(e.clientX, e.clientY), M3 = maps(); G.hoverDst = ho2 && M3.dsts[ho2.uid] ? ho2.uid : null; var ov = document.elementFromPoint(e.clientX, e.clientY); $("mtrack").classList.toggle("drop", !!(ov && ov.closest && ov.closest("#mtrack")) && infOpt(drag.uid) >= 0); }
   if (drag.kind === "marker") routeHover(e.clientY);
 }, { passive: false });
 addEventListener("pointerup", function (e) {
-  var d = drag; drag = null; $("dragGhost").style.display = "none"; $("mtrack").classList.remove("drop"); if (!d || !d.on) return; dragged = true; setTimeout(function () { dragged = false; }, 50); G.hoverDst = null;
+  var d = drag; drag = null; $("dragGhost").style.display = "none"; $("mtrack").classList.remove("drop"); dragEndHints(); if (!d || !d.on) return; dragged = true; setTimeout(function () { dragged = false; }, 50); G.hoverDst = null;
   if (!G.pend || G.playing || G.busy) return; var M = maps(), pend = G.pend;
   if (d.kind === "card") {
     var mine = M.card[d.c.id] || [], over = document.elementFromPoint(e.clientX, e.clientY), onTrack = !!(over && over.closest && over.closest("#mtrack")), onHand = !!(over && over.closest && over.closest("#hand"));
@@ -768,7 +789,7 @@ var TIPS = [
   ["action", function (p) { return p.kind === "action"; }, "Operations: you and the enemy take turns, one action each. Tap a glowing card to act. Two passes in a row end the phase."],
   ["contact", function (p, v) { return v && v.contact && (p.kind === "action" || p.kind === "maneuver"); }, "In Contact: Close attacks can reach, and at Assessment the higher Frontline Strength wins the contest. The loser falls back and loses 1 Homefront."],
   ["operator", function (p) { return p.kind === "action" && p.options.some(function (o) { return /to infiltrate/.test(o); }); }, "Operators reach the Mission Track one way: from your Frontline, in Operations, by their INFILTRATE line (1 ISR). They act at H-Hour, then return to your Rear Area."],
-  ["effect", function (p) { return p.kind === "action" && p.options.some(function (o) { return /^Play /.test(o); }); }, "Effect cards: Orders happen at once; Operations and Conditions wait on the Mission Track and act at H-Hour. Tap a card in your hand to play it."],
+  ["effect", function (p) { return p.kind === "action" && p.options.some(function (o) { return /^Play /.test(o); }); }, "Effect cards all go to the Mission Track. An Order lands at H-Hour and happens right away; a Mission waits on the track and acts when it reaches H-Hour. Drag a card onto the Mission Track, or tap it, to play it."],
   ["etrack", function (p, v) { return v && v.bot.track.length > 0; }, "The enemy has a card on its Mission Track. It acts at H-Hour; tap it on the track to read it."],
   ["reaction", function (p) { return p.kind === "reaction"; }, "A Reaction answers the enemy's move. Using it exhausts the card, or spends the Reaction card from your hand."],
   ["ready", function (p) { return p.kind === "ready_select"; }, "Sustainment: pay each card's Ready number in Supply to ready it for next round. Aircraft you do not ready return to base."],
@@ -846,7 +867,7 @@ function playNext() {
     if (/^--- Round/.test(text)) { banner("Round " + f.view.round, f.view.terrain); SFX.round(); if (f.view.round === 1 && !G.shuffled) { G.shuffled = true; SFX.shuffle(); } else vox("round", { delay: .4 }); wait = 1.5; }
     else if (/^H-Hour/.test(text)) { var hm = text.match(/'s ([A-Z0-9][A-Z0-9 '\-]+?) (resolves|ends|completes)/); SFX.hhour(); vox(/^H-Hour: Your /.test(text) ? "hhour" : "incoming"); flashScreen(.12); wait = 1.7; if (!(hm && showcase(hm[1], "H-Hour: " + (hm[2] === "ends" ? "ends" : "resolves now"), true))) banner("H-Hour", ""); $("mtrack").classList.remove("tick"); void $("mtrack").offsetWidth; $("mtrack").classList.add("tick"); }
     else if (/^Frontline contest/.test(text) && G.stand && G.standRound !== f.view.round) { G.standRound = f.view.round; var home = f.view.you.marker === 1 ? ((G.info && G.info.names) || ["You"])[0] : ((G.info && G.info.names) || ["", "The bot"])[1]; banner("Last stand", home + " " + (home === "You" ? "defend" : "defends") + " the home edge"); SFX.react(); vox(home === "You" ? "stand" : "advance"); shake = .25; wait = 1.9; }
-    else if ((pm = text.match(/ (plays|puts) ([A-Z0-9][A-Z0-9 '\-]+?)( on the Mission Track \((\d+) round|[:.])/)) && showcase(pm[2], pm[1] === "puts" ? "On the Mission Track: " + pm[4] + " round" + (pm[4] === "1" ? "" : "s") + " to H-Hour" : "Played", false)) { SFX.ability(); wait = Math.max(wait, 1.5); }
+    else if ((pm = text.match(/ (plays|puts) ([A-Z0-9][A-Z0-9 '\-]+?)( on the Mission Track \((\d+) round|[:.])/)) && showcase(pm[2], pm[1] === "puts" ? "On the Mission Track: " + pm[4] + " round" + (pm[4] === "1" ? "" : "s") + " to H-Hour" : isOrder(pm[2]) ? "Mission Track · H-Hour: happens now" : "Played", false)) { SFX.ability(); wait = Math.max(wait, 1.5); if (pm[1] === "plays" && isOrder(pm[2])) hhPulse(); }
     else if ((pm = text.match(/ fires ([A-Z0-9][A-Z0-9 '\-]+?):/)) && showcase(pm[1], "Reaction", true)) { SFX.react(); wait = Math.max(wait, 2.2); }
     else if (/reveals a Hidden card/.test(text)) { wait += .4; }
     else if (/in Contact/.test(text)) { banner("In Contact", "The Frontlines meet"); SFX.round(); vox("contact", { delay: .3 }); wait = 1.4; }
@@ -942,7 +963,7 @@ function showSettings() { audioInit(); unlock(); SFX.open && SFX.open();
     segRow("badges", "Attack badges", "The attack value on cards on the table.", [[true, "On"], [false, "Off"]]) +
     "<h4>Accessibility</h4>" + segRow("captions", "Captions for radio calls", "Shows each radio call as text, also when the voices are off.", [[false, "Off"], [true, "On"]]) +
     '<h4>About</h4><div class="about"><div class="logos">' + L.map(function (x) { return '<img class="' + x.key + '" alt="' + esc(x.alt) + '" src="' + x.src + '">'; }).join("") + "</div>" +
-    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.19.3" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
+    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.19.4" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
     "<p><b>Sound</b></p><ul>" + CR.map(function (c) { return "<li>" + esc(c.source) + ": " + esc(c.what) + "</li>"; }).join("") + "</ul>" + (MU.length ? "<p>Music: " + esc(MU.join(", ")) + ".</p>" : "") +
     "<p><b>Card art</b>: made for the project (Art Pass v6.0 and earlier passes); some cards show Beta 3 art until the next Art Pass.</p></div></div>";
   el.style.display = "block"; el.scrollTop = 0;
@@ -1201,7 +1222,7 @@ function showSetup() {
     $("cover").style.display = "block"; $("cover").classList.add("map");
     $("cover").firstElementChild.innerHTML = '<canvas class="contours" id="suMap"></canvas><div class="su"><header class="su-h"><h1 class="t">Shadows <span>&amp;</span> Steel</h1>' +
       '<div class="seg" data-set="mode"><button data-v="train" aria-pressed="' + (SET.mode === "train") + '">Basic Training</button><button data-v="bot" aria-pressed="' + (SET.mode === "bot") + '">Play the bot</button><button data-v="watch" aria-pressed="' + (SET.mode === "watch") + '">Watch the bot play itself</button><button data-v="replays" aria-pressed="' + (SET.mode === "replays") + '">Saved replays</button></div><button class="ghost gear" id="suFM">Field Manual</button><button class="ghost gear" id="suLib">Card library</button><button class="ghost gear" id="suGear">⚙ Settings</button>' + (LOCAL ? '<button class="ghost gear" id="suQuit">Quit</button>' : "") + (SITE ? '<button class="ghost gear" id="suSend">✉ Send notes</button>' : "") + '</header>' + (SITE ? siteWelcome() : "") +
-      '<div id="suBody"></div><footer class="su-f">Tap a card to read it during the game; glowing cards can act. The ☰ menu holds notes, the battle log, saving a replay and Settings. Cards: ' + esc(d.cards || "") + ". Decks: " + esc(d.decks || "") + ". Battlefield table v0.19.3.</footer>" + logoBand() + "</div>";
+      '<div id="suBody"></div><footer class="su-f">Tap a card to read it during the game; glowing cards can act. The ☰ menu holds notes, the battle log, saving a replay and Settings. Cards: ' + esc(d.cards || "") + ". Decks: " + esc(d.decks || "") + ". Battlefield table v0.19.4.</footer>" + logoBand() + "</div>";
     setupBody(d); requestAnimationFrame(function () { contourMap($("suMap"), SET.terrain); if (window.SSOpening && window.SSOpening.menuShown) window.SSOpening.menuShown(); });
   }, function (e) { $("cover").style.display = "block"; $("cover").firstElementChild.innerHTML = "<h1 class='t'>Shadows &amp; Steel</h1><p class='lead'>The game engine did not start.</p><pre>" + esc(e.message) + "</pre>"; });
 }

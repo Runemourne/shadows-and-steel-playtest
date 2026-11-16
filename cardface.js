@@ -78,7 +78,7 @@ function drawGlance(u, S, o) {
     y0 += 124;
   } else {   // an Effect: when it acts, then what it does in a few large words
     var tm = +u.timer || 0, l0 = parseLine((u.lines || []).filter(function (l) { return !/^(REQUIRES|PULSE)/.test(String(l)); })[0] || (u.lines || [])[0] || ""), what = String(l0.body || "").replace(/\s+/g, " ");
-    g.textAlign = "left"; g.fillStyle = BRICK; g.font = "22px " + BOO; g.fillText(tm ? tm + " ROUND" + (tm > 1 ? "S" : "") + " TO H-HOUR" : u.sub === "Reaction" ? "WHEN TRIGGERED" : "AT ONCE", 18, y0 + 22);
+    g.textAlign = "left"; g.fillStyle = BRICK; g.font = "22px " + BOO; g.fillText(tm ? tm + " ROUND" + (tm > 1 ? "S" : "") + " TO H-HOUR" : u.sub === "Reaction" ? "WHEN TRIGGERED" : "H-HOUR", 18, y0 + 22)   // v0.19.4 (his 16 Nov note): an Order lands at H-Hour, so the glance face says H-HOUR, not AT ONCE;
     g.fillStyle = INK; g.font = "600 21px " + BAR; y0 = wrap(g, what || l0.name || "", 18, y0 + 52, 244, 24, y0 + 52 + 24 * 3) + 4;
   }
   // one short tag for each ability line
