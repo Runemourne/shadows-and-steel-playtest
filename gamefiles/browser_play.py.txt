@@ -26,11 +26,18 @@ the Hint button; reasons for ACTION lines you cannot use; the starting Homefront
 basic_training.json (next to this file): both forces are built from card IDs in a fixed draw order, the bot follows the
 script's moves and otherwise holds back, and each of your prompts carries a "coach" (the lesson, what to do, and which
 options are allowed). Card names in the lessons come from the card file, so renames need no script change. The engine is
-unchanged; normal games are unchanged."""
+unchanged; normal games are unchanged.
+0.16 (15 Nov 2026, Basic Training v0.3, RD-153 (1)): the teach follows the TOM method (Theme, Objective, Mechanics). A lesson
+page may be a plain sentence or {"t": text, "h": heading, "spot": what to point at}; the script's "briefing" pages come before
+step 1. "deal" hands you each card as its lesson starts: your hand still holds what the engine dealt, but cards not yet dealt
+carry held=True and the table does not show them (the game, and so the opening's scene 3, are unchanged). "moments" explain an
+event as it happens: each is filled with card names and sent in the game info for the table to show. The glossary splits
+Tactical and Theater from the new Long shot entry, and adds ISR, Supply and Lift (DarKnight84's note, 15 Nov).
+0.16.1 (16 Nov 2026): the ISR entry gives the numbers (start, gain each Sustainment, cap); the Supply entry says which Base pays."""
 import json, random, traceback, os, re
 import merged_engine as E
 
-VERSION = "0.15"
+VERSION = "0.16.1"
 
 # 0.9 (14 Nov 2026): saved replays: Session.replay() and /play/replay (the whole game as frames, packed small).
 # 0.8 (14 Nov 2026, RD-133): one set of cards again. The Theory of Victory decks became cards and decks v0.11 and the
@@ -225,8 +232,12 @@ def glossary(R=None):
          ("Contact", "\\bContact\\b", "Both Force Markers are in the same Zone. Close attacks and the Frontline contest need Contact."),
          ("Force Marker", "Force Marker", "Your piece on the Terrain. It stands in one Zone and moves at Maneuver: 1 Zone toward the enemy, 1 toward home, or it stays. You control your Zone and every Zone behind it."),
          ("Close", "\\bClose\\b", "A Close attack reaches only in Contact."),
-         ("Tactical", "\\bTactical\\b", "A Tactical attack reaches when the Force Markers are %d Zones apart or less. A long shot costs 1 more ISR." % R.get("tac_reach", 3)),
-         ("Theater", "\\bTheater\\b", "A Theater attack always reaches. A long shot costs 1 more ISR."),
+         ("Tactical", "\\bTactical\\b", "A Tactical attack has a range of 0 to %d Zones: it reaches when the Force Markers are %d Zones apart or less." % (R.get("tac_reach", 3), R.get("tac_reach", 3))),
+         ("Theater", "\\bTheater\\b", "A Theater attack reaches any distance."),
+         ("Long shot", "\\bTactical\\b|\\bTheater\\b|long shot", "Any attack that is not Close (Tactical or Theater) is a long shot: it costs %d more ISR, for the targeting data needed at a distance." % R.get("ranged_isr", 1)),
+         ("ISR", "\\bISR\\b", "Intelligence, surveillance and reconnaissance: what your force knows about the enemy. An attack spends ISR to find its target (the target's Concealment, plus 1 for a long shot). You start with %d, gain %d each Sustainment (%d more when the enemy has at least 2 more face-up Capabilities than you), and hold at most %d. Some cards and events give more; a devastated Base gives its owner 3." % (R.get("isr0", 4), R.get("isr_income", 2), 1, R.get("isr_cap", 10))),
+         ("Supply", "\\bSupply\\b", "Pays to deploy, ready and repair cards. It sits on your Bases, and each Base restocks its own Supply each Sustainment, up to what it can hold. When you pay, the Supply comes from the Base holding the most."),
+         ("Lift", "\\bLift\\b", "How many cards you can deploy or upgrade this round: 2 for each Base, 1 for a devastated Base."),
          ("Hidden", "\\bHidden\\b|face down", "A face-down card. Attacking it costs %d extra ISR; a Hidden Effect is a decoy and is discarded when revealed." % R.get("hidden_isr", 2)),
          ("Mission Track", "Mission Track|track card", "Where Operations, Conditions and Operators wait. Each Operations phase every card moves 1 space toward H-Hour."),
          ("H-Hour", "H-Hour", "When a Mission Track card reaches H-Hour it resolves; nobody may react to it."),
@@ -286,6 +297,9 @@ class Coach:
         self.S = script; self.byid = {c.id: c for c in cards.values()}
         self.steps = script.get("steps", []); self.bot = script.get("bot_moves", [])
         self.i = 0; self.b = 0; self.drift = []; self.botdrift = []
+        self.deal = {int(k): list(v) for k, v in (script.get("deal") or {}).items()}   # 0.16: cards handed to you as their lessons start
+        you = script.get("you", {}); self.total = {}
+        for cid in you.get("draw", []) + you.get("main", []): self.total[cid] = self.total.get(cid, 0) + 1
 
     def name(self, cid): c = self.byid.get(cid); return c.name if c else cid
 
@@ -294,6 +308,44 @@ class Coach:
         return re.sub(r"\{([A-Z]+-\d+)\}", lambda m: self.name(m.group(1)), str(t or ""))
 
     def deck(self, ids): return [self.name(x) for x in ids]
+
+    def page(self, x, **extra):
+        """0.16: a lesson page for the table, always {"t": text} plus any "h" (heading) and "spot" (what to point at)."""
+        d = dict(x) if isinstance(x, dict) else dict(t=x)
+        d["t"] = self.fill(d.get("t"))
+        if d.get("h"): d["h"] = self.fill(d["h"])
+        if not d.get("spot"): d.pop("spot", None)
+        d.update(extra); return d
+
+    def briefing(self):
+        """0.16: the briefing pages (Theme, Objective, Mechanics), shown before the first step."""
+        b = self.S.get("briefing") or {}; ps = b.get("pages", []); les = self.fill(b.get("lesson") or "Briefing")
+        return [self.page(x, lesson=les, k="%d of %d" % (i + 1, len(ps))) for i, x in enumerate(ps)]
+
+    def moments(self):
+        """0.16: the explanations shown as an event happens. "match" becomes a pattern for the event text, with card names filled in."""
+        out = []
+        for m in self.S.get("moments", []):
+            pat = re.sub(r"\{([A-Z]+-\d+)\}", lambda q: re.escape(self.name(q.group(1))).replace("\\ ", " "), m.get("match", ""))
+            out.append(dict(round=m.get("round"), match=pat, title=self.fill(m.get("title")), lesson=self.fill(m.get("lesson") or ""), pages=[self.page(x) for x in m.get("pages", [])]))
+        return out
+
+    def held(self, g, p):
+        """0.16: which cards in your hand Basic Training has not dealt yet (True for each one, in hand order). A card counts as
+        dealt once its round in "deal" has come; cards already played count against the cards dealt."""
+        if not self.deal: return [False] * len(p.hand)
+        dealt = {}
+        for r, ids in self.deal.items():
+            if r <= g.round:
+                for cid in ids: dealt[cid] = dealt.get(cid, 0) + 1
+        hand = [c.id for c in p.hand]; left = {}
+        for cid, n in self.total.items():
+            left[cid] = n - sum(1 for c in p.ie if c.id == cid) - sum(1 for c in p.mf if c.id == cid) - hand.count(cid)
+        shown = {}; out = []
+        for cid in hand:
+            ok = shown.get(cid, 0) < max(0, dealt.get(cid, 0) - left.get(cid, 0)); out.append(not ok)
+            if ok: shown[cid] = shown.get(cid, 0) + 1
+        return out
 
     @staticmethod
     def ids(g, m):
@@ -318,7 +370,7 @@ class Coach:
     def person(self, g, kind, labels, meta):
         """The lesson for this prompt of yours: dict(allow, auto, coach). Moves on to the next step."""
         if self.i >= len(self.steps):
-            f = self.S.get("free", {}); return dict(allow=None, auto=None, coach=dict(n=len(self.steps), of=len(self.steps), free=True, title=self.fill(f.get("title")), pages=[self.fill(x) for x in f.get("pages", [])], do=self.fill(f.get("do"))))
+            f = self.S.get("free", {}); return dict(allow=None, auto=None, coach=dict(n=len(self.steps), of=len(self.steps), free=True, title=self.fill(f.get("title")), pages=[self.page(x) for x in f.get("pages", [])], do=self.fill(f.get("do"))))
         st = self.steps[self.i]
         if st.get("kind") != kind or (st.get("round") and st["round"] != g.round):
             self.drift.append("step %d expects %s in round %s; the game asks %s in round %d" % (self.i + 1, st.get("kind"), st.get("round", "any"), kind, g.round))
@@ -327,8 +379,9 @@ class Coach:
         if not al:
             self.drift.append("step %d (%s, round %d): no option matches %s" % (self.i + 1, kind, g.round, {k: st[k] for k in ("card", "dst", "label") if k in st}))
             al = None
-        self.i += 1
-        c = dict(n=self.i, of=len(self.steps), lesson=self.fill(st.get("lesson")), title=self.fill(st.get("title")), pages=[self.fill(x) for x in st.get("pages", [])], do=self.fill(st.get("do")), nudge=self.fill(st.get("nudge") or ""))
+        first = self.i == 0; self.i += 1
+        pages = (self.briefing() if first else []) + [self.page(x) for x in st.get("pages", [])]
+        c = dict(n=self.i, of=len(self.steps), lesson=self.fill(st.get("lesson")), title=self.fill(st.get("title")), pages=pages, do=self.fill(st.get("do")), nudge=self.fill(st.get("nudge") or ""))
         return dict(allow=al, auto=(al[0] if (st.get("auto") and al) else None), coach=c)
 
     def bot_pick(self, g, p, kind, opts):
@@ -350,6 +403,20 @@ def stack(g, coach):
     for p, side in zip(g.P, ("you", "bot")):
         sp = coach.S[side]
         p.ie = [g.cards[n] for n in reversed(coach.deck(sp.get("draw", [])))]; p.mf = [g.cards[n] for n in reversed(coach.deck(sp.get("main", [])))]
+
+
+def coach_view(g, coach):
+    """0.16: Basic Training: cards in your hand that the lesson has not dealt yet carry held=True; the table leaves them out."""
+    real = g.view
+    def view(pid, *a, **k):
+        v = real(pid, *a, **k)
+        try:
+            if pid == 0 and v.get("you", {}).get("hand"):
+                for c, h in zip(v["you"]["hand"], coach.held(g, g.P[0])):
+                    if h: c["held"] = True
+        except Exception: pass
+        return v
+    g.view = view
 
 
 def coach_game(g, coach):
@@ -389,7 +456,7 @@ class Session:
             cc = Coach(self.train, self.cards); missing = [x for side in ("you", "bot") for part in ("draw", "main") for x in self.train[side].get(part, []) if x not in cc.byid]
             if missing: raise ValueError("Basic Training names cards that are not in the card file: " + ", ".join(sorted(set(missing))))
             for i, side in enumerate(("you", "bot")): self.specs[i]["ie"] = cc.deck(self.train[side].get("draw", [])); self.specs[i]["deck"] = cc.deck(self.train[side].get("main", []))
-            self.info.update(tutorial=dict(name=self.train.get("name", "Basic Training"), version=self.train.get("version", ""), steps=len(self.train.get("steps", [])), end=json.loads(cc.fill(json.dumps(self.train.get("end", {}))))), mode="Basic Training")
+            self.info.update(tutorial=dict(name=self.train.get("name", "Basic Training"), version=self.train.get("version", ""), steps=len(self.train.get("steps", [])), end=json.loads(cc.fill(json.dumps(self.train.get("end", {})))), moments=cc.moments()), mode="Basic Training")
         self.answers = []; self.la = []; self.frames = []; self.nframe = 0; self.npend = 0
         self.g = None; self.pending = None; self.over = None; self.error = None; self.snapshot = None; self.qinfo = []
         self.run()
@@ -410,7 +477,7 @@ class Session:
         g = self.g = E.Game(self.specs[0], self.specs[1], self.cards, terrain=self.terrain, seed=self.seed, first=self.first, rules=self.rules, log=True)
         show_piles(g)
         co = self.coach = Coach(self.train, self.cards) if self.train else None
-        if co: stack(g, co); coach_game(g, co)
+        if co: stack(g, co); coach_game(g, co); coach_view(g, co)
 
         def chooser(obj, p, kind, prompt, labels):
             les = co.person(g, kind, labels, list(getattr(obj, "meta", []) or [])) if co else None
@@ -488,7 +555,7 @@ class Session:
             g = E.Game(self.specs[0], self.specs[1], self.cards, terrain=self.terrain, seed=self.seed, first=self.first, rules=self.rules, log=True)
             show_piles(g); sess = self
             co = Coach(self.train, self.cards) if self.train else None
-            if co: stack(g, co); coach_game(g, co)
+            if co: stack(g, co); coach_game(g, co); coach_view(g, co)
             def chooser(obj, p, kind, prompt, labels):
                 les = co.person(g, kind, labels, list(getattr(obj, "meta", []) or [])) if co else None
                 if les and les["auto"] is not None: return les["auto"]
@@ -551,8 +618,13 @@ def training_summary():
     if not t: return None
     try:
         co = Coach(t, build_data("merged")[1]); out = []
+        txt = lambda x: co.fill(x.get("t") if isinstance(x, dict) else x)
+        for x in co.briefing(): out.append(dict(lesson=x["lesson"], title=x.get("h", ""), pages=[x["t"]]))   # 0.16: the briefing first
         for st in t.get("steps", []):
-            if st.get("pages"): out.append(dict(lesson=co.fill(st.get("lesson")), title=co.fill(st.get("title")), pages=[co.fill(x) for x in st["pages"]]))
+            if st.get("pages"): out.append(dict(lesson=co.fill(st.get("lesson")), title=co.fill(st.get("title")), pages=[txt(x) for x in st["pages"]]))
+        for m in t.get("moments", []): out.append(dict(lesson=co.fill(m.get("lesson") or "Assessment"), title=co.fill(m.get("title")), pages=[txt(x) for x in m.get("pages", [])]))
+        order = [co.fill((t.get("briefing") or {}).get("lesson") or "Briefing"), "Command", "Operations", "Sustainment", "Assessment"]
+        out.sort(key=lambda x: order.index(x["lesson"]) if x["lesson"] in order else len(order))   # 0.16: the Field Manual reads by phase
         end = t.get("end", {}).get("win", {})
         return dict(name=t.get("name", "Basic Training"), version=t.get("version", ""), steps=len(t.get("steps", [])), minutes=t.get("minutes", "10 to 15"), lessons=out,
                     win=dict(title=co.fill(end.get("title")), pages=[co.fill(x) for x in end.get("pages", [])]))

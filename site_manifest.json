@@ -1,5 +1,5 @@
 {
-"build": "Battlefield v0.18 (playtest website, 2026-11-15) \u00b7 Basic Training v0.2 \u00b7 cards v0.15, decks v0.15",
+"build": "Battlefield v0.19.2 (playtest website, 2026-11-16) \u00b7 Basic Training v0.3.2 \u00b7 cards v0.16, decks v0.16",
 "files": {
 ".nojekyll": [
 0,
@@ -622,48 +622,48 @@
 "4c9eada2ee5f6c3face54b3a18d407872d81a42f87e268a72ef523e73650cde2"
 ],
 "battle.js": [
-201786,
-"373421aa3b882fe2eddd85add9cd5e59ed4137025677e93ca82c23a388f452a2"
+210537,
+"018fc1cd4224e59ec7e1478b4956231e54facc5df587bf2769895a3ce7aedb99"
 ],
 "brand.js": [
 25649,
 "f41cce32429a3051163d23fc86879705722090c2720f0caa2bb2e2359cbd20b4"
 ],
 "cardface.js": [
-17706,
-"d6d680457c2aeda794309bd0a273bccc8bbac7b60a7052b488342a5e2f7018c9"
+24090,
+"aed32b5e6710d98a49cdb6266360c5d8261f2da109de0bb1c226cdecc2c6118e"
 ],
-"gamefiles/SS_Merged_Cards_v0.15.csv.txt": [
-28052,
-"a98680e99259d1383507662c6de6a04f2919434b16445a9f21a2d2635bf13e1f"
+"gamefiles/SS_Merged_Cards_v0.16.csv.txt": [
+32052,
+"98a0813fa97df1e758010e8028a285492d942d5f901f838d7402171046932e30"
 ],
-"gamefiles/SS_Merged_Decks_v0.15.csv.txt": [
-4450,
-"3800f24caf22e7b61e27ad0fe0016c9385e4ffc24cd7071acdc2c70ad29e8848"
+"gamefiles/SS_Merged_Decks_v0.16.csv.txt": [
+4488,
+"3feb7a92eca785d4bbb7801176bc52aaf5aec9ae415cb8f65c0609333330607b"
 ],
 "gamefiles/basic_training.json.txt": [
-15610,
-"6e1eddf11d61e4ce45fb4db9c586be7b0085a4ca1e51af63ee80227c03f6cfc1"
+21556,
+"c576aaab51967cc287f0b8817c9676cdf0f90aa854dc5b824ba763a07770b521"
 ],
 "gamefiles/browser_play.py.txt": [
-42444,
-"7c8096589fc23e99571e96d1b40ed6060137e176335be35a846ea4db9f95a345"
+48194,
+"10b9e857acbe1c8aed02dabc6a5441100d63fa0fa8ed68c3d87c8c1b5a2c370c"
 ],
 "gamefiles/manifest.json": [
 967,
-"7352357ae48bb47d589e5a589a7335fb0d35f84b8e686002d58579a5ceb44483"
+"8c47966f11830aa06d8eb1bc413bb4a33c3b754acb9be52d318b6eccabee42c0"
 ],
 "gamefiles/merged_engine.py.txt": [
-101161,
-"044cb2bf8c2c00169913dae8c8714ba1d84e7e7114e0dd1db5045df5b806ff01"
+116945,
+"74a6c69b50785a29b8be79279c8ea13af0099e37828e710a5178b73bd97662b6"
 ],
 "heights.js": [
 43686,
 "9ead3fd8b37e76cf2cc592dedc4ad87885b1af8f13963e4de7548b687f7b14db"
 ],
 "index.html": [
-41561,
-"ee21c1df41a86f694898b1b89760663f6669164b52be8a933791a417f4b9e425"
+43958,
+"6bf171dab65aeb928f66a61976ca6baa806658876b6963e6ef7ccd9d156c90c6"
 ],
 "opening/opening.js": [
 16787,
@@ -674,24 +674,24 @@
 "4a41c1d5fa1bcb3e62f47059b8aa6a1ec7737d9c4ca1e2291e0d0fa02e492430"
 ],
 "opening/opening_tall.mp4": [
-3192882,
-"b440800e8b3cd1ac361c0422c7506d4e39b8163e0a359f5d6df7a66444615d17"
+3201857,
+"bd48889e0fc7830609b6f76aa67d93e3403de950e759e0e5577b254a5e8ca288"
 ],
 "opening/opening_wide.mp4": [
-3624441,
-"e0fcef605552b642c5584980fe94283e92b62d73e5ad884d9ec8ed2696cb01bd"
+3647808,
+"0995ff222c46fb9e9ea7141b037e2d1f65e0ea3b0e9969e8c860d490228fef76"
 ],
 "opening/poster_tall.jpg": [
-53695,
-"5a2a49c9651973ea65eff704171a3a9bf6b8eea1f9966bd74636677e435a5ddf"
+59466,
+"fb78ff4659cc145643e67da8e3b35e3c9f3b052b2ee552f8692611d42f494b3a"
 ],
 "opening/poster_wide.jpg": [
-72656,
-"d36f74a40a8e1c9aa4a239d66df080f094c0394ba84d63dd7ee06bb14df32fb0"
+78427,
+"958b2cc664abc32196602bf10df7f9fe9d3c41b406b6c2796af656f342991366"
 ],
 "opening/scene3.json": [
-66456,
-"cc01dc98c874b629712bb6b31d9a4970de5f8ec5d5dc5da440e0b207596801f7"
+70287,
+"91d8ce9adfa37511ed226d287516ab073a5f220a468f60a7f042f94ccf30e3e7"
 ],
 "pyodide/pyodide-lock.json": [
 119077,
@@ -718,8 +718,8 @@
 "331ea9090db0c9f6f597bd9840fd5b171830f6e0b3ba1cb24dfa91f0c95aedc1"
 ],
 "site.js": [
-5086,
-"7507ce82abc8ad159ba421b3d08f32ccdb53ec0b0f6a93d19dcefb7f7fc4fd0a"
+5090,
+"700fe9bfefd31e2525248da1e1f6c41b7d5ad8ef166201d42b7cc3f7cfefbb31"
 ],
 "sound.js": [
 10573,

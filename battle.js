@@ -10,7 +10,7 @@ var W = innerWidth, H = innerHeight, LAND = W > H * 1.05, T = 0;
 var G = { view: null, latest: null, pend: null, latestPend: null, queue: [], playing: false, since: 0, sel: null, over: null, err: null, speed: 1, muted: false, canUndo: false, hist: [], skip: false, info: null, started: false, busy: false, assist: true, calm: false, meta: {}, bases: {}, notes: [], paused: false, histWhy: {}, rate: {}, faces: {}, volFx: .9, volMus: .5, volVox: .85, capLast: {}, capUntil: 0 };
 (function () { try { var st = JSON.parse(localStorage.getItem("ss.sound") || "null"); if (st) { G.volFx = st.fx; G.volMus = st.mus; G.volVox = st.vox == null ? .85 : st.vox; G.muted = !!st.muted; } } catch (e) { } })();
 // Settings (v0.15): kept in localStorage under ss.settings; sound volumes stay under ss.sound
-var SETDEF = { text: 1, motion: "auto", shake: true, shapes: false, confirm: false, tips: true, captions: false, badges: true, speed: 1, opening: true };   // opening (v0.18): the animated opening before the Main Menu
+var SETDEF = { text: 1, motion: "auto", shake: true, shapes: false, confirm: false, tips: true, captions: false, badges: true, speed: 1, opening: true, glance: true };   // glance (v0.19.1, RD-153 (2)): the glance face for cards in the hand and on the table   // opening (v0.18): the animated opening before the Main Menu
 var PREF = (function () { var d = {}, k; for (k in SETDEF) d[k] = SETDEF[k]; try { var st = JSON.parse(localStorage.getItem("ss.settings") || "null"); if (st) for (k in SETDEF) if (st[k] != null && typeof st[k] === typeof SETDEF[k]) d[k] = st[k]; } catch (e) { } return d; })();
 function savePrefs() { try { localStorage.setItem("ss.settings", JSON.stringify(PREF)); } catch (e) { } }
 G.speed = PREF.speed; G.assist = PREF.badges;
@@ -144,7 +144,7 @@ function moodOf(v) { return !v ? "menu" : G.over ? "debrief" : v.round >= v.last
 
 /* ================= card faces: drawn by cardface.js (shared with the Workbench) ================= */
 var CF = window.CardFace, CLS = CF.CLS, TPL = CF.TPL, BOO = CF.BOO, BAR = CF.BAR, rr = CF.rr, cover = CF.cover, isCap = CF.isCap, parseLine = CF.parseLine;
-function drawCard(u, S, o) { o = o || {}; if (!o.meta) o.meta = G.meta; var f = u && !u.upfrom && (G.faces || {})[u.name]; if (f && f.upfrom) u = Object.assign({}, u, { upfrom: f.upfrom }); return CF.draw(u, S, o, IMG); }
+function drawCard(u, S, o) { o = o || {}; if (!o.meta) o.meta = G.meta; var f = u && !u.upfrom && (G.faces || {})[u.name]; if (f && f.upfrom) u = Object.assign({}, u, { upfrom: f.upfrom }); if (o.glance && f) u = Object.assign({}, f, u, { costn: u.costn != null ? u.costn : f.costn, cost: u.cost || f.cost }); return CF.draw(u, S, o, IMG); }   // v0.19.1: a table card lacks its cost; the glance face takes it from the card's face
 function drawBase(b, side) {
   var c = cv(440, 160), g = c.getContext("2d"), img = IMG[(b.kind === "Hub" ? "Base_STAGING_ISB_" : "Base_FORWARD_ISB_") + (b.dev ? "Devastated" : "Operational")];
   rr(g, 0, 0, 440, 160, 14); g.fillStyle = "#16191a"; g.fill(); g.save(); rr(g, 6, 6, 428, 148, 10); g.clip();
@@ -198,10 +198,10 @@ function makeObj(e) {
   var o = { uid: e.uid, grp: grp, mesh: m, glow: gl, ring: ring, shadow: sh, key: "", tx: e.x, tz: e.z, ts: e.s, side: e.side, type: e.type, u: e.u, alive: true, lift: 0 };
   m.userData.obj = o; pickables.push(m); O[e.uid] = o; return o;
 }
-function faceKey(e) { var u = e.u; return e.type === "contact" ? "contact" : e.type === "base" ? ["b", u.sup, u.dmg, u.dev, u.surv, u.conc, u.stock, u.ex, PREF.shapes].join("|") : ["c", u.name, u.dmg, u.ex, u.hidden, u.spot, u.surv, u.atkn, u.conc, e.side, G.assist, PREF.shapes].join("|"); }
+function faceKey(e) { var u = e.u; return e.type === "contact" ? "contact" : e.type === "base" ? ["b", u.sup, u.dmg, u.dev, u.surv, u.conc, u.stock, u.ex, PREF.shapes].join("|") : ["c", u.name, u.dmg, u.ex, u.hidden, u.spot, u.surv, u.atkn, u.conc, e.side, G.assist, PREF.shapes, PREF.glance, u.dur].join("|"); }
 function setFace(o, e) {
   var k = faceKey(e); if (k === o.key) return false; var old = o.mesh.material.map;
-  o.mesh.material.map = e.type === "contact" ? staticT : tex(e.type === "base" ? drawBase(e.u, e.side) : drawCard(e.u, 1, { side: e.side, assist: G.assist, shapes: PREF.shapes }));
+  o.mesh.material.map = e.type === "contact" ? staticT : tex(e.type === "base" ? drawBase(e.u, e.side) : drawCard(e.u, 1, { side: e.side, assist: G.assist && !PREF.glance, shapes: PREF.shapes, glance: PREF.glance }));
   o.mesh.material.needsUpdate = true; if (old && old !== staticT) old.dispose(); o.key = k; return true;
 }
 function removeObj(o, destroyed) {
@@ -270,6 +270,13 @@ function placeTrack(tb, botPx) {   // the Mission Track sits between the bars (s
   tb = tb == null ? ($("top").offsetHeight || 0) : tb; botPx = botPx || 0;
   var mt = $("mtrack"), avail = H - tb - (H <= 520 ? 74 : Math.max(botPx, $("bot").offsetHeight)) - 12; mt.style.top = Math.round(tb + 6 + avail / 2) + "px";
   mt.style.transform = "translateY(-50%)"; var mh = mt.offsetHeight, k = mh > avail && avail > 80 ? Math.max(.55, avail / mh) : 1; mt.style.transformOrigin = "left center"; mt.style.transform = "translateY(-50%)" + (k < 1 ? " scale(" + k.toFixed(3) + ")" : "");   // the Mission Track fits between the bars
+  var wide = W >= 900 && H > 520; mt.style.left = wide ? "22px" : "";   // v0.19.2: on a desktop or laptop, in from the screen edge
+  if (wide && !G.dir) try {   // v0.19.2: the line between the two H-Hours sits on the dashed centre line of the board (as near as the bars allow)
+    var hr = mt.querySelector("hr"), ly = screenPos(new THREE.Vector3(0, .33, .15)).y, h0 = hr ? hr.offsetTop + 1 : mh / 2, lo = tb + 6, bot = H - Math.max(botPx, $("bot").offsetHeight) - 6;
+    var k2 = Math.min(k, (ly - lo) / h0, (bot - ly) / Math.max(1, mh - h0)); if (k2 < .55) k2 = k;   // shrink a little more if that lets the H-Hour line meet the centre line
+    var hiT = bot - mh * k2;
+    if (hr && hiT >= lo) { mt.style.transformOrigin = "left top"; mt.style.transform = k2 < 1 ? "scale(" + k2.toFixed(3) + ")" : "none"; mt.style.top = Math.round(Math.max(lo, Math.min(hiT, ly - h0 * k2))) + "px"; }
+  } catch (e) { }
   $("feed").style.left = (W >= 900 ? Math.round(mt.getBoundingClientRect().right + 10) : 8) + "px";
 }
 function uiScale() { var u = Math.max(1, Math.min(1.6, Math.min(innerWidth / 1400, innerHeight / 820))); document.documentElement.style.setProperty("--ui", u.toFixed(3)); }
@@ -290,7 +297,7 @@ function fit() {
   if (G.dir) camera.clearViewOffset();
   if (G.view) sync(G.view);
 }
-addEventListener("resize", function () { fit(); });
+addEventListener("resize", function () { fit(); try { spotlight(); } catch (e) { } });
 
 /* ================= what the player can do right now ================= */
 function maps() {
@@ -366,9 +373,9 @@ function hud() {
 }
 var handKey = "", handCv = {};
 function hand() {
-  var v = G.view, M = maps(), hs = (v && v.you.hand) || [], key = hs.map(function (c) { return c.id; }).join(",") + "|" + Object.keys(M.card).join(",") + "|" + G.sel + "|" + (G.playing ? 1 : 0);
+  var v = G.view, M = maps(), hs = (v && v.you.hand) || [], key = hs.map(function (c) { return c.id + (c.held ? "h" : ""); }).join(",") + "|" + Object.keys(M.card).join(",") + "|" + G.sel + "|" + (G.playing ? 1 : 0);
   key += "|" + (G.multi ? JSON.stringify(G.multi.picked) : ""); if (key === handKey) return; handKey = key; var el = $("hand"); el.innerHTML = ""; var hi0 = 0;
-  hs.forEach(function (c) { var k = c.id + c.name; if (!handCv[k]) handCv[k] = drawCard(c, 1, { hand: true }).toDataURL("image/jpeg", .85); var im = new Image(); im.src = handCv[k]; im.alt = c.name; im.dataset.card = c.id;
+  hs.forEach(function (c, hix) { if (c.held) { hi0++; return; } var k = c.id + c.name + (PREF.glance ? "|g" : ""); if (!handCv[k]) handCv[k] = drawCard(c, 1, { hand: true, glance: PREF.glance }).toDataURL("image/jpeg", .85); var im = new Image(); im.src = handCv[k]; im.alt = c.name; im.dataset.card = c.id;
     var hi = hi0++; if (M.card[c.id] && !G.playing) im.className = "can"; if (G.sel === c.id) im.className = "sel"; if (G.multi && G.multi.picked.some(function (x) { return x.id === c.id && x.ix === hi; })) im.className = "sel";
     im.dataset.ix = hi; im.onclick = function () { if (dragged) { dragged = false; return; } if (handHeld) { handHeld = false; return; } tapHand(c, hi); }; im.addEventListener("pointerdown", function (e) { handHold(e, c, hi); handDown(e, c, hi, im); }); im.oncontextmenu = function (e) { e.preventDefault(); }; el.appendChild(im); });
 }
@@ -387,6 +394,7 @@ function optWhere(i) { var m = G.pend && G.pend.meta && G.pend.meta[i]; if (!m) 
 function prompt() {
   var el = $("prompt"), v = G.view, pend = G.pend, h = "";
   if (G.err) h = "<p><b>The game stopped on an error. Please pass this text to Claude.</b></p><pre style='white-space:pre-wrap;font-size:calc(12px * var(--ts))'>" + esc(G.err) + "</pre>";
+  else if (G.moment) h = momentBox();
   else if (G.over && !G.playing && !G.queue.length && G.info && G.info.tutorial && !G.replay) h = coachEnd();
   else if (G.over && !G.playing && !G.queue.length) h = '<p class="t" style="font-size:calc(16px * var(--ts));color:var(--amber)">' + (/^Nobody/.test(G.over.winner) ? "A draw" : esc(G.over.winner) + (G.over.winner === "You" ? " win" : " wins")) + " in round " + G.over.round + '</p><p class="h">' + esc(G.over.how) + '.</p><div class="btns"><button id="pDebrief">Debrief</button>' + (SITE && !G.replay ? '<button id="pSend">✉ Send notes</button>' : "") + (G.replay ? '<button class="ghost" id="rExit">' + (G.replay.standalone ? "Stop" : "Exit replay") + "</button>" : '<button class="ghost" id="pNew">Exit to the Main Menu</button>') + "</div>";
   else if (G.replay) h = "<p>" + esc(G.caption || "…") + "</p>" + (G.why && G.whyAt === G.shownN && G.info && G.info.spectate ? '<p class="why">' + esc(whyLine(G.why)) + "</p>" : "") + replayBar();
@@ -411,7 +419,7 @@ function prompt() {
   } else h = "<p" + (G.info && G.info.spectate ? "" : " class='h'") + ">" + esc(G.caption || "…") + "</p>" + (G.explain && G.explainAt === G.shownN ? '<p class="why" style="color:#8fc8ff">' + esc(G.explain) + "</p>" : "") + (G.why && G.whyAt === G.shownN && G.info && G.info.spectate ? '<p class="why">' + esc(whyLine(G.why)) + "</p>" : "") + '<div class="btns">' + (G.why && G.info && G.info.spectate ? '<button class="ghost" id="pWhy">Why?</button>' : "") + '<button class="ghost" id="pPause">' + (G.paused ? "▶ Resume" : "❚❚ Pause") + "</button>" + (G.paused ? '<button class="ghost" id="pStep">Next event</button>' : "") + '<button class="ghost" id="pNote">✎ Add note</button></div>';
   if (el.dataset.h !== h) { el.innerHTML = h; el.dataset.h = h; var bh = $("bot").offsetHeight; if (Math.abs(bh - (G.botH || 0)) > 8) { G.botH = bh; placeTrack(); } }
 }
-function render() { hud(); hand(); prompt(); }
+function render() { hud(); hand(); prompt(); try { spotlight(); } catch (e) { } }
 /* what caused a loss: the last attack, played or fired card, ability or H-Hour before it (consequence lines are not causes) */
 function isCause(text, fx) { if (/takes \d+ damage|is destroyed|loses? \d+ Homefront|is suppressed|covers the target|intercepts|reloads|^--- /.test(text)) return false; return (fx && fx.kind === "attack") || /^H-Hour|\b(attacks|plays|fires|uses|puts|resolves|ends|completes)\b|spills onto/.test(text); }
 function hitsBox() { if (!G.hits || !G.hits.length) return ""; return '<div class="hits"><b>Since your last move:</b>' + G.hits.slice(-3).map(function (x) { return '<div class="hit1">' + (x.cause ? '<span class="cz">' + esc(x.cause.replace(/^H-Hour: (The |Your )?/, function (m, w) { return "At H-Hour, " + (w ? w.toLowerCase() : ""); })) + "</span>" : "") + '<span class="out">' + esc(x.lines.join(" ")) + "</span></div>"; }).join("") + "</div>"; }
@@ -549,6 +557,18 @@ var ray = new THREE.Raycaster(), down = null, holdT = null, held = false;
 function objAt(x, y) { ray.setFromCamera({ x: x / W * 2 - 1, y: -(y / H) * 2 + 1 }, camera); var hh = ray.intersectObjects(pickables); return hh.length ? hh[0].object.userData.obj : null; }
 $("gl").addEventListener("pointerdown", function (e) { $("menu").hidden = true; down = { x: e.clientX, y: e.clientY }; held = false; clearTimeout(holdT);
   holdT = setTimeout(function () { var o = down && objAt(down.x, down.y); if (o && o.type !== "contact") { held = true; zoom(o.u, o.type === "base" ? { canvas: drawBase(o.u, o.side) } : { side: o.side }); } }, 430); });
+/* v0.19.1: with a mouse, pointing at a card on the table shows the whole printed card beside the table (RD-153 (2)) */
+var peekT = null, peekKey = "", peekCv = {};
+function peekHide() { clearTimeout(peekT); peekT = null; peekKey = ""; var el = $("peek"); if (el) el.style.display = "none"; }
+function peekAt(x, y) {
+  if (G.dir || drag || !G.view) return peekHide(); var o = objAt(x, y); if (!o || o.type === "contact" || !o.u || !o.u.name) return peekHide();
+  var key = o.uid + "|" + faceKey({ u: o.u, type: o.type, side: o.side }) + "|" + (x < W / 2 ? "r" : "l"); if (key === peekKey) return; peekKey = key; clearTimeout(peekT);
+  peekT = setTimeout(function () { var el = $("peek"); if (!el) { el = document.createElement("div"); el.id = "peek"; el.innerHTML = '<img alt=""><small>Hold to read it with its keywords</small>'; document.body.appendChild(el); }
+    var ck = o.type + ":" + faceKey({ u: o.u, type: o.type, side: o.side }); if (!peekCv[ck]) try { peekCv[ck] = (o.type === "base" ? drawBase(o.u, o.side) : drawCard(Object.assign({}, o.u, { ex: false, spot: false }), 1.6, {})).toDataURL("image/jpeg", .9); } catch (er) { return; }
+    el.querySelector("img").src = peekCv[ck]; el.className = (o.type === "base" ? "base " : "") + (x < W / 2 ? "r" : "l"); el.style.display = "block"; }, 260);
+}
+$("gl").addEventListener("pointermove", function (e) { if (e.pointerType === "mouse") peekAt(e.clientX, e.clientY); });
+$("gl").addEventListener("pointerleave", peekHide); $("gl").addEventListener("pointerdown", peekHide);
 $("gl").addEventListener("pointermove", function (e) { if (e.pointerType === "mouse" && G.sel && G.pend && !G.playing) { var ho = objAt(e.clientX, e.clientY), M2 = maps(); G.hoverDst = ho && M2.dsts[ho.uid] ? ho.uid : null; }
   if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 14) { clearTimeout(holdT); down = null; } });
 $("gl").addEventListener("pointercancel", function () { clearTimeout(holdT); down = null; });
@@ -579,6 +599,8 @@ $("prompt").onclick = function (e) {
   if (b.id === "cNext" && G.pend) { G.cpage[G.pend.n] = (G.cpage[G.pend.n] || 0) + 1; SFX.select && SFX.select(); handKey = ""; return render(); }
   if (b.id === "cBack" && G.pend) { G.cpage[G.pend.n] = Math.max(0, Math.min(coachPages(G.pend).length, G.cpage[G.pend.n] || 0) - 1); handKey = ""; return render(); }
   if (b.id === "cFM") return showManual();
+  if (b.id === "cMom") return momentGo(false);
+  if (b.id === "cMomB") return momentGo(true);
   if (b.id === "cPlay") { SET.mode = "bot"; return quit(true); }
   if (b.id === "tipX" && G.tipNow && G.tipNow.key) { tipSeen(G.tipNow.key); G.tipNow = { key: null, n: G.tipNow.n }; return render(); }   /* one tip a prompt: the next waits for the next prompt */
 };
@@ -662,15 +684,54 @@ $("route").addEventListener("click", function (e) { if (dragged || !G.pend || G.
 
 /* ================= Basic Training: the coach (v0.17, Stage D) ================= */
 function coachPages(p) { return (p.coach && p.coach.pages) || []; }
+function pgT(x) { return x && typeof x === "object" ? x.t || "" : String(x || ""); }   /* v0.19: a lesson page is a sentence or {t, h, spot} */
 function coachReady(p) { return !p.coach || (G.cpage[p.n] || 0) >= coachPages(p).length; }
 function coachBox(p) {
   var c = p.coach; if (!c) return "";
   var pg = coachPages(p), k = Math.min(G.cpage[p.n] || 0, pg.length), reading = k < pg.length, h = '<div class="coach' + (c.drift ? " drift" : "") + '">';
-  h += '<p class="ck">' + esc(c.free ? "Basic Training" : (c.lesson ? c.lesson + " · " : "") + "step " + c.n + " of " + c.of) + '</p><p class="ct">' + esc(c.title || "") + "</p>";
-  if (reading) h += '<p class="cx">' + esc(pg[k]) + '</p><div class="btns">' + (k ? '<button class="ghost" id="cBack">Back</button>' : "") + '<button class="cgo" id="cNext">Next' + (pg.length > 1 ? " (" + (k + 1) + " of " + pg.length + ")" : "") + "</button></div>";
+  var pk = reading && pg[k] && typeof pg[k] === "object" && pg[k].h ? pg[k] : null;   // v0.19: a briefing page carries its own heading
+  h += '<p class="ck">' + esc(pk ? (pk.lesson || "Briefing") + " · " + (pk.k || "") : c.free ? "Basic Training" : (c.lesson ? c.lesson + " · " : "") + "step " + c.n + " of " + c.of) + '</p><p class="ct">' + esc(pk ? pk.h : c.title || "") + "</p>";
+  if (reading) h += '<p class="cx">' + esc(pgT(pg[k])) + '</p><div class="btns">' + (k ? '<button class="ghost" id="cBack">Back</button>' : "") + '<button class="cgo" id="cNext">Next' + (function () { var own = pg.filter(function (x) { return !(x && x.lesson); }), j = own.indexOf(pg[k]); return pk || own.length < 2 ? "" : " (" + (j + 1) + " of " + own.length + ")"; })() + "</button></div>";
   else { if (k && pg.length) h += '<p class="cr"><button class="ghost lk" id="cBack">Read the note again</button></p>';
     h += '<p class="cd">' + esc(c.do || "") + "</p>" + (G.nudge && G.nudge.n === p.n ? '<p class="cn">' + esc(c.nudge || "Not that one yet. " + (c.do || "")) + "</p>" : ""); }
   return h + "</div>";
+}
+/* v0.19 (Basic Training v0.3): a moment explains an event as it happens; the game waits until Continue */
+function momentFor(f) {
+  var t = G.info && G.info.tutorial, ms = (t && t.moments) || []; if (!ms.length || G.replay || G.skip || (G.info && G.info.spectate)) return null; G.momDone = G.momDone || {};
+  for (var i = 0; i < ms.length; i++) { var m = ms[i]; if (G.momDone[i] || (m.round && f.view && f.view.round !== m.round)) continue; var re; try { re = new RegExp(m.match); } catch (e) { continue; } if (re.test(f.text)) { G.momDone[i] = 1; return { m: m, k: 0 }; } }
+  return null;
+}
+function momentBox() {
+  var mo = G.moment, m = mo.m, pg = m.pages || [], k = Math.min(mo.k, pg.length - 1), last = k >= pg.length - 1;
+  return '<div class="coach moment"><p class="ck">' + esc((m.lesson ? m.lesson + " · " : "") + "what just happened") + '</p><p class="ct">' + esc(m.title || "") + '</p><p class="cx">' + esc(pgT(pg[k])) + '</p><div class="btns">' + (k ? '<button class="ghost" id="cMomB">Back</button>' : "") + '<button class="cgo" id="cMom">' + (last ? "Continue" : "Next (" + (k + 1) + " of " + pg.length + ")") + "</button></div></div>";
+}
+function momentGo(back) {
+  var mo = G.moment; if (!mo) return; var n = (mo.m.pages || []).length;
+  if (back) { mo.k = Math.max(0, mo.k - 1); return render(); }
+  if (mo.k < n - 1) { mo.k++; SFX.select && SFX.select(); return render(); }
+  G.moment = null; SFX.select && SFX.select(); render(); var gen = G.pgen; after(.35, function () { if (gen === G.pgen) playNext(); });
+}
+/* v0.19: the coach points at what it is talking about (a part of the screen, or a row of the table) */
+var SPOTS = { hand: ["hand", "Your hand"], route: ["route", "The route: 5 Zones"], mtrack: ["mtrack", "Mission Track"], you: ["you", "Your status bar"], foe: ["foe", "Enemy status bar"], phase: ["phase", "Round and phase"], prompt: ["prompt", ""], win: ["bWin", "How to win"],
+  front: [1.72, "Your Frontline"], rear: [4.12, "Your Rear Area"], bases: [5.84, "Your Bases"], efront: [-1.72, "Enemy Frontline"], erear: [-4.12, "Enemy Rear Area"], ebases: [-5.84, "Enemy Bases"] };
+function spotNow() {
+  if (G.over && !G.playing) return null;
+  if (G.moment) { var mp = (G.moment.m.pages || [])[G.moment.k]; return mp && mp.spot; }
+  var p = G.pend; if (!p || G.playing || !p.coach || coachReady(p)) return null; var pg = coachPages(p)[G.cpage[p.n] || 0]; return pg && pg.spot;
+}
+function spotlight() {
+  var el = $("spots"); if (!el) { el = document.createElement("div"); el.id = "spots"; document.body.appendChild(el); }
+  var sp = spotNow(), list = !sp ? [] : Array.isArray(sp) ? sp : [sp], key = list.join(",") + "|" + W + "x" + H + "|" + (G.tbH || 0) + "|" + (G.botH || 0);
+  if (el.dataset.k === key) return; el.dataset.k = key; el.innerHTML = "";
+  list.forEach(function (name) {
+    var d = SPOTS[name]; if (!d) return; var r = null;
+    if (typeof d[0] === "string") { var t = $(d[0]); if (!t || t.hidden || getComputedStyle(t).display === "none") return; var b = t.getBoundingClientRect(); if (b.width < 2 || b.height < 2) return; r = { l: b.left, t: b.top, r: b.right, b: b.bottom }; }
+    else { var hw = name.indexOf("bases") >= 0 ? 2.75 : (LAND ? 11.5 : 6.2) / 2 + .25, hz = name.indexOf("bases") >= 0 ? .5 : 1.02, pts = [[-hw, d[0] - hz], [hw, d[0] - hz], [-hw, d[0] + hz], [hw, d[0] + hz]].map(function (q) { return screenPos(new THREE.Vector3(q[0], .42, q[1])); });
+      r = { l: Math.min.apply(0, pts.map(function (q) { return q.x; })), r: Math.max.apply(0, pts.map(function (q) { return q.x; })), t: Math.min.apply(0, pts.map(function (q) { return q.y; })), b: Math.max.apply(0, pts.map(function (q) { return q.y; })) }; }
+    var pad = 4, x = document.createElement("div"); x.className = "spot"; x.style.left = Math.max(2, r.l - pad) + "px"; x.style.top = Math.max(2, r.t - pad) + "px"; x.style.width = Math.max(10, Math.min(W - 4, r.r + pad) - Math.max(2, r.l - pad)) + "px"; x.style.height = Math.max(10, Math.min(H - 4, r.b + pad) - Math.max(2, r.t - pad)) + "px";
+    if (d[1]) { var lb = document.createElement("span"); lb.textContent = d[1]; x.appendChild(lb); lb.className = (typeof d[0] !== "string" ? "in" : r.t < 30 ? "below" : "") + (typeof d[0] === "string" && r.r > W - 170 ? " rt" : ""); } el.appendChild(x);   // table rows: the label sits inside, so stacked rows do not collide
+  });
 }
 function coachEnd() {
   var t = G.info.tutorial || {}, e = (t.end || {})[G.over.winner === "You" ? "win" : "other"] || {}, pages = e.pages || [];
@@ -686,7 +747,7 @@ function showManual() {   /* the Field Manual: the Basic Training lessons, the w
   words.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
   el.innerHTML = '<div class="lh"><button class="ghost" id="fmX" style="float:right">Close</button><h3 class="t" style="margin:2px 0">Field Manual</h3><p class="hint">How to play, as taught in Basic Training, and every keyword and game term. The full rules join this page when the rulebook is updated.</p>' +
     '<div class="row seg2" id="fmTabs"><button data-fm="how" aria-pressed="true">How to play</button><button data-fm="win" aria-pressed="false">Ways to win</button><button data-fm="words" aria-pressed="false">Glossary</button></div></div>' +
-    '<div class="fmb" data-fm="how">' + (groups.length ? groups.map(function (g) { return "<h4>" + esc(g.lesson) + "</h4>" + g.items.map(function (x) { return '<p class="fq">' + esc(x.title) + "</p>" + x.pages.map(function (y) { return "<p>" + esc(y) + "</p>"; }).join(""); }).join(""); }).join("") : "<p>Basic Training is not on this copy of the page.</p>") + "</div>" +
+    '<div class="fmb" data-fm="how">' + (groups.length ? groups.map(function (g) { return "<h4>" + esc(g.lesson) + "</h4>" + g.items.map(function (x) { return '<p class="fq">' + esc(x.title) + "</p>" + x.pages.map(function (y) { return "<p>" + esc(pgT(y)) + "</p>"; }).join(""); }).join(""); }).join("") : "<p>Basic Training is not on this copy of the page.</p>") + "</div>" +
     '<div class="fmb" data-fm="win" hidden>' + (t && t.win ? t.win.pages.map(function (y) { return "<p>" + esc(y) + "</p>"; }).join("") : "") + "<p>In a game, the ⚑ button shows how close each side is to each way to win.</p></div>" +
     '<div class="fmb" data-fm="words" hidden><input type="search" id="fmQ" placeholder="Find a word"><dl id="fmDl">' + words.map(function (w) { return "<dt>" + esc(w[0]) + (w[2] === "keyword" ? ' <small style="color:var(--dim);font-weight:400">keyword</small>' : "") + "</dt><dd>" + esc(w[1]) + "</dd>"; }).join("") + "</dl></div>";
   el.style.display = "block";
@@ -698,7 +759,7 @@ $("fm").addEventListener("input", function (e) { if (e.target.id !== "fmQ") retu
 
 /* first-time tips: one line the first time each thing comes up in a normal game (Settings > Tips switches them off) */
 var TIPS = [
-  ["deploy", function (p) { return p.kind === "deploy"; }, "Command: deploy cards from your hand. Each costs its Deploy number in Supply and 1 Lift. New cards arrive in your Rear Area."],
+  ["deploy", function (p) { return p.kind === "deploy"; }, "Command: deploy cards from your hand. Each costs its Deploy number in Supply and 1 Lift. New cards arrive in your Rear Area. To read a card, point at it or tap it and it rises; press and hold it for the whole card."],
   ["hidden", function (p) { return p.kind === "deploy" && p.options.some(function (o) { return /face down/.test(o); }); }, "Deploying face down makes a Hidden card: it costs no Supply now, and the enemy pays {hidden_isr} more ISR to attack it. Revealing it later costs its Deploy cost."],
   ["upgrade", function (p) { return p.kind === "deploy" && p.options.some(function (o) { return /^Upgrade /.test(o); }); }, "Upgrade: a Generation II or III card can replace a card in play that its Upgrades From line names. You pay only the difference in Supply."],
   ["discard", function (p) { return p.kind === "discard"; }, "Command starts with a choice: discard any cards you will not use soon, then draw back up to 5."],
@@ -815,6 +876,7 @@ function playNext() {
     $("vig").className = G.stand ? "fx stand" : "fx"; render();
   } catch (e) { console.error(e); }
   if (G.dir) { G.playing = false; return; }   // v0.18: the opening plays one frame at a time, on its own schedule
+  var mo = momentFor(f); if (mo) { var g0 = G.pgen; after(Math.min(wait, 1.1), function () { if (g0 === G.pgen) { if (!G.queue.length && G.latest) { G.view = G.latest; sync(G.view); } G.moment = mo; SFX.turn && SFX.turn(); render(); } }); return; }   // v0.19: explain it now; Continue resumes
   var gen = G.pgen; after(wait, function () { if (gen === G.pgen) playNext(); });
 }
 
@@ -871,6 +933,7 @@ function showSettings() { audioInit(); unlock(); SFX.open && SFX.open();
     segRow("motion", "Reduced motion", "Stills the screen effects. Follows your device setting unless you choose.", [["auto", "Follow device"], ["on", "On"], ["off", "Off"]]) +
     segRow("shake", "Screen shake", "", [[true, "On"], [false, "Off"]]) +
     segRow("opening", "Opening film", "Plays before the Main Menu each time the game opens. Skip or Esc goes straight to the menu; Reduced motion skips it.", [[true, "On"], [false, "Off"]]) +
+    segRow("glance", "Card faces", "Glance: cards in your hand and on the table show their cost, key numbers and ability tags, large. Point at a card (or tap it) to raise it; hold any card to read all of it. Full print: the printed card, shrunk.", [[true, "Glance"], [false, "Full print"]]) +
     segRow("shapes", "Side markers", "Adds a shape to the side colours: your cards a rectangle, the enemy's a diamond, as on a map.", [[false, "Colour only"], [true, "Colour and shape"]]) +
     "<h4>Sound</h4>" + '<div class="row"><span>Mute everything</span><label class="ck"><input type="checkbox" id="sMute"' + (G.muted ? " checked" : "") + "> Mute</label></div>" + rng("sFx", "Effects", G.volFx) + rng("sMus", "Music", G.volMus) + rng("sVox", "Radio voices", G.volVox) +
     "<h4>Gameplay</h4>" + segRow("speed", "Speed", "How fast the bot's moves play out.", [[.5, "½×"], [1, "1×"], [2, "2×"]]) +
@@ -879,7 +942,7 @@ function showSettings() { audioInit(); unlock(); SFX.open && SFX.open();
     segRow("badges", "Attack badges", "The attack value on cards on the table.", [[true, "On"], [false, "Off"]]) +
     "<h4>Accessibility</h4>" + segRow("captions", "Captions for radio calls", "Shows each radio call as text, also when the voices are off.", [[false, "Off"], [true, "On"]]) +
     '<h4>About</h4><div class="about"><div class="logos">' + L.map(function (x) { return '<img class="' + x.key + '" alt="' + esc(x.alt) + '" src="' + x.src + '">'; }).join("") + "</div>" +
-    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.18" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
+    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.19.2" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
     "<p><b>Sound</b></p><ul>" + CR.map(function (c) { return "<li>" + esc(c.source) + ": " + esc(c.what) + "</li>"; }).join("") + "</ul>" + (MU.length ? "<p>Music: " + esc(MU.join(", ")) + ".</p>" : "") +
     "<p><b>Card art</b>: made for the project (Art Pass v6.0 and earlier passes); some cards show Beta 3 art until the next Art Pass.</p></div></div>";
   el.style.display = "block"; el.scrollTop = 0;
@@ -1067,7 +1130,7 @@ function sendForm(root) {
     } });
 }
 $("bSaveRep").onclick = function () { $("menu").hidden = true; if (!G.info || G.replay) return; saveReplay(null, null); };
-function reset() { G.cpage = {}; G.nudge = null; G.tipNow = null; tweens = []; clearBoard(); G.hint = null; G.hints = 0; G.view = null; G.latest = null; G.pend = null; G.latestPend = null; G.queue = []; G.playing = false; G.since = 0; G.sel = null; G.over = null; G.overShown = false; G.err = null; G.stand = false; G.standRound = 0; G.hoverDst = null; G.heldAtk = null; G.lastAtk = null; G.explain = ""; G.aar = []; G.aarEv = []; G.aarLast = null; G.why = null; G.histWhy = {}; G.rate = {}; gameId = ""; G.startedAt = new Date().toISOString(); G.stored = false; G.hist = []; G.hits = []; G.cause = ""; $("bQuit").textContent = "Abandon game"; G.multi = null; G.autoQ = null; G.notes = []; G.paused = false; G.replay = null; G.savedReplay = null; G.lastRec = null; G.pgen = (G.pgen || 0) + 1; G.ordersRound = 0; G.shuffled = false; document.body.classList.remove("replaying"); $("debrief").style.display = "none"; $("bQuit").textContent = "Abandon game"; G.waiting = false; G.lastN = 0; G.skip = false; G.started = false; G.busy = false; G.caption = ""; lastHf = {}; handKey = ""; $("feed").innerHTML = ""; closePreview(); }
+function reset() { G.cpage = {}; G.moment = null; G.momDone = {}; G.nudge = null; G.tipNow = null; tweens = []; clearBoard(); G.hint = null; G.hints = 0; G.view = null; G.latest = null; G.pend = null; G.latestPend = null; G.queue = []; G.playing = false; G.since = 0; G.sel = null; G.over = null; G.overShown = false; G.err = null; G.stand = false; G.standRound = 0; G.hoverDst = null; G.heldAtk = null; G.lastAtk = null; G.explain = ""; G.aar = []; G.aarEv = []; G.aarLast = null; G.why = null; G.histWhy = {}; G.rate = {}; gameId = ""; G.startedAt = new Date().toISOString(); G.stored = false; G.hist = []; G.hits = []; G.cause = ""; $("bQuit").textContent = "Abandon game"; G.multi = null; G.autoQ = null; G.notes = []; G.paused = false; G.replay = null; G.savedReplay = null; G.lastRec = null; G.pgen = (G.pgen || 0) + 1; G.ordersRound = 0; G.shuffled = false; document.body.classList.remove("replaying"); $("debrief").style.display = "none"; $("bQuit").textContent = "Abandon game"; G.waiting = false; G.lastN = 0; G.skip = false; G.started = false; G.busy = false; G.caption = ""; lastHf = {}; handKey = ""; $("feed").innerHTML = ""; closePreview(); }
 function useBuild(k) {   // card faces and printed values of the build in play (the test build has cards the baseline does not)
   var b = (G.builds || []).filter(function (x) { return x.key === k; })[0]; if (!b || G.buildOn === k) return; G.buildOn = k; G.faces = b.faces || G.faces; G.meta = b.meta || G.meta; G.gloss = b.glossary || G.gloss; G.decklists = b.decklists || G.decklists; handCv = {}; handKey = ""; }
 /* ================= the map: contour lines of the chosen battlefield (setup backdrop and saved-game cover) ================= */
@@ -1124,7 +1187,7 @@ function trainBody(el, d) {   /* v0.17 (Stage D): Basic Training on the Main Men
   var t = d.training;
   if (!t) { el.innerHTML = '<section class="step"><h2>Basic Training</h2><p class="hint">Basic Training is not on this copy of the page (basic_training.json is missing).</p></section>'; return; }
   var done = false; try { done = !!localStorage.getItem("ss.trained"); } catch (e) { }
-  el.innerHTML = '<section class="step train"><h2><i>★</i>' + esc(t.name) + '</h2><p class="lead2">New to Shadows &amp; Steel? Start here. A short guided battle teaches the game one step at a time: about ' + esc(t.minutes) + ' minutes, and you cannot get it wrong.</p>' +
+  el.innerHTML = '<section class="step train"><h2><i>★</i>' + esc(t.name) + '</h2><p class="lead2">New to Shadows &amp; Steel? Start here. A short guided battle teaches the game one step at a time: about ' + esc(t.minutes) + ' minutes. Each step accepts only the move it asks for, so you always know what to do next.</p>' +
     '<ol class="tl">' + ["The board: the route, Zones, your Force Marker and Contact", "Deploying cards, and your Frontline and Rear Area", "Attacking, and what Survivability and Durability mean", "Operators, the Mission Track and H-Hour", "Effect cards, Sustainment and Assessment", "How to win"].map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ol>" +
     '<p class="hint">' + (done ? "You have finished Basic Training on this device. Play it again any time." : "The coach explains each step. Read it, tap Next, then do what it asks.") + ' The Field Manual holds every lesson to read again later.</p></section>' +
     '<div class="go"><button id="pgo" class="big">Start Basic Training</button><p><button class="ghost" id="tFM">Read the Field Manual</button></p></div><pre id="serr"></pre>';
@@ -1138,7 +1201,7 @@ function showSetup() {
     $("cover").style.display = "block"; $("cover").classList.add("map");
     $("cover").firstElementChild.innerHTML = '<canvas class="contours" id="suMap"></canvas><div class="su"><header class="su-h"><h1 class="t">Shadows <span>&amp;</span> Steel</h1>' +
       '<div class="seg" data-set="mode"><button data-v="train" aria-pressed="' + (SET.mode === "train") + '">Basic Training</button><button data-v="bot" aria-pressed="' + (SET.mode === "bot") + '">Play the bot</button><button data-v="watch" aria-pressed="' + (SET.mode === "watch") + '">Watch the bot play itself</button><button data-v="replays" aria-pressed="' + (SET.mode === "replays") + '">Saved replays</button></div><button class="ghost gear" id="suFM">Field Manual</button><button class="ghost gear" id="suLib">Card library</button><button class="ghost gear" id="suGear">⚙ Settings</button>' + (LOCAL ? '<button class="ghost gear" id="suQuit">Quit</button>' : "") + (SITE ? '<button class="ghost gear" id="suSend">✉ Send notes</button>' : "") + '</header>' + (SITE ? siteWelcome() : "") +
-      '<div id="suBody"></div><footer class="su-f">Tap a card to read it during the game; glowing cards can act. The ☰ menu holds notes, the battle log, saving a replay and Settings. Cards: ' + esc(d.cards || "") + ". Decks: " + esc(d.decks || "") + ". Battlefield table v0.18.</footer>" + logoBand() + "</div>";
+      '<div id="suBody"></div><footer class="su-f">Tap a card to read it during the game; glowing cards can act. The ☰ menu holds notes, the battle log, saving a replay and Settings. Cards: ' + esc(d.cards || "") + ". Decks: " + esc(d.decks || "") + ". Battlefield table v0.19.2.</footer>" + logoBand() + "</div>";
     setupBody(d); requestAnimationFrame(function () { contourMap($("suMap"), SET.terrain); if (window.SSOpening && window.SSOpening.menuShown) window.SSOpening.menuShown(); });
   }, function (e) { $("cover").style.display = "block"; $("cover").firstElementChild.innerHTML = "<h1 class='t'>Shadows &amp; Steel</h1><p class='lead'>The game engine did not start.</p><pre>" + esc(e.message) + "</pre>"; });
 }
@@ -1387,5 +1450,5 @@ var fontReady = (document.fonts && document.fonts.load) ? Promise.race([Promise.
 [1500, 6000, 15000].forEach(function (ms) { setTimeout(function () { dbReady().then(function (d) { if (d) recoverNotes(); }); }, ms); });
 (function () { var rj = document.getElementById("ss-replay"); if (!rj) return; try { window.SS_REPLAY = JSON.parse(rj.textContent); } catch (e) { return; }   // a saved-replay file: no engine, just the game
   Promise.all([artReady, fontReady]).then(function () { $("cover").classList.add("map"); $("cover").firstElementChild.innerHTML = standaloneCover(window.SS_REPLAY); requestAnimationFrame(function () { contourMap($("suMap"), (window.SS_REPLAY.meta || {}).terrain || window.SS_TNAME || ""); }); }); })();
-window.SS = { sendForm: sendForm, showSend: showSend, site: SITE, copyWhere: copyWhere, optWhere: optWhere, quitApp: quitApp, winTrack: winTrack, showLibrary: showLibrary, toggleWin: toggleWin, glossFor: glossFor, hintBox: hintBox, PREF: PREF, applyPrefs: applyPrefs, showSettings: showSettings, caption: caption, TER: TER, SND: SND, readCard: readCard, showPiles: showPiles, hitsBox: hitsBox, isCause: isCause, saveReplay: saveReplay, playReplay: playReplay, buildReplayFile: buildReplayFile, listReplays: listReplays, loadReplay: loadReplay, showDebrief: showDebrief, replayJump: replayJump, set: SET, drawCard: function (u, S) { return drawCard(u, S || 1); }, engine: function (handle) { Promise.all([artReady, fontReady]).then(function () { engineOk(handle); G.engineUp = true; var gate = window.SSOpening && window.SSOpening.gate && window.SSOpening.gate(); (gate || Promise.resolve()).then(showSetup); }); }, op: OPDIR, G: G, api: api, objs: function () { return O; }, choose: choose, tapObj: tapObj, zoom: zoom, resume: function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); } };
+window.SS = { sendForm: sendForm, showSend: showSend, site: SITE, copyWhere: copyWhere, optWhere: optWhere, quitApp: quitApp, winTrack: winTrack, showLibrary: showLibrary, toggleWin: toggleWin, glossFor: glossFor, hintBox: hintBox, PREF: PREF, applyPrefs: applyPrefs, showSettings: showSettings, caption: caption, TER: TER, SND: SND, readCard: readCard, showPiles: showPiles, hitsBox: hitsBox, isCause: isCause, saveReplay: saveReplay, playReplay: playReplay, buildReplayFile: buildReplayFile, listReplays: listReplays, loadReplay: loadReplay, showDebrief: showDebrief, replayJump: replayJump, set: SET, drawCard: function (u, S) { return drawCard(u, S || 1); }, engine: function (handle) { Promise.all([artReady, fontReady]).then(function () { engineOk(handle); G.engineUp = true; var gate = window.SSOpening && window.SSOpening.gate && window.SSOpening.gate(); (gate || Promise.resolve()).then(showSetup); }); }, op: OPDIR, G: G, api: api, objs: function () { return O; }, choose: choose, tapObj: tapObj, objAt: objAt, peekAt: peekAt, zoom: zoom, resume: function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); } };
 })();

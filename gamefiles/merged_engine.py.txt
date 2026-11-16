@@ -1,4 +1,5 @@
-"""Shadows & Steel: Merged Baseline rules engine (Beta 3.5 structure + the Gemini v5.1 changes + the pieces kept from the Core Set).
+"""[Candidate v0.16-SC: SPECTRUM control keys added by apply_sc_keys.py; RD-143]
+Shadows & Steel: Merged Baseline rules engine (Beta 3.5 structure + the Gemini v5.1 changes + the pieces kept from the Core Set).
 
 Reads SS_Merged_Cards_v<latest>.csv and SS_Merged_Decks_v<latest>.csv from this folder.
 Every choice a player makes goes through Game.decide(); a bot takes the highest value, a person picks from the labels.
@@ -13,7 +14,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 RULES = dict(hf=20, hand=5, isr0=4, isr_income=2, isr_cap=10, zones=5, front_limit=4, tac_reach=3, last=8, lift=4, tick_hi=12, tick_lo=6,
              hidden_isr=2, ambush=1, recover_cost=2, base_hf=3, span_max=3, supremacy=1, home_bonus=3, centre=1, war_cost=1, reshuffle_hf=1, lookahead=1,
              concepts=0, instant_end=0, forced_discard=0, ranged_isr=1, la_samples=2,
-             shield_rockets=0, close_reach=0, contest_hf=1, no_fallback=0, contest_retreat=1, break_str=3, ie_first=1)  # the last two are trial switches, both off: air defence also intercepts ROCKET attacks; Close attacks reach 1 Zone
+             shield_rockets=0, close_reach=0, contest_hf=1, no_fallback=0, contest_retreat=1, break_str=3, ie_first=1,
+             collapse_cap=4, collapse_min=3, collapse_all=1, comp_isr=0, pin_isr=1, pin_str=0, cascade_sup=0, sc_mill=2)  # v0.16-SC (RD-143): COLLAPSE OF WILL's cap, the smallest gap at which the bot fires it, and whether it empties your ISR (1) or costs ISR equal to the Homefront taken (0); the ISR cost of a COMPROMISE action, and of PIN; a PINNED card counts 0 for Frontline Strength (1) or still counts (0); SYSTEMS CASCADE hits Bases with this much Supply or less; when the bot COMPROMISEs: 2 = discard everything; 1 = discard everything when the reshuffle is close or WAR WEARINESS is out, otherwise only the strong cards; 0 = only the strong cards  # the last two are trial switches, both off: air defence also intercepts ROCKET attacks; Close attacks reach 1 Zone
 CLASS_KEY = {"Movement & Maneuver": "M2", "Fires": "FIRES", "Protection": "PROT", "Intelligence": "INTEL", "Information": "INFO", "Command & Control": "C2", "Sustainment": "SUST", "Joint": "JOINT"}
 CLASS_NAME = {"M2": "Movement & Maneuver", "FIRES": "Fires", "PROT": "Protection", "INTEL": "Intelligence", "INFO": "Information", "C2": "Command & Control", "SUST": "Sustainment", "JOINT": "Joint"}
 BASE_TYPES = {"Hub": dict(stock=15, restock=1, surv=4, alone=2, dur=8, conc=0, hf=3, access=("SPACE", "MARITIME", "CYBER")),
@@ -38,6 +40,16 @@ CONCEPTS = {
 ABILITY_TEXT = {
     "HOLD": ("Frontline", "HOLD {n}", "Counts as {n} for Frontline Strength."), "ROUT": ("Contact", "ROUT", "If you win the Frontline contest, the enemy retreats 1 more Zone."),
     "SEIZE": ("Frontline", "SEIZE", "Your Force Marker may advance 1 extra Zone."), "OVERRUN": ("Contact", "OVERRUN", "When this card's attack destroys a Frontline card, ready this card (once a round)."), "UPGRADE_ONLY": ("Deploy", "FLAGSHIP", "Enters play only as an upgrade of a card in play (pay the difference)."), "INF_HIT": ("Infiltrate", "INFILTRATE: DIRECT ACTION {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour deal {n} damage to an enemy LAND card anywhere, then return to the Rear Area exhausted."), "INF_INTEL": ("Infiltrate", "INFILTRATE: SPECIAL RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain {n} ISR and draw 1, then return to the Rear Area exhausted."), "INF_REVEAL": ("Infiltrate", "INFILTRATE: COUNTER-RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain 2 ISR and reveal up to {n} Hidden enemy cards, then return to the Rear Area exhausted."), "A_RIPOSTE": ("Action", "RIPOSTE {n}", "Deal {n} damage to each Exhausted enemy Frontline card."), "DISRUPT": ("Infiltrate", "DISRUPT {n}", "At H-Hour, also cancel {n} enemy Mission Track card(s): Conditions first, then Operations, then Operators. Canceled cards go to their owner's discard pile."), "FLAGSHIP": ("Deploy", "FLAGSHIP", "Only one of this card in play per player."), "A_FLIP": ("Action", "FALSE PICTURE {n}", "Flip up to {n} of your other cards face down; revealing them again costs nothing."), "A_STRIKEPKG": ("Action", "STRIKE PACKAGE {n}", "Ready up to {n} of your FIRES cards."), "SHOOTER": ("Ability", "SENSOR-TO-SHOOTER {n}", "Your FIRES attacks cost {n} less ISR."), "RETARGET": ("Ability", "RE-ATTACK", "When your FIRES attack destroys a card or damages a Base, ready that card (once a round each)."), "RIPOSTE": ("Reaction", "RIPOSTE {n}", "When an enemy unit attacks your Frontline, deal {n} damage to it."), "IMMOVABLE": ("Frontline", "IMMOVABLE", "While in your Frontline, your Force Marker is pushed back at most 1 Zone."), "RAMPAGE": ("Contact", "BREAKTHROUGH ASSAULT", "Each time this card's attack destroys a card, ready this card."),
+    "HIJACK_ATK": ("Attack", "HIJACK", "Take control of 1 enemy DRONE or ROBOT, even if it is exhausted, and attack with its ATK. Then exhaust it."),
+    "SPOT_ISR": ("Action", "SPOTLIGHT +{n} ISR", "SPOTLIGHT also gains {n} ISR."),
+    "A_PIN": ("Action", "PIN {n}", "Pay 1 ISR: exhaust {n} enemy Frontline card(s); a PINNED card does not ready at the Recovery of this round."),
+    "A_COMPROMISE": ("Action", "COMPROMISE {n}", "Look at the top {n} cards of the enemy Main Force; discard any of them and put the rest back in any order."),
+    "ADV_DRAW": ("Sustainment", "ADVANTAGE: DRAW {n}", "At Recovery, if you have more ISR than the enemy, draw {n}."),
+    "ADV_SUPPLY": ("Sustainment", "ADVANTAGE: SUPPLY {n}", "At Recovery, if you have more ISR than the enemy, put {n} Supply on your Bases."),
+    "A_OVERWATCH": ("Action", "OVERWATCH {n}", "If the enemy has more Capabilities in play than you: gain {n} ISR and ready 1 of your Supporters."),
+    "A_REPAIR": ("Action", "FIELD MAINTENANCE {n}", "Remove {n} damage from 1 of your cards or Bases."),
+    "A_BRIEF": ("Action", "COMMANDER'S INTENT", "Pay 1 ISR: ready 1 of your other cards; it gets +1 ATK this round."),
+    "R_SCREEN": ("Reaction", "SCREEN {n}", "Exhaust: a Rear Area card or a Base gets +{n} Survivability, or cancel a DRONE or ROBOT attack on it."),
     "OBSTACLE": ("Frontline", "OBSTACLE", "The enemy cannot SEIZE or PURSUE, and enemy ROUT has no effect."),
     "FIX": ("Frontline", "FIX", "While the Force Markers are 1 Zone apart or in Contact, the enemy marker cannot fall back."), "PURSUIT": ("Contact", "PURSUIT", "When the enemy Force Marker falls back or is pushed back, yours may follow 1 Zone."), "FLANK": ("Attack", "FLANK", "In Contact, may target the Rear Area and Bases."),
     "DEEP": ("Attack", "DEEP", "DEEP FIRES: out of Contact, may target the Rear Area and Bases."), "SUPPRESS": ("Attack", "SUPPRESS", "Exhaust the target before it can react."),
@@ -129,7 +141,7 @@ def deck_cost(cards, names): return round(sum(cards[n].inv for n in names if n i
 class Unit:
     N = [0]
     def __init__(s, c, row="R", hidden=False):
-        s.c, s.row, s.ex, s.dmg, s.hidden, s.spot, s.over, s.fresh = c, row, False, 0, hidden, False, False, False; Unit.N[0] += 1; s.uid = "u%d" % Unit.N[0]
+        s.c, s.row, s.ex, s.dmg, s.hidden, s.spot, s.over, s.fresh = c, row, False, 0, hidden, False, False, False; s.pin = False; Unit.N[0] += 1; s.uid = "u%d" % Unit.N[0]
     def k(s, key): return 0 if s.hidden or not s.c.cap else s.c.keys.get(key, 0)
 
 
@@ -169,8 +181,40 @@ class Game:
         s.P = [Player(0, a, cards, s.R, s.rng, 0), Player(1, b, cards, s.R, s.rng, 1 if same else 0)]
         s.Z = s.R["zones"]; s.pos = [1, s.Z]; s.round = 0; s.first = s.rng.randrange(2) if first is None else first
         s.log = [] if log else None; s.why = [{}, {}]; s.info = 0; s.on_event = None; s.on_decide = None; s.fx = None; s.meta = []; s.endq = []; s.human = None; s.human_pid = None; s.winner = None; s.how = ""; s.phase = "Set up"; s.stats = dict(attacks=0, kills=0, supported=0, effects=0, reactions=0, hidden=0)
-        s.P[s.first].isr += 1; s.add_supply(s.P[1 - s.first], 1)
+        s.P[s.first].isr += 1; s.add_supply(s.P[1 - s.first], 1); s.evl = []
     # ------------------------------------------------------------ helpers
+    def ev(s, p, key):   # a note for the probes (who did what, in which round); changes nothing
+        if not getattr(s, "_la", False): s.evl.append((s.round, p.i, key))
+    def adv(s, p): return p.isr > s.opp(p).isr   # ADVANTAGE: only while you have more ISR than the enemy
+    def pin_value(s, x):   # the bot pins the card that matters most: a ready attacker, or the card holding the line when the forces are close
+        return (0.3 * x.c.atk + 0.8 if not x.ex else 0) + ((x.k("HOLD") or 1) * (0.9 if s.dist() == 0 else (0.4 if s.dist() == 1 else 0.1)) if s.R["pin_str"] else 0) + 0.05 * s.unit_value(x)
+    def card_worth(s, c): return (c.cost + 0.5 * c.atk + c.hf + (3 if c.keys.get("FLAGSHIP") else 0)) if c.cap else (1.0 + c.cost + c.isr + (1 if c.req[:1] == ["PULSE"] else 0))
+    def compromise(s, p, n, src):
+        """COMPROMISE n: p looks at the top n cards of the enemy Main Force, discards any of them and puts the rest back (in any order)."""
+        o = s.opp(p); top = o.mf[-n:] if n > 0 else []
+        if not top: return 0
+        s.info += 1; out = []
+        if s.is_human(p):   # a person picks, one at a time, and may stop
+            pool = list(top)
+            while pool:
+                ch = s.decide(p, "compromise", "%s: COMPROMISE %d. Discard which of the enemy's top Main Force cards? (%d discarded)" % (src, n, len(out)), [(1, "Discard %s (%s)" % (c.name, c.kind()), c) for c in dict.fromkeys(pool)] + [(0, "Done", 0)])
+                if not ch: break
+                pool.remove(ch); out.append(ch)
+        else:   # the bot: when the reshuffle is close or WAR WEARINESS is out, discard everything; otherwise discard the strong cards and leave the weak ones on top
+            m = s.R["sc_mill"]; out = [c for c in top if m == 2 or (m == 1 and (len(o.mf) <= n + 4 or s.cond(p, "E_WEARY"))) or s.card_worth(c) >= 3.5]
+        for c in out: o.mf.remove(c); o.discard.append(c)   # removes one copy; which copy does not matter
+        if out: s.say("%s: %s's Main Force is compromised, %d card%s discarded (%s)." % (src, s.who(o), len(out), "" if len(out) == 1 else "s", ", ".join(c.name for c in out)))
+        else: s.say("%s: %s looks at the top of %s's Main Force." % (src, s.who(p), s.who(o)))
+        s.ev(p, "COMPROMISED %d" % len(out)); return len(out)
+    def spoof_orders(s, p, c):
+        """SPOOFED ORDERS (reaction): when p plays an Operation or a Pulse, the enemy may cancel it unless p pays 2 ISR. ADVANTAGE: p cannot pay. True if canceled."""
+        d = s.opp(p); r = next((x for x in d.hand if "R_SPOOFORD" in x.keys and d.sup() >= x.cost and d.isr >= x.isr), None)
+        if not r: return False
+        n = r.keys["R_SPOOFORD"]
+        if not s.decide(d, "reaction", "%s plays %s: %s Play %s (%s): cancel it unless the enemy pays %d ISR?" % (s.who(p), c.name, c.l[0], r.name, r.cost_text(), n), [(s.effect_value(p, c) + 0.4, "Yes, play %s" % r.name, 1), (0.9, "No", 0)]): return False
+        s.pay(d, r.cost); d.isr -= r.isr; d.hand.remove(r); d.discard.append(r); s.stats["reactions"] += 1; s.ev(d, "R_SPOOFORD"); s.say(s.who(d), "reacts with", r.name + ".")
+        if not s.adv(d) and p.isr >= n and s.decide(p, "pay", "%s: pay %d ISR to push %s through?" % (r.name, n, c.name), [(1, "Pay %d ISR" % n, 1), (0, "Let it be canceled", 0)]): p.isr -= n; s.say(s.who(p), "pays %d ISR; %s goes ahead." % (n, c.name)); return False
+        s.say(c.name, "is canceled."); s.ev(d, "CANCELED"); return True
     def who(s, p): return p.name
     def say(s, *a):
         if s.log is None: return
@@ -268,12 +312,14 @@ class Game:
                     else: return
                 else:
                     p.mf = p.discard; p.discard = []; s.rng.shuffle(p.mf); d = p.mf
-                    s.say(s.who(p), "reshuffles the discard pile into a new Main Force."); s.lose_hf(p, s.R["reshuffle_hf"], "reshuffle")
+                    s.say(s.who(p), "reshuffles the discard pile into a new Main Force."); s.ev(p, "RESHUFFLE"); s.lose_hf(p, s.R["reshuffle_hf"], "reshuffle")
+                    _w = max([t["c"].keys.get("E_WEARY", 0) for t in s.opp(p).track if t["kind"] == "cond"] + [0])
+                    if _w: s.lose_hf(p, _w, "WAR WEARINESS")
             if not d: return
             p.hand.append(d.pop()); s.info += 1
     def span(s, p): return min(s.R["span_max"] + (1 if p.fl.get("sync") else 0), 1 + sum(u.k("COMMAND") for u in p.units) + p.span_bonus) if not p.fl.get("sync") else 4
     def strength(s, p):
-        v = sum((u.k("HOLD") or 1) for u in p.front() if not u.hidden and u.c.cap) + p.fl.get("str", 0) + (2 if s.cond(p, "E_BATTLEPOS") and p.fl.get("held") else 0)
+        v = sum((u.k("HOLD") or 1) for u in p.front() if not u.hidden and u.c.cap and not (u.pin and s.R["pin_str"])) + p.fl.get("str", 0) + (2 if s.cond(p, "E_BATTLEPOS") and p.fl.get("held") else 0)
         if s.pos[p.i] == (1 if p.i == 0 else s.Z): v += s.R["home_bonus"] or sum(1 for b in p.bases if not b.dev)
         return v
     def track_threat(s, o):   # how much the enemy's Mission Track is worth disrupting (bot)
@@ -350,7 +396,7 @@ class Game:
     def targets(s, p, u):
         """Legal targets for unit u: list of (kind, obj) where kind is 'u' or 'b'."""
         o = s.opp(p); c = u.c; out = []
-        if not c.atk or not s.reach(c): return out
+        if not (c.atk or s.hijack_atk(p, u)) or not s.reach(c): return out
         screen = bool(o.front()); deep = (u.k("DEEP") and not s.contact()) or (u.k("FLANK") and s.contact()) or not screen
         for t in o.units:
             if not t.hidden and t.c.cap and c.targets != "ANY" and (t.c.air != (c.targets == "AIR")): continue
@@ -361,12 +407,22 @@ class Game:
                 if b.kind == "Staging Base" and (c.range != "Close" or s.contact()): out.append(("b", b))
                 if b.kind == "Hub" and (c.range == "Theater" or (u.k("FLANK") and s.contact())): out.append(("b", b))
         return out
+    def hijack_pool(s, p): return [x for x in s.opp(p).units if not x.hidden and x.c.cap and (x.c.tags & {"DRONE", "ROBOT"}) and x.c.atk]   # exhausted ones count (RD-153 (3))
+    def acls(s, p, u):   # the Class of the attacking unit: for HIJACK, the hijacked enemy unit's Class (its supporters join it)
+        if u.k("HIJACK_ATK") and s.hijack_pool(p):
+            if getattr(u, "_hjc", None): return u._hjc
+            return max(s.hijack_pool(p), key=lambda x: x.c.atk).c.cls
+        return u.c.cls
+    def hijack_atk(s, p, u):
+        if not u.k("HIJACK_ATK"): return 0
+        if getattr(u, "_hja", None) is not None: return u._hja
+        return max([x.c.atk for x in s.hijack_pool(p)] + [0])
     SUPPORT_KEYS = ("FS", "CUE", "JAM", "SUSTAIN", "SUSTAINR", "MEDEVAC")
     def support_sets(s, p, u):
         """Every legal set of supporters for an attack by u (digital game, for a person): ready, face-up Capabilities with a SUPPORT
         ability, each of a different Class from the attacker and each other, at most Span of Control of them. Includes the empty set."""
         import itertools
-        cand = [x for x in p.units if x is not u and not x.ex and not x.hidden and x.c.cap and any(x.k(k) for k in s.SUPPORT_KEYS) and x.c.cls != u.c.cls]
+        cand = [x for x in p.units if x is not u and not x.ex and not x.hidden and x.c.cap and any(x.k(k) for k in s.SUPPORT_KEYS) and x.c.cls != s.acls(p, u)]
         out = [()]
         for n in range(1, min(s.span(p), len(cand)) + 1):
             for combo in itertools.combinations(cand, n):
@@ -374,7 +430,7 @@ class Game:
         return out[:40]
     def supporters(s, p, u, isr_cost, hits_needed):
         """The bot's (and the helper's) choice of supporters for an attack: returns list of units."""
-        used = {u.c.cls}; out = []; left = s.span(p); fs = 0
+        used = {s.acls(p, u)}; out = []; left = s.span(p); fs = 0
         cand = [x for x in p.units if x is not u and not x.ex and not x.hidden and x.c.cap and x.c.cls not in used]
         def take(x): out.append(x); used.add(x.c.cls)
         o = s.opp(p); guard = any(x.c.cap and not x.ex and not x.hidden and any(k.startswith("R_") for k in x.c.keys) for x in o.units)
@@ -391,6 +447,7 @@ class Game:
         return out
     def atk_value(s, p, u, kind, t):
         c = u.c; o = s.opp(p); a = c.atk + p.fl.get("atk", 0) + (1 if p.ben == "SPEARHEAD" and s.contact() and (c.tags & {"ARMOR", "ROBOT"}) else 0) + (s.R["ambush"] if u.fresh else 0)
+        if u.k("HIJACK_ATK"): a += s.hijack_atk(p, u)   # PUPPETEER: attacks with the ATK of the enemy DRONE or ROBOT it hijacks
         if u.row == "F": a += p.fl.get("fatk", 0)
         if p.fl.get("shock") and c.cls == "M2": a += p.fl["shock"]
         if u.k("SWARM"): a += sum(1 for x in p.units if x is not u and not x.hidden and (x.c.tags & {"ROBOT", "DRONE"}))
@@ -400,7 +457,7 @@ class Game:
     def attack_options(s, p):
         o = s.opp(p); opts = []
         for u in p.units:
-            if u.ex or not u.c.cap or not u.c.atk: continue
+            if u.ex or not u.c.cap or not (u.c.atk or s.hijack_atk(p, u)): continue
             rev = u.hidden
             if rev and (p.sup() < u.c.cost or s.phase != "Operations"): continue
             c = u.c
@@ -448,7 +505,8 @@ class Game:
         for x in d.units:
             if x.ex or x.hidden or not x.c.cap or x is t: continue
             front = isinstance(t, Unit) and t.row == "F"; rearish = t is not None and not front; noint = ctx.get("noint")
-            n = x.k("R_COVER") or x.k("R_SHIELD") or (x.k("R_ESCORT") if front else 0) or (x.k("R_GUARD") if rearish else 0)
+            n = x.k("R_COVER") or x.k("R_SHIELD") or (x.k("R_ESCORT") if front else 0) or (x.k("R_GUARD") if rearish else 0) or (x.k("R_SCREEN") if rearish else 0)
+            if x.k("R_SCREEN") and rearish and not noint and atk and u is not None and (u.c.tags & {"DRONE", "ROBOT"}): opts.append((threat + 0.5, "%s: intercept and cancel it" % x.c.name, ("cancel", x)))
             if n and t is not None and ctx.get("hits", 0) > 0: opts.append((min(n, ctx["hits"]) * 0.6 + (2.0 if ctx.get("kill") and ctx["hits"] - n < ctx.get("need", 99) else -0.3), "%s: give the target +%d Survivability" % (x.c.name, n), ("cover", x, n)))
             if not noint and ((x.k("R_SHIELD") and ctx.get("air")) or (x.k("R_ESCORT") and ctx.get("air") and front) or (x.k("R_GUARD") and (ctx.get("air") or ctx.get("rocket")) and rearish)): opts.append((threat + 0.5, "%s: intercept and cancel it" % x.c.name, ("cancel", x)))
             if x.k("R_GLIDE") and not noint and (not atk or ctx.get("ranged")): opts.append((threat + 1.0, "%s: cancel it%s" % (x.c.name, " and deal 2 damage to the attacker" if u else ""), ("glide", x)))
@@ -469,7 +527,7 @@ class Game:
             ch[1].ex = True; res["cancel"] = True; s.say(s.who(d) + "'s", ch[1].c.name, "cancels the action" + (" and deals 2 damage to %s." % u.c.name if u is not None else "."))
             if u is not None and not s.R.get("glide_nodmg"): s.hit_unit(p, u, 2)
         else:
-            c = ch[1]; s.pay(d, c.cost); d.isr -= c.isr; d.hand.remove(c); d.discard.append(c); s.say(s.who(d), "reacts with", c.name + ".")
+            c = ch[1]; s.pay(d, c.cost); d.isr -= c.isr; d.hand.remove(c); d.discard.append(c); s.say(s.who(d), "reacts with", c.name + "."); s.ev(d, next(iter(c.keys)))
             if "E_HARDKILL" in c.keys:
                 res["cancel"] = True
                 if isinstance(t, Unit): t.ex = False
@@ -491,6 +549,14 @@ class Game:
     def do_attack(s, p, ch, noreact=False):
         _, u, kind, t, sup, cost, kc = ch[:7]; o = s.opp(p); c = u.c
         if u not in p.units or u.ex: return
+        hj = None
+        if u.k("HIJACK_ATK"):
+            u._hja = None; u._hjc = None; pool = s.hijack_pool(p)
+            if not pool: return
+            hj = max(pool, key=lambda x: x.c.atk)
+            ok = [x for x in pool if x.c.cls not in {y.c.cls for y in sup}] or pool; pool = ok; hj = max(pool, key=lambda x: x.c.atk)
+            if s.is_human(p) and len(pool) > 1: hj = s.decide(p, "target", "HIJACK: take control of which enemy DRONE or ROBOT? It attacks with its ATK, then is exhausted.", [(x.c.atk, "%s (ATK %d%s)" % (x.c.name, x.c.atk, ", exhausted" if x.ex else ""), x) for x in pool])
+            u._hja = hj.c.atk; u._hjc = hj.c.cls; s.say(s.who(p) + "'s", u.c.name, "hijacks", s.who(o) + "'s", hj.c.name + "."); s.ev(p, "HIJACK" + (" SUPPORTED" if sup else ""))
         if len(ch) > 7 and ch[7] and u.hidden: s.pay(p, 0 if getattr(u, "paid", False) else c.cost); u.hidden = False; u.fresh = True; s.mark("reveal", u); s.say(s.who(p), "reveals a Hidden card:", c.name + ".")
         s.mark("attack", u, t, sup)
         p.isr -= cost; u.ex = True; s.stats["attacks"] += 1
@@ -547,6 +613,9 @@ class Game:
             if x.k("MEDEVAC") and u in p.units and u.dmg: u.dmg -= 1
         if u in p.units and u.ex and u.k("RELOAD") and not getattr(u, "rl", False) and p.sup() >= 1 and (not s.is_human(p) or s.decide(p, "reload", "RAPID RELOAD: pay 1 Supply to ready %s again? You have %d Supply." % (c.name, p.sup()), [(1, "Pay 1 Supply and ready %s" % c.name, u), (0, "Do not reload", 0)])): s.pay(p, 1); u.ex = False; u.rl = True; s.say(c.name, "reloads (1 Supply).")  # digital game: a choice for a person
         u.fresh = False
+        if hj is not None:
+            u._hja = None; u._hjc = None
+            if hj in s.opp(p).units and not hj.ex: hj.ex = True; s.say(hj.c.name, "is exhausted.")
     # ------------------------------------------------------------ effects
     def req_ok(s, p, c):
         r = c.req
@@ -567,9 +636,24 @@ class Game:
             "E_FIREMISSION": 2.0 if (E(pred=lambda u: not u.c.air) and s.dist() <= s.R["tac_reach"]) else -1, "E_KILLBOX": 1.3 if o.units else 0.2,
             "E_GLIDE": 2.6, "E_DEPTH": 1.5 if s.dist() <= 2 else 0.4, "E_CLOAK": 1.0 if sum(u.dmg for u in p.units) >= 2 else -1, "E_FUSION": 1.0 if p.isr <= 6 else -1,
             "E_CODEBREAK": 1.8 if o.hand else 0.8, "E_PSYOP": 1.9, "E_GRID": 3.0, "E_FRAGO": 1.4 if myex else -1, "E_SYNC": 1.0 if p.mf else -1, "E_STOCKS": 1.3, "E_PREPO": 1.9 if any(x.cap and x.cost >= 4 for x in p.hand) else 1.0,
-            "E_DROP": 1.2 + 0.4 * len(myex), "E_SEAD": 2.0 if E(pred=lambda u: u.c.tags & {"DEFENSE", "AIR-DEFENSE", "SENSOR"}) else -1, "E_CRUISE": 2.4, "E_EYE": 1.4 + 0.7 * sum(1 for x in o.units if x.hidden) - (0.6 if p.isr >= 8 else 0), "E_DYNTGT": (2.0 if any(u.c.cls == "FIRES" for u in p.units if not u.hidden) else -1), "E_FASCAM": (2.1 if s.dist() <= 2 else 0.6), "E_BATTLEPOS": (1.9 if s.dist() <= 2 else 0.9), "E_DCO": 1.4, "E_COUNTERATK": (2.6 if s.contact() and sum(1 for u in o.front() if u.ex) >= 2 else -1), "E_INFOADV": 1.9, "E_NAVWAR": (2.2 if s.dist() >= 1 else 0.8), "E_NARR": 1.6, "E_MTC": (2.4 if s.dist() == 1 and any(not u.ex and not u.hidden and u.c.cls == "M2" and u.c.atk for u in p.units) else (1.0 if s.dist() >= 2 else -1)), "E_CONVERGE": 3.2}.get(k, -1)
+            "E_DROP": 1.2 + 0.4 * len(myex), "E_SEAD": 2.0 if E(pred=lambda u: u.c.tags & {"DEFENSE", "AIR-DEFENSE", "SENSOR"}) else -1, "E_CRUISE": 2.4, "E_EYE": 1.4 + 0.7 * sum(1 for x in o.units if x.hidden) - (0.6 if p.isr >= 8 else 0), "E_DYNTGT": (2.0 if any(u.c.cls == "FIRES" for u in p.units if not u.hidden) else -1), "E_FASCAM": (2.1 if s.dist() <= 2 else 0.6), "E_BATTLEPOS": (1.9 if s.dist() <= 2 else 0.9), "E_DCO": 1.4, "E_COUNTERATK": (2.6 if s.contact() and sum(1 for u in o.front() if u.ex) >= 2 else -1), "E_INFOADV": 1.9, "E_NAVWAR": (2.2 if s.dist() >= 1 else 0.8), "E_NARR": 1.6, "E_MTC": (2.4 if s.dist() == 1 and any(not u.ex and not u.hidden and u.c.cls == "M2" and u.c.atk for u in p.units) else (1.0 if s.dist() >= 2 else -1)), "E_CONVERGE": 3.2,
+            "E_COMMS": (1.7 if len(o.hand) >= 2 else (0.6 if o.hand else -1)), "E_OVERLOAD": (1.6 if len(o.mf) <= 8 or s.cond(p, "E_WEARY") else 1.0) if (o.mf or o.discard) and not o.ie else -1, "E_COUNTERMAND": (1.2 + 0.25 * len(o.hand)) if len(o.hand) >= 3 and not o.ie else -1,
+            "E_WEARY": (2.2 if len(o.mf) <= 9 and not o.ie else 1.0),
+            "E_COLLAPSE": s.collapse_value(p), "E_CASCADE": s.cascade_value(p)}.get(k, -1)
         if k == "E_FRAGO" and len(myex) and s.is_human(p): v = 1
         return v
+    def collapse_n(s, p): return max(0, min(s.R["collapse_cap"], p.isr - s.opp(p).isr))
+    def collapse_value(s, p):   # the bot fires COLLAPSE OF WILL when it wins the game, at a gap of collapse_min or more, or late with a gap of 2 or more
+        n = s.collapse_n(p); o = s.opp(p)
+        if n <= 0: return -1
+        if n >= o.hf - s.R["war_cost"]: return 9.0
+        return 1.2 + 0.5 * n if (n >= min(s.R["collapse_cap"], s.R["collapse_min"]) or (n >= 2 and s.round >= s.R["last"] - 1)) else -1
+    def cascade_bases(s, p): return [b for b in s.opp(p).bases if not b.dev and b.sup <= s.R["cascade_sup"]]
+    def cascade_value(s, p):
+        bs = s.cascade_bases(p); o = s.opp(p); n = 0
+        if not bs: return -1
+        return 1.2 + 1.6 * len(bs) + (3 if any(b.t()["dur"] - b.dmg <= 3 for b in bs) else 0) - (2 if s.cond(o, "E_DCO") else 0)
+    KEEP = {"E_COLLAPSE"}   # the bot holds its finisher until its moment instead of discarding it in Command
     def effect_options(s, p):
         opts = []
         for c in dict.fromkeys(p.hand):
@@ -584,6 +668,8 @@ class Game:
         o = s.opp(p); s.pay(p, c.cost); p.isr -= c.isr; p.hand.remove(c); s.stats["effects"] += 1
         if c.req[:1] == ["PULSE"]:
             b = next(b for b in p.bases if not b.dev and not b.ex and (set(c.req[1:-1]) & set(b.t()["access"]))); b.ex = True; s.say(s.who(p), "fires a Joint Pulse from", b.name + ".")
+        s.ev(p, next(iter(c.keys)))
+        if (c.sub == "Operation" or c.req[:1] == ["PULSE"]) and s.spoof_orders(p, c): (p.ash if c.expend else p.discard).append(c); return
         if c.sub in ("Operation", "Condition"):
             p.track.append(dict(c=c, t=c.timer, kind="op" if c.sub == "Operation" else "cond")); s.say(s.who(p), "puts", c.name, "on the Mission Track (%d round%s)." % (c.timer, "s" if c.timer > 1 else "")); return
         s.say(s.who(p), "plays", c.name + ".")
@@ -683,6 +769,29 @@ class Game:
             for t in E(p, 1, pred=lambda u: u.row == "R"): s.strike(p, 2, t, dmg=True)
         elif k == "E_PSYOP":
             for t in E(p, 2, pred=lambda u: not u.ex): t.ex = True
+        elif k == "E_COMMS":   # COMPROMISED COMMS: the enemy reveals its hand; discard 1 Effect. ADVANTAGE: any 1 card instead, and draw 1
+            a = s.adv(p); pool = [x for x in o.hand if a or not x.cap]; s.info += 1
+            s.say(s.who(o), "reveals its hand:", (", ".join(x.name for x in o.hand) or "no cards") + ".")
+            if pool:
+                x = s.decide(p, "target", "%s: discard which card from the enemy's hand?" % c.name, [(s.card_worth(x), "%s (%s)" % (x.name, x.kind()), x) for x in dict.fromkeys(pool)])
+                o.hand.remove(x); o.discard.append(x); s.say(s.who(o), "must discard", x.name + "."); s.ev(p, "STRIPPED")
+            if a: s.draw(p, 1)
+        elif k == "E_OVERLOAD":   # INFORMATION OVERLOAD: the enemy draws n, then discards n of its choice
+            n = c.keys[k]; h0 = len(o.hand); s.draw(o, n); n = len(o.hand) - h0
+            for _ in range(n):
+                x = s.decide(o, "discard", "%s: discard a card (%d to go)." % (c.name, n), [(-s.card_worth(x) - (2 if x.cap else (1.5 if s.req_ok(o, x) else 0)), "Discard %s (%s)" % (x.name, x.kind()), x) for x in dict.fromkeys(o.hand)])
+                o.hand.remove(x); o.discard.append(x); n -= 1
+            s.say(s.who(o), "is overloaded: draws and discards.")
+        elif k == "E_COUNTERMAND":   # ORDERS COUNTERMANDED: the enemy discards its hand and draws that many
+            n = len(o.hand); o.discard += o.hand; o.hand = []; s.say(s.who(o), "discards its hand (%d) and draws that many." % n); s.draw(o, n)
+        elif k == "E_WEARY": s.compromise(p, c.keys.get("COMP", 0), c.name)   # H-Hour
+        elif k == "E_COLLAPSE":   # COLLAPSE OF WILL: Homefront loss equal to the ISR gap, up to the cap; then you lose all your ISR
+            n = s.collapse_n(p); s.say("%s: the ISR gap is %d." % (c.name, p.isr - o.isr)); s.ev(p, "COLLAPSE %d" % n); p.isr = 0 if s.R["collapse_all"] else p.isr - n; s.lose_hf(o, n, c.name)
+        elif k == "E_CASCADE":   # SYSTEMS CASCADE: n damage to each enemy Base that is out of Supply
+            n = c.keys[k] - (2 if s.cond(o, "E_DCO") else 0)
+            if s.cond(o, "E_DCO"): s.say("DEFENSIVE CYBERSPACE OPERATIONS: the damage is reduced by 2.")
+            for b in s.cascade_bases(p):
+                if n > 0 and s.winner is None: s.say("%s: %s has no Supply left to keep its systems up." % (c.name, b.name)); s.ev(p, "CASCADE HIT"); s.hit_base(o, b, n)
     def dig(s, p, n):
         d = p.mf if p.mf else s.deck(p); top = d[-n:]; s.info += 1
         if not top: return
@@ -722,6 +831,13 @@ class Game:
                 tg = [x for x in o.units if not x.ex and not x.hidden and x.c.cap]
                 if tg: opts.append((1.2 + 0.5 * min(len(tg), K("A_PARALYZE")) + 0.15 * sum(sorted([x.c.atk for x in tg], reverse=True)[:K("A_PARALYZE")]), "Use %s: exhaust up to %d enemy cards" % (n, K("A_PARALYZE")), ("ab", u, "A_PARALYZE")))
             if K("A_SITREP"): opts.append((0.9 + (0.6 if any(x.ex for x in p.units) else 0), "Use %s: draw 1 card and ready 1 other card" % n, ("ab", u, "A_SITREP")))
+            if K("A_PIN") and p.isr >= s.R["pin_isr"]:
+                tg = [x for x in o.front() if not x.hidden and x.c.cap and not x.pin]
+                if tg: opts.append((0.9 + max(s.pin_value(x) for x in tg), "Use %s (%d ISR): PIN %d enemy Frontline card (exhausted; it does not ready at this Recovery)" % (n, s.R["pin_isr"], K("A_PIN")), ("ab", u, "A_PIN")))
+            if K("A_COMPROMISE") and p.isr >= s.R["comp_isr"] and o.mf: opts.append((1.15 + (0.5 if len(o.mf) <= 8 else 0), "Use %s (%d ISR): COMPROMISE %d (look at the top of the enemy Main Force; discard any)" % (n, s.R["comp_isr"], K("A_COMPROMISE")), ("ab", u, "A_COMPROMISE")))
+            if K("A_OVERWATCH") and sum(1 for x in o.units if not x.hidden) > sum(1 for x in p.units if not x.hidden): opts.append((0.9 + (0.7 if any(x.ex and x is not u and any(x.k(q) for q in s.SUPPORT_KEYS) for x in p.units) else 0) - (0.6 if p.isr >= 9 else 0), "Use %s: gain %d ISR and ready 1 of your Supporters" % (n, K("A_OVERWATCH")), ("ab", u, "A_OVERWATCH")))
+            if K("A_REPAIR") and (any(x.dmg and not x.hidden for x in p.units) or any(b.dmg and not b.dev for b in p.bases)): opts.append((0.9 + 0.3 * K("A_REPAIR"), "Use %s: remove %d damage from 1 of your cards or Bases" % (n, K("A_REPAIR")), ("ab", u, "A_REPAIR")))
+            if K("A_BRIEF") and p.isr >= 1 and any(x.ex and x is not u and not x.hidden and x.c.atk for x in p.units): opts.append((1.3, "Use %s (1 ISR): ready 1 of your other cards; it gets +1 ATK this round" % n, ("ab", u, "A_BRIEF")))
             if K("A_RETRANS"): opts.append((0.6 + (0.7 if any(t["kind"] == "op" and t["t"] > 1 for t in p.track) else 0), "Use %s: advance 1 of your Mission Track cards and gain 1 ISR" % n, ("ab", u, "A_RETRANS")))
             if K("A_UPLINK") and (p.mf or p.ie): opts.append((1.0, "Use %s: look at the top 3 cards of your deck and take 1" % n, ("ab", u, "A_UPLINK")))
             if K("A_PREDICT") and p.isr >= 1 and p.mf: opts.append((1.1, "Use %s (1 ISR): look at the top 3 Main Force cards and take 1" % n, ("ab", u, "A_PREDICT")))
@@ -736,6 +852,7 @@ class Game:
         o = s.opp(p); again = False
         if rev and u.hidden: s.pay(p, 0 if getattr(u, "paid", False) else u.c.cost); u.hidden = False; s.mark("reveal", u); s.say(s.who(p), "reveals a Hidden card:", u.c.name + ".")
         s.mark("ability", u); s.say(s.who(p), "uses", u.c.name + ".")
+        s.ev(p, k)
         if not k.startswith("INF_"): u.ex = True
         if k == "A_FLIP" and s.is_human(p):   # digital game: the person chooses up to N (printed: "Flip up to 2 of your other Capabilities face down")
             pool = [x for x in p.units if x is not u and not x.hidden and x.c.cap]
@@ -758,6 +875,23 @@ class Game:
                 x.ex = True; s.say(x.c.name, "is paralyzed (exhausted).")
         elif k == "A_PARALYZE":
             for x in sorted([x for x in o.units if not x.ex and not x.hidden and x.c.cap], key=lambda x: -(x.c.atk + s.unit_value(x)))[:u.k("A_PARALYZE")]: x.ex = True; s.say(x.c.name, "is paralyzed (exhausted).")
+        if k == "A_PIN":
+            p.isr -= s.R["pin_isr"]
+            for _ in range(u.k("A_PIN")):
+                tg = [x for x in o.front() if not x.hidden and x.c.cap and not x.pin]
+                if not tg: break
+                x = s.decide(p, "target", "PIN which enemy Frontline card?", [(s.pin_value(x), x.c.name, x) for x in tg])
+                x.ex = True; x.pin = True; s.say(x.c.name, "is PINNED until the end of the round.")
+        if k == "A_COMPROMISE": p.isr -= s.R["comp_isr"]; s.compromise(p, u.k("A_COMPROMISE"), u.c.name)
+        if k == "A_OVERWATCH":
+            s.gain_isr(p, u.k("A_OVERWATCH")); ex = [x for x in p.units if x.ex and x is not u and not x.hidden and any(x.k(q) for q in s.SUPPORT_KEYS)]
+            if ex: x = s.decide(p, "target", "Ready which Supporter?", [(s.unit_value(x), x.c.name, x) for x in ex]); x.ex = False; s.say(x.c.name, "readies.")
+        if k == "A_REPAIR":
+            n = u.k("A_REPAIR"); pool = [(x.dmg + 0.2 * s.unit_value(x), x.c.name, x) for x in p.units if x.dmg and not x.hidden] + [(b.dmg + 2.5, "the Base " + b.name, b) for b in p.bases if b.dmg and not b.dev]
+            x = s.decide(p, "target", "Remove %d damage from which card or Base?" % n, pool); x.dmg = max(0, x.dmg - n); s.say(s.who(p), "repairs", (x.name if isinstance(x, Base) else x.c.name) + ".")
+        if k == "A_BRIEF":
+            p.isr -= 1; ex = [x for x in p.units if x.ex and x is not u and not x.hidden and x.c.atk]
+            x = s.decide(p, "target", "Ready which card? It gets +1 ATK this round.", [(s.unit_value(x) + x.c.atk, x.c.name, x) for x in ex]); x.ex = False; x.fresh = True; s.say(x.c.name, "readies with the commander's intent: +1 ATK.")
         if k == "A_SCAN":
             h = [x for x in o.units if x.hidden]
             if h and s.is_human(p) and len(h) > 1: h = [s.decide(p, "target", "SCAN: reveal which enemy Hidden card?", [(0, "Reveal " + s.hidden_label(o, x), x) for x in h])]   # printed: "REVEAL 1 enemy Hidden card"
@@ -767,6 +901,7 @@ class Game:
             tg = [x for x in o.units if not x.hidden and x.c.cap and not x.spot]
             t = s.decide(p, "target", "Spotlight which enemy card?", [(s.unit_value(x) + x.c.conc + (1 if x.row == "R" else 0), x.c.name, x) for x in tg])
             if t: t.spot = True; s.say(t.c.name, "is spotlighted.")
+            if u.k("SPOT_ISR"): s.gain_isr(p, u.k("SPOT_ISR"))   # HIGH WATCH (RD-153 (4))
         elif k == "A_SPOOF":
             s.gain_isr(o, -2); tg = [x for x in o.cls_units("INTEL", "C2") if not x.ex]
             if tg and s.is_human(p) and len(tg) > 1: tg = [s.decide(p, "target", "SPOOF: exhaust which enemy Intelligence or C2 card?", [(0, "Exhaust %s" % x.c.name, x) for x in tg])]   # printed: "EXHAUST 1 enemy INTEL or C2 card"
@@ -823,7 +958,7 @@ class Game:
         R = s.R; o = s.opp(p); s.phase = "Command"
         # draw: optional discards first, then up to the hand size
         while p.hand:
-            dis = [(0.6 if (not c.cap and c.sub != "Reaction" and (not s.req_ok(p, c) or s.effect_value(p, c) < 0) and len(p.hand) >= 4) or (c.cap and c.gi > 1 and c.cost > p.sup()) else -1, "Discard %s (%s)" % (c.name, c.kind()), c) for c in dict.fromkeys(p.hand)]
+            dis = [(0.6 if (not c.cap and c.sub != "Reaction" and not (s.KEEP & set(c.keys)) and (not s.req_ok(p, c) or s.effect_value(p, c) < 0) and len(p.hand) >= 4) or (c.cap and c.gi > 1 and c.cost > p.sup()) else -1, "Discard %s (%s)" % (c.name, c.kind()), c) for c in dict.fromkeys(p.hand)]
             x = s.decide(p, "discard", "Command, round %d: discard any cards you do not want before you draw back to %d." % (s.round, R["hand"]), dis + [(0, "Keep the rest and draw", None)])
             if x is None: break
             p.hand.remove(x); p.discard.append(x)
@@ -941,7 +1076,7 @@ class Game:
                 p.track.remove(t); c = t["c"]
                 if t["kind"] == "inf":
                     s.say("H-Hour:", s.who(p) + "'s", c.name, "completes its mission."); u = Unit(c, "R"); u.ex = True; u.dmg = t.get("dmg", 0); p.units.append(u)
-                    op = t.get("op", "INF_PSYOP"); o = s.opp(p)
+                    op = t.get("op", "INF_PSYOP"); o = s.opp(p); s.ev(p, "H:" + op)
                     if op == "INF_HIT":
                         tg = [x for x in o.units if x.c.cap and (s.R.get("op_anydomain", 1) or "LAND" in x.c.tags)]
                         if tg: x = max(tg, key=lambda x: s.unit_value(x) + x.dmg); s.say(c.name, "strikes", x.c.name if not x.hidden else "a Hidden card", "for %d damage." % t["n"]); s.hit_unit(o, x, t["n"])
@@ -955,7 +1090,7 @@ class Game:
                     ot = [x for x in s.opp(p).track if x["t"] < 3]
                     if ot and t.get("op", "INF_PSYOP") == "INF_PSYOP": ot[0]["t"] += 1
                     continue
-                s.say("H-Hour:", s.who(p) + "'s", c.name, ("resolves." if t["kind"] == "op" else "ends."))
+                s.say("H-Hour:", s.who(p) + "'s", c.name, ("resolves." if t["kind"] == "op" else "ends.")); s.ev(p, "H:" + next(iter(c.keys)))
                 (p.ash if c.expend else p.discard).append(c); s.resolve(p, c)
         passes = 0; i = 0; guard = 0
         while passes < 2 and guard < 80:
@@ -970,7 +1105,9 @@ class Game:
             for b in p.bases: b.sup = min(b.stock(), b.sup + b.restock()); b.ex = False
         for p in s.P:
             free = 1 if s.own_half(p) else 0; m2 = p.ben == "SPEARHEAD"; reactor = p.has("REACTOR"); rom = sum(u.k("ROM") for u in p.units)
-            ex = sorted([u for u in p.units if u.ex and not u.hidden], key=lambda u: -(s.unit_value(u) + u.c.atk)); paid = []
+            ex = sorted([u for u in p.units if u.ex and not u.hidden and not u.pin], key=lambda u: -(s.unit_value(u) + u.c.atk)); paid = []   # a PINNED card does not ready at this Recovery
+            for u in [u for u in p.units if not u.hidden and (u.k("ADV_DRAW") or u.k("ADV_SUPPLY"))]:
+                if s.adv(p): s.say(s.who(p) + "'s", u.c.name + ": ADVANTAGE."); s.draw(p, u.k("ADV_DRAW")); s.add_supply(p, u.k("ADV_SUPPLY")); s.ev(p, "ADVANTAGE")
             for u in ex:
                 cost = 0 if reactor and not u.k("REACTOR") else u.c.ready
                 if cost and free and u.row == "F": cost = 0; free = 0
@@ -1053,6 +1190,7 @@ class Game:
         s.endq = []
         for p in s.P:
             p.fl = {}
+            for u in p.units: u.pin = False   # PIN ends with the round; the card is still exhausted, and readies at the next Recovery as usual
             if s.R["forced_discard"] and p.hand: p.discard += p.hand; p.hand = []
         if s.R["forced_discard"]: s.say("Both players discard their hands.")
     def play(s):
@@ -1070,7 +1208,7 @@ class Game:
     def view(s, pid):
         def unit(u, own):
             if u.hidden and not own: return dict(uid=u.uid, name="Hidden card", cls="", gen="", atk="", dmg=0, dur=0, surv=0, conc=0, ex=False, hidden=True, lines=["A face-down card. Attacking it costs %d extra ISR." % s.R["hidden_isr"]])
-            c = u.c; return dict(uid=u.uid, name=c.name, cls=c.cls, gen=c.gen, atk=("ATK %d %s" % (c.atk, c.range)) if c.atk else "", atkn=c.atk, range=c.range, dmg=u.dmg, dur=c.dur, surv=c.surv, conc=c.conc, ex=u.ex, hidden=u.hidden, spot=u.spot, cap=c.cap,
+            c = u.c; return dict(uid=u.uid, name=c.name, cls=c.cls, gen=c.gen, atk=("ATK %d %s" % (c.atk, c.range)) if c.atk else "", atkn=c.atk, range=c.range, dmg=u.dmg, dur=c.dur, surv=c.surv, conc=c.conc, ex=u.ex, hidden=u.hidden, spot=u.spot, pin=u.pin, cap=c.cap,
                              lines=c.lines() if c.cap else ["Decoy: " + c.name], id=c.id, ready=c.ready, cost=c.cost, hf=c.hf, tags=" ".join(sorted(c.tags)), sub=c.sub)
         def side(p, own):
             return dict(name=p.name, concept=p.concept, benefit=p.con["text"] if s.R["concepts"] else "Concept benefits are switched off for balancing.", hf=p.hf, sup=p.sup(), isr=p.isr, hand_count=len(p.hand), deck=len(p.mf), ie=len(p.ie), discard=len(p.discard), ash=len(p.ash), marker=s.pos[p.i], strength=s.strength(p), lift=p.lift, span=s.span(p),

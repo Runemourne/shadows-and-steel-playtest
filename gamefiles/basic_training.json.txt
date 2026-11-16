@@ -1,6 +1,6 @@
 {
  "name": "Basic Training",
- "version": "0.2",
+ "version": "0.3.2",
  "game": {
   "seed": 1945,
   "terrain": "OPEN PLAIN",
@@ -87,21 +87,23 @@
   {
    "kind": "deploy",
    "round": 1,
-   "lesson": "The board",
-   "title": "Welcome to Basic Training",
+   "lesson": "Command",
+   "title": "Deploy your first card",
    "card": "CAP-102",
    "label": "\\): Conceal",
    "pages": [
-    "You command a joint force. This short battle teaches the game one step at a time and takes about 10 to 15 minutes. This box is the prompt: it always tells you what you can do now. Read each note, tap Next, then do what it asks. You cannot get it wrong.",
-    "The column of boxes at the right edge, from ENEMY down to YOU, is the route: 5 Zones between the two forces. Each side has a Force Marker on it: yours is the blue triangle, the enemy's the red one. When both markers share a Zone, the forces are in Contact. Close-range fighting happens only in Contact.",
-    "Your hand is at the bottom. Capability cards are your forces. To put one into play you deploy it: pay its Deploy cost in Supply and use 1 Lift. You have 25 Supply on your two Bases and 4 Lift this round."
+    {
+     "t": "Round 1 starts with Command, where you build your force. To put a Capability into play you deploy it: pay its Deploy cost in Supply and use 1 Lift. You have 25 Supply on your two Bases and 4 Lift this round.",
+     "spot": "hand"
+    },
+    "{CAP-102} is infantry: cheap, and good at holding ground."
    ],
-   "do": "Deploy {CAP-102}: tap it in your hand, then tap Deploy. (You can also drag it onto the table.)"
+   "do": "Deploy {CAP-102}: tap it in your hand (it rises so you can read it), then tap Deploy. (You can also drag it onto the table.)"
   },
   {
    "kind": "deploy",
    "round": 1,
-   "lesson": "Deploying",
+   "lesson": "Command",
    "title": "Deploy a tank",
    "card": "CAP-101",
    "label": "\\): Conceal",
@@ -113,8 +115,8 @@
   {
    "kind": "deploy",
    "round": 1,
-   "lesson": "Deploying",
-   "title": "That is enough for now",
+   "lesson": "Command",
+   "title": "Two is enough for now",
    "label": "^Done deploying",
    "pages": [
     "Cards you do not deploy stay in your hand for later."
@@ -124,31 +126,40 @@
   {
    "kind": "arrange",
    "round": 1,
-   "lesson": "Rows",
-   "title": "The Frontline",
+   "lesson": "Command",
+   "title": "Set your rows",
    "card": "CAP-102",
    "label": "up to the Frontline",
    "pages": [
-    "New cards arrive in your Rear Area, the back row. The Frontline is the front row, where the fighting is. Only Frontline cards count for Frontline Strength, and enemy close attacks can reach only your Frontline. It holds 4 cards."
+    {
+     "t": "New cards arrive in your Rear Area. Move the cards that will fight up to the Frontline. The Frontline holds up to 4 cards. It shields your Rear Area and Bases, and only Frontline cards count in the Frontline contest.",
+     "spot": [
+      "front",
+      "rear"
+     ]
+    }
    ],
    "do": "Move {CAP-102} up to the Frontline."
   },
   {
    "kind": "arrange",
    "round": 1,
-   "lesson": "Rows",
+   "lesson": "Command",
    "title": "Frontline Strength",
    "card": "CAP-101",
    "label": "up to the Frontline",
    "pages": [
-    "Each Frontline card counts 1 for Frontline Strength. {CAP-102} has HOLD 2, so it counts 2. Your Strength is shown in your status bar along the bottom edge of the screen: watch it go up when you move a card to the Frontline."
+    {
+     "t": "Each Frontline card adds 1 to your Frontline Strength. {CAP-102} has HOLD 2, so it adds 2. Your Strength is in your status bar: watch it go up.",
+     "spot": "you"
+    }
    ],
    "do": "Move {CAP-101} up as well."
   },
   {
    "kind": "arrange",
    "round": 1,
-   "lesson": "Rows",
+   "lesson": "Command",
    "title": "Rows are set",
    "label": "^Done arranging",
    "do": "Tap Done arranging.",
@@ -157,11 +168,14 @@
   {
    "kind": "maneuver",
    "round": 1,
-   "lesson": "Moving",
+   "lesson": "Command",
    "title": "Move your Force Marker",
    "label": "^Advance 1",
    "pages": [
-    "Each round you may advance 1 Zone, hold, or fall back. Advancing brings Contact closer. A side that ends a round holding the middle Zone, alone, costs the enemy 1 Homefront."
+    {
+     "t": "Last in Command, you move your Force Marker: advance 1 Zone, hold, or fall back. Advancing brings Contact closer. A side that ends a round alone in the middle Zone costs the enemy 1 Homefront.",
+     "spot": "route"
+    }
    ],
    "do": "Tap Advance 1 Zone, or drag your marker one Zone up the route."
   },
@@ -172,51 +186,52 @@
    "title": "Operations",
    "label": "^Pass",
    "pages": [
-    "In Operations the two sides take turns, one action each, until both pass. Your cards attack at Close range, and the markers are still 2 Zones apart, so there is nothing to attack yet.",
-    "When the round ends, each side loses 1 Homefront: the cost of war. Watch for it in your status bar."
+    "In Operations the two sides take turns, one action each, until both pass. Your cards attack at Close range, and the markers are still 2 Zones apart, so there is nothing to attack yet. Watch your Homefront when the round ends."
    ],
    "do": "Tap Pass."
   },
   {
    "kind": "discard",
    "round": 2,
-   "lesson": "A round",
-   "title": "Round 2",
+   "lesson": "Command",
+   "title": "Round 2: new cards",
    "label": "^Keep",
    "pages": [
-    "Every round has four phases: Command (deploy, set rows, move), Operations (act), Sustainment (ready and repair) and Assessment (the Frontline contest and Homefront). The banner at the top names the phase.",
-    "That was the cost of war: each side lost 1 Homefront. Homefront is your nation's will to fight. Each side starts with 20, and a side at 0 loses. At the start of Command you may discard cards you do not want before you draw back up to 5."
+    {
+     "t": "Each Command starts by refreshing your hand: you may discard cards you do not want, then you draw back up to 5. Basic Training has dealt you two new cards for this round's lessons.",
+     "spot": "hand"
+    }
    ],
    "do": "Keep your cards: tap Keep the rest and draw."
   },
   {
    "kind": "deploy",
    "round": 2,
-   "lesson": "Deploying",
+   "lesson": "Command",
    "title": "Artillery",
    "card": "CAP-103",
    "label": "\\): Conceal",
    "pages": [
-    "{CAP-103} is artillery. Its range is Tactical: it can fire from up to 3 Zones away, even from your Rear Area."
+    "{CAP-103} is artillery. Its range is Tactical: it reaches targets up to 3 Zones away. It can fire before Contact, even from your Rear Area."
    ],
    "do": "Deploy {CAP-103}."
   },
   {
    "kind": "deploy",
    "round": 2,
-   "lesson": "Operators",
+   "lesson": "Command",
    "title": "Special forces",
    "card": "CAP-212",
    "label": "\\): Conceal",
    "pages": [
-    "{CAP-212} is an Operator. Its INFILTRATE line lets it slip behind enemy lines. You will use it in Operations."
+    "{CAP-212} is an Operator. Its INFILTRATE line lets it slip behind enemy lines on a mission. You will send it in Operations."
    ],
    "do": "Deploy {CAP-212}."
   },
   {
    "kind": "deploy",
    "round": 2,
-   "lesson": "Deploying",
+   "lesson": "Command",
    "title": "Done for this round",
    "label": "^Done deploying",
    "do": "Tap Done deploying.",
@@ -225,19 +240,22 @@
   {
    "kind": "arrange",
    "round": 2,
-   "lesson": "Operators",
+   "lesson": "Command",
    "title": "Operators start from the Frontline",
    "card": "CAP-212",
    "label": "up to the Frontline",
    "pages": [
-    "An Operator can INFILTRATE only from your Frontline, so move it up. {CAP-103} can stay in the Rear Area: it fires from there, and enemy close attacks cannot reach it."
+    {
+     "t": "An Operator can INFILTRATE only from your Frontline, so move it up. {CAP-103} stays in the Rear Area: it fires from there, out of reach of enemy Close attacks.",
+     "spot": "front"
+    }
    ],
    "do": "Move {CAP-212} up to the Frontline."
   },
   {
    "kind": "arrange",
    "round": 2,
-   "lesson": "Rows",
+   "lesson": "Command",
    "title": "Rows are set",
    "label": "^Done arranging",
    "do": "Tap Done arranging.",
@@ -246,38 +264,44 @@
   {
    "kind": "maneuver",
    "round": 2,
-   "lesson": "Contact",
+   "lesson": "Command",
    "title": "Into Contact",
    "label": "^Advance 1",
    "pages": [
-    "The enemy moved first this round (the sides take turns going first). Its marker is now 1 Zone from yours. Advance into its Zone and the forces will be in Contact."
+    {
+     "t": "The sides take turns going first, and this round the enemy moved first: its marker is now 1 Zone from yours. Advance into its Zone and the forces will be in Contact.",
+     "spot": "route"
+    }
    ],
    "do": "Advance 1 Zone."
   },
   {
    "kind": "action",
    "round": 2,
-   "lesson": "Attacking",
+   "lesson": "Operations",
    "title": "Your first attack",
    "card": "CAP-101",
    "dst": "CAP-115",
    "label": "\\(ATK 4,",
    "pages": [
-    "The enemy struck first: its {CAP-115} hit your {CAP-102} for 2 damage. A card is destroyed when its damage reaches its Durability. {CAP-102} has Durability 3, so it can take 1 more. Damage stays until you repair it.",
-    "To attack, the damage you deal is your ATK minus the target's Survivability. {CAP-115} has Survivability 1 and Durability 3, and {CAP-101} has ATK 4: 4 minus 1 is 3, enough to destroy it. An attack also costs ISR (intelligence) to find the target: you gain ISR every round."
+    "Your turn to act. An attack does damage equal to your ATK minus the target's Survivability. {CAP-101} has ATK 4 and {CAP-115} has Survivability 1: 4 minus 1 is 3. {CAP-115} has Durability 3, so that destroys it.",
+    "Every attack also spends ISR to find its target: the target's Concealment, plus 1 for a long shot. You start with 4 ISR and gain 2 each Sustainment (3 when the enemy has at least 2 more face-up cards than you), up to 10. Some cards give more."
    ],
    "do": "Tap your {CAP-101} (it glows), then the ringed {CAP-115}. Choose the attack with {CAP-101} alone (ATK 4)."
   },
   {
    "kind": "action",
    "round": 2,
-   "lesson": "Operators",
+   "lesson": "Operations",
    "title": "Operators and the Mission Track",
    "card": "CAP-212",
    "label": "^Send",
    "pages": [
-    "Destroying an enemy card costs the enemy 1 Homefront. Notice your {CAP-101} is now turned: it is exhausted and cannot act again this round.",
-    "The Mission Track, the column of boxes at the left edge, holds cards that act later. Operators reach it in one way only: in Operations, an Operator in your Frontline uses its INFILTRATE line for 1 ISR. It waits there for its Timer, acts at H-Hour, then returns to your Rear Area."
+    "Destroying an enemy card costs the enemy 1 Homefront. Your {CAP-101} is now turned sideways: it is exhausted and cannot act again this round.",
+    {
+     "t": "The Mission Track, the column on the left, holds cards that act later. In Operations, an Operator in your Frontline can INFILTRATE for 1 ISR. It waits on the track for its Timer, acts at H-Hour, then returns to your Rear Area.",
+     "spot": "mtrack"
+    }
    ],
    "do": "Tap {CAP-212} and choose Send to infiltrate. (You can also drag it onto the Mission Track.)"
   },
@@ -288,7 +312,7 @@
    "title": "Pass",
    "label": "^Pass",
    "pages": [
-    "Keep the rest of your hand for the next round. When both sides pass in a row, Operations end."
+    "When both sides pass in a row, Operations end. Keep the rest of your hand for later."
    ],
    "do": "Tap Pass."
   },
@@ -299,40 +323,42 @@
    "title": "Sustainment",
    "label": "^No",
    "pages": [
-    "Sustainment: your Bases restock Supply and you gain ISR. Exhausted cards are readied for Supply, but {CAP-101} readied free: while your marker is in your own half, one Frontline card readies free.",
-    "You can also repair: 2 Supply removes 1 damage. Your {CAP-102} can wait. You will repair it next round."
+    "Sustainment: your Bases restock Supply and you gain 2 ISR. Exhausted cards are readied for Supply, but {CAP-101} readied free: while your marker is in your own half, one Frontline card readies free.",
+    "You can also repair: 2 Supply removes 1 damage. Your {CAP-102} can wait until next round."
    ],
-   "do": "Tap No."
+   "do": "Tap No. Then watch Assessment."
   },
   {
    "kind": "discard",
    "round": 3,
-   "lesson": "Assessment",
-   "title": "You won the Frontline contest",
+   "lesson": "Command",
+   "title": "Round 3: finish it",
    "label": "^Keep",
    "pages": [
-    "In Assessment, when the forces are in Contact, the side with the higher Frontline Strength wins the Frontline contest. You had 3 and the enemy 2. The loser retreats 1 Zone, plus 1 for your {CAP-101}'s ROUT, and loses 1 Homefront.",
-    "You also held the middle Zone alone, so the enemy lost 1 more Homefront."
+    {
+     "t": "The enemy has fallen back to its home edge. Basic Training has dealt you three new cards.",
+     "spot": "hand"
+    }
    ],
    "do": "Keep your cards: tap Keep the rest and draw."
   },
   {
    "kind": "deploy",
    "round": 3,
-   "lesson": "Winning",
+   "lesson": "Command",
    "title": "Push it off its home edge",
    "card": "CAP-102",
    "label": "\\): Conceal",
    "pages": [
-    "The enemy is back on its home edge. Win a Frontline contest there and it is driven off the map: you win by Supremacy.",
-    "A force on its own home edge makes a last stand: +3 Frontline Strength. So you need a strong Frontline, and to clear the enemy's."
+    "Win a Frontline contest while the enemy is on its home edge and it is driven off the map: you win by Supremacy.",
+    "But a force on its own home edge makes a last stand: +3 Frontline Strength. So you need a strong Frontline, and to clear the enemy's."
    ],
    "do": "Deploy your second {CAP-102}."
   },
   {
    "kind": "deploy",
    "round": 3,
-   "lesson": "Deploying",
+   "lesson": "Command",
    "title": "Done deploying",
    "label": "^Done deploying",
    "do": "Tap Done deploying.",
@@ -341,7 +367,7 @@
   {
    "kind": "arrange",
    "round": 3,
-   "lesson": "Rows",
+   "lesson": "Command",
    "title": "Strengthen the Frontline",
    "card": "CAP-102",
    "label": "up to the Frontline",
@@ -351,7 +377,7 @@
   {
    "kind": "arrange",
    "round": 3,
-   "lesson": "Rows",
+   "lesson": "Command",
    "title": "Rows are set",
    "label": "^Done arranging",
    "do": "Tap Done arranging.",
@@ -360,35 +386,41 @@
   {
    "kind": "maneuver",
    "round": 3,
-   "lesson": "Moving",
+   "lesson": "Command",
    "title": "Close in",
    "label": "^Advance 1",
    "pages": [
-    "Each advance is only 1 Zone, so you will still be 1 Zone short of Contact. A card in your hand can close the gap."
+    {
+     "t": "Each advance is only 1 Zone, so you will still be 1 Zone short of Contact. A card in your hand can close the gap in Operations.",
+     "spot": "route"
+    }
    ],
    "do": "Advance 1 Zone."
   },
   {
    "kind": "action",
    "round": 3,
-   "lesson": "Range",
+   "lesson": "Operations",
    "title": "A long shot",
    "card": "CAP-103",
    "dst": "CAP-117",
    "pages": [
-    "H-Hour: your {CAP-212} completed its mission. It dealt 3 damage to {CAP-117} and came back to your Rear Area, exhausted.",
-    "You are 1 Zone apart, not in Contact, so Close attacks cannot reach. {CAP-103} fires at Tactical range; a long shot costs 1 more ISR. {CAP-117} has taken 3 of its 4 Durability. Finish it."
+    "You are 1 Zone apart, not in Contact, so Close attacks cannot reach. {CAP-103}'s Tactical range reaches up to 3 Zones.",
+    "Any attack that is not Close is a long shot: it costs 1 extra ISR. {CAP-117} has taken 3 of its 4 Durability. Finish it."
    ],
    "do": "Tap {CAP-103}, then the ringed {CAP-117}."
   },
   {
    "kind": "action",
    "round": 3,
-   "lesson": "Effects",
+   "lesson": "Operations",
    "title": "Effect cards",
    "card": "EFF-102",
    "pages": [
-    "Not every card is a force. Effect cards are played from your hand for their cost, then go to your discard pile. {EFF-102} is an Order: it happens at once.",
+    {
+     "t": "Not every card is a force. The word above this card's name says EFFECT · ORDER: an Order happens at once, then goes to your discard pile.",
+     "spot": "hand"
+    },
     "Its REQUIRES line needs a friendly FIRES card in play. Your {CAP-103} is a FIRES card, so it meets the requirement."
    ],
    "do": "Play {EFF-102}: tap it in your hand."
@@ -396,7 +428,7 @@
   {
    "kind": "action",
    "round": 3,
-   "lesson": "Effects",
+   "lesson": "Operations",
    "title": "Close the gap",
    "card": "EFF-109",
    "pages": [
@@ -407,12 +439,15 @@
   {
    "kind": "action",
    "round": 3,
-   "lesson": "Winning",
+   "lesson": "Operations",
    "title": "Hit a Base",
    "card": "CAP-101",
    "dst": "BASE",
    "pages": [
-    "With no enemy cards in the Frontline, nothing screens the enemy's Bases. Destroy both enemy Bases and you win by Devastation. {CAP-101} can hit the Staging Base now."
+    {
+     "t": "With no enemy cards in its Frontline, nothing screens its Bases. Destroy both enemy Bases and you win by Devastation. {CAP-101} can hit the Staging Base now.",
+     "spot": "ebases"
+    }
    ],
    "do": "Tap {CAP-101}, then the ringed enemy Base, and attack."
   },
@@ -423,7 +458,7 @@
    "title": "Let Assessment decide",
    "label": "^Pass",
    "pages": [
-    "That is enough. The contest at Assessment will decide this battle."
+    "That is enough. The Frontline contest at Assessment will decide this battle."
    ],
    "do": "Tap Pass."
   },
@@ -434,7 +469,7 @@
    "title": "Ready your cards",
    "card": "CAP-101",
    "pages": [
-    "Your marker is in the enemy's half now, so nothing readies free. Each card costs its Ready number in Supply, 1 for these. A ready card can act, react or support next round."
+    "Your marker is in the enemy's half now, so nothing readies free. Readying a card costs 1 Supply. A ready card can act, react or support next round."
    ],
    "do": "Tap your glowing {CAP-101} on the table to ready it."
   },
@@ -463,7 +498,9 @@
    "title": "Repair",
    "label": "^Pay",
    "do": "Pay 2 Supply to remove 1 damage from {CAP-102}.",
-   "pages": []
+   "pages": [
+    "Repairing costs 2 Supply for each point of damage removed."
+   ]
   },
   {
    "kind": "ready",
@@ -474,7 +511,7 @@
    "pages": [
     "{CAP-102} is back to 1 damage of 3. That is enough for now."
    ],
-   "do": "Tap No. Then watch Assessment."
+   "do": "Tap No. Then watch Assessment: the enemy's last stand."
   }
  ],
  "free": {
@@ -488,7 +525,7 @@
    "pages": [
     "You drove the enemy off its home edge. That is one of four ways to win:",
     "Supremacy: win a Frontline contest while the enemy is on its home edge. Devastation: destroy both enemy Bases. Homefront collapse: bring the enemy's Homefront to 0. Higher Homefront: lead when round 8 ends. The ⚑ button shows how close each side is to each one.",
-    "Not covered here; the first-time tips will point them out in your first games: Hidden cards (deployed face down), Reactions, Operations and Conditions that wait on the Mission Track, upgrades from one Generation to the next, and your Concept. Hold any card to read it; the words under it explain its keywords."
+    "Not covered here; the first-time tips will point them out in your first games: Hidden cards (deployed face down), Reactions, Mission cards that wait on the Mission Track, upgrades from one Generation to the next, and your Concept. Press and hold any card to read it; the words under it explain its keywords. The Field Manual (☰ menu) holds every lesson and the full glossary."
    ],
    "next": "Play the bot next. Choose any two forces on the Main Menu. The Hint button shows what the bot would do."
   },
@@ -500,5 +537,173 @@
    "next": "Play the bot next."
   }
  },
- "minutes": "10 to 15"
+ "minutes": "15",
+ "method": "TOM, the Army War College's way to teach a game: Theme, Objective, then Mechanics. Basic Training is the abbreviated teach: a short briefing, then each mechanic taught as it becomes relevant. The Field Manual is the long teach.",
+ "briefing": {
+  "lesson": "Briefing",
+  "pages": [
+   {
+    "h": "Theme: you command a joint force",
+    "t": "Shadows & Steel is a card game about modern joint warfare. You command land, air, sea, space and cyber capabilities against an enemy force. Each card is a kind of real-world capability: an armored brigade, artillery, special forces."
+   },
+   {
+    "h": "How Basic Training works",
+    "t": "This battle takes about 15 minutes. This box is the coach. It is a guided battle: each step accepts only the move it asks for. Read each note, tap Next, then do what it asks. Every lesson stays in the Field Manual (in the ☰ menu) to read again later.",
+    "spot": "prompt"
+   },
+   {
+    "h": "Objective: break the enemy",
+    "t": "There are four ways to win: drive the enemy off its home edge (Supremacy), destroy both its Bases (Devastation), bring its Homefront to 0, or have more Homefront when round 8 ends. Today you will win by Supremacy. The ⚑ button shows how close each side is.",
+    "spot": "win"
+   },
+   {
+    "h": "The table: rows of cards",
+    "t": "Your side of the table is at the bottom, the enemy's at the top. Each side has two rows of cards: the Frontline, where the fighting is, and the Rear Area behind it. Behind them sit your two Bases, which hold your Supply.",
+    "spot": [
+     "front",
+     "rear",
+     "bases"
+    ]
+   },
+   {
+    "h": "The route: Zones",
+    "t": "The column on the right is the route: 5 Zones between the two forces. Your Force Marker (▲) and the enemy's (▼) move along it. When both are in the same Zone, the forces are in Contact and the fighting starts. A Zone is a place on the route; the Frontline is a row of cards.",
+    "spot": "route"
+   },
+   {
+    "h": "A round has four phases",
+    "t": "The game lasts up to 8 rounds. Each round has four phases, named in the bar at the top: Command (deploy cards, set your rows, move your marker), Operations (take turns to attack and act), Sustainment (restock, ready, repair) and Assessment (the Frontline contest, then Homefront).",
+    "spot": "phase"
+   },
+   {
+    "h": "Your resources",
+    "t": "Your status bar shows what you have. Supply pays for cards. Lift is how many cards you can deploy this round. ISR (intelligence) finds targets for your attacks: you start with 4 and gain 2 each Sustainment, up to 10. Homefront is your nation's will to fight: each side starts with 20, and a side at 0 loses.",
+    "spot": "you"
+   },
+   {
+    "h": "Your cards",
+    "t": "Capability cards are your forces; they stay on the table. Effect cards are played once for what they do. The word above each card's name says which. Basic Training hands you each card when its lesson starts.",
+    "spot": "hand"
+   },
+   {
+    "h": "Reading a card at a glance",
+    "t": "Each card shows what matters most, large: its cost at top left, then ATK and range, SURV (Survivability), DUR (Durability left / full) and CONC (Concealment), and a tag for each ability. Point at a card with a mouse, or tap it on a touch screen, and it rises so you can read it.",
+    "spot": "hand"
+   },
+   {
+    "h": "Reading the whole card",
+    "t": "Press and hold any card, in your hand or on the table, to open the whole printed card with every rule and what its keywords mean. With a mouse, just pointing at a card on the table also shows the whole card beside the table. You can switch to the full printed faces in Settings > Card faces."
+   }
+  ]
+ },
+ "deal": {
+  "1": [
+   "CAP-102",
+   "CAP-101"
+  ],
+  "2": [
+   "CAP-103",
+   "CAP-212"
+  ],
+  "3": [
+   "CAP-102",
+   "EFF-102",
+   "EFF-109"
+  ]
+ },
+ "moments": [
+  {
+   "round": 1,
+   "match": "^The cost of war",
+   "title": "The cost of war",
+   "lesson": "Assessment",
+   "pages": [
+    {
+     "t": "The round is over, and each side just lost 1 Homefront: the cost of war. It happens at the end of every round, so a long war wears both sides down. Win before your Homefront runs out.",
+     "spot": [
+      "you",
+      "foe"
+     ]
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "match": "^The forces are in Contact",
+   "title": "Contact",
+   "lesson": "Command",
+   "pages": [
+    {
+     "t": "Both Force Markers are in the same Zone: the forces are in Contact. Close attacks can now reach the enemy Frontline, and at Assessment the two Frontlines will fight it out.",
+     "spot": "route"
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "match": "^{CAP-102} takes 2 damage",
+   "title": "You took a hit",
+   "lesson": "Operations",
+   "pages": [
+    {
+     "t": "The enemy acted first: its {CAP-115} hit your {CAP-102} for 2 damage. A card is destroyed when its damage reaches its Durability. {CAP-102} has Durability 3, so it can take 1 more. Damage stays until you repair it.",
+     "spot": "front"
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "match": "^Frontline contest",
+   "title": "Assessment: the Frontline contest",
+   "lesson": "Assessment",
+   "pages": [
+    {
+     "t": "Assessment. The forces are in Contact, so the Frontlines fight it out: the higher Frontline Strength wins. You have 3, the enemy 2. The loser retreats 1 Zone, plus 1 for your {CAP-101}'s ROUT, and loses 1 Homefront.",
+     "spot": [
+      "front",
+      "efront"
+     ]
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "match": "hold the centre",
+   "title": "Holding the centre",
+   "lesson": "Assessment",
+   "pages": [
+    {
+     "t": "You end the round alone in the middle Zone, so the enemy loses 1 more Homefront. Then the cost of war takes 1 from each side.",
+     "spot": "route"
+    }
+   ]
+  },
+  {
+   "round": 3,
+   "match": "^{CAP-212} strikes",
+   "title": "H-Hour",
+   "lesson": "Operations",
+   "pages": [
+    {
+     "t": "H-Hour: your {CAP-212} reached the end of its Mission Track Timer, so its mission happens now. It strikes {CAP-117} for 3 damage, then returns to your Rear Area, exhausted. Nobody can react to a card at H-Hour.",
+     "spot": "mtrack"
+    }
+   ]
+  },
+  {
+   "round": 3,
+   "match": "^Frontline contest",
+   "title": "The last stand",
+   "lesson": "Assessment",
+   "pages": [
+    {
+     "t": "Assessment. The enemy is on its home edge and makes its last stand: +3 Frontline Strength. It is not enough: you have 5, the enemy 3. Watch it fall back off the map.",
+     "spot": [
+      "front",
+      "efront"
+     ]
+    }
+   ]
+  }
+ ]
 }

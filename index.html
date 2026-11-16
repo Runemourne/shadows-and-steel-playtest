@@ -227,6 +227,21 @@ html.rm *{animation-duration:.01ms!important;transition:none!important}
 #prompt .coach .cd{font-size:calc(15px * var(--ts));line-height:1.4;font-weight:700;color:#f3d29b;margin:4px 0 0}
 #prompt .coach .cn{font-size:calc(13.5px * var(--ts));color:#ffcfbf;margin-top:5px}
 #prompt .coach .cr{margin:0}#prompt button.lk{border:0;background:none;padding:2px 0;color:var(--dim);text-decoration:underline;font-size:calc(12px * var(--ts));min-height:0}
+/* v0.19 (Basic Training v0.3): moments explain an event as it happens; the coach points at what it is talking about */
+#prompt .coach.moment{border-color:var(--teal);border-left-color:var(--teal);background:rgba(127,224,200,.09)}#prompt .coach.moment .ck{color:var(--teal)}
+/* v0.19.1 (RD-153 (2)): cards readable at a glance. Pointing at a hand card (mouse) raises it; tapping one (touch) raises it while it is chosen; pointing at a table card shows the whole printed card beside the table */
+#hand img{transform-origin:50% 100%;position:relative}
+@media (hover:hover) and (pointer:fine){#hand img:hover{transform:translateY(-6px) scale(2.15);z-index:30;box-shadow:0 0 0 2px var(--amber),0 12px 30px rgba(0,0,0,.8)}#hand img.sel{transform:translateY(-14px) scale(1.15);z-index:25}#hand img.sel:hover{transform:translateY(-6px) scale(2.15)}}
+@media (pointer:coarse){#hand img.sel{transform:translateY(-6px) scale(2);z-index:30}}
+#peek{position:fixed;top:50%;transform:translateY(-55%);display:none;pointer-events:none;z-index:6;text-align:center}#peek img{height:min(62vh,440px);width:auto;border-radius:10px;box-shadow:0 10px 34px rgba(0,0,0,.85);display:block}
+#peek.base img{height:auto;width:min(36vw,380px)}#peek small{display:block;margin-top:5px;color:var(--dim);font-size:calc(11.5px * var(--ts))}#peek.r{right:96px}#peek.l{left:96px}
+.rm #hand img{transition:none}
+#spots{position:fixed;inset:0;pointer-events:none;z-index:4}
+#spots .spot{position:fixed;border:3px solid #ffd27a;border-radius:8px;box-shadow:0 0 0 2px rgba(10,14,13,.75),0 0 22px rgba(255,210,122,.75),inset 0 0 18px rgba(255,210,122,.25);animation:spotP 1.4s ease-in-out infinite alternate}
+#spots .spot span{position:absolute;left:-3px;top:-24px;white-space:nowrap;font:400 calc(12px * var(--ts))/1 "Black Ops One",Impact,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#1a1408;background:#ffd27a;padding:4px 7px 3px;border-radius:3px}
+#spots .spot span.below{top:auto;bottom:-24px}#spots .spot span.in{top:5px;left:6px}#spots .spot span.rt{left:auto;right:-3px}@media (min-width:900px) and (min-height:521px){#route{right:22px}}
+@keyframes spotP{from{box-shadow:0 0 0 2px rgba(10,14,13,.75),0 0 10px rgba(255,210,122,.45),inset 0 0 10px rgba(255,210,122,.15)}to{box-shadow:0 0 0 2px rgba(10,14,13,.75),0 0 26px rgba(255,210,122,.9),inset 0 0 22px rgba(255,210,122,.3)}}
+.rm #spots .spot{animation:none}
 #prompt .coach.drift{border-color:var(--red)}#prompt .coach.end{border-color:var(--teal);border-left-color:var(--teal);background:rgba(127,224,200,.08)}#prompt .coach.end .ck{color:var(--teal)}
 #prompt button.cgo{border-color:var(--amber);background:var(--amber);color:#1b1408;font-weight:700}
 #prompt button small.which{display:block;font-family:Barlow,system-ui,sans-serif;text-transform:none;letter-spacing:0;font-weight:500;color:var(--dim);font-size:calc(12px * var(--ts));margin-top:2px}

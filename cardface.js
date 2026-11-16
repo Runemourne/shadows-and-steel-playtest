@@ -33,8 +33,74 @@ function statIcon(g, k, x, y) { g.save(); g.translate(x, y); g.strokeStyle = INK
   else if (k === 1) { g.beginPath(); g.moveTo(0, -7); g.lineTo(6.5, -4.5); g.lineTo(6, 2); g.lineTo(0, 7.5); g.lineTo(-6, 2); g.lineTo(-6.5, -4.5); g.closePath(); g.stroke(); }
   else { g.strokeRect(-7.5, -6, 15, 12); g.beginPath(); g.moveTo(-5, 0); g.lineTo(-2, 0); g.lineTo(-.5, -3.5); g.lineTo(1.5, 3.5); g.lineTo(3, 0); g.lineTo(5.5, 0); g.stroke(); }
   g.restore(); }
+/* The glance face (Battlefield v0.19.1, RD-153 (2)): what a card looks like when it is small, in the hand or on the table. Same size and
+   frame as the print face, but only what a player needs at a glance, large: the cost, the type word, the name, the key numbers
+   (ATK and range, Survivability, Durability left / full, Concealment) and one short tag per ability line. Holding a card still
+   opens the full print face. Drawn from the same card data, so it cannot drift from the card file. Print cards are unchanged. */
+var RNG = { Close: "CLOSE", Tactical: "TACTICAL", Theater: "THEATER" };
+function glanceTags(u) {
+  var out = [];
+  (u.lines || []).forEach(function (l) { var p = parseLine(l); if (/^ATTACK/.test(p.timing)) { var kw = String(p.body).match(/\b(DEEP FIRES|FLANK|PRECISION \d|SUPPRESS|TANK KILLER|ANTI-AIR|vs [A-Z]+(?: or [A-Z]+)?)\b/); if (kw) out.push(kw[1]); return; }
+    if (/^INFILTRATE/.test(p.timing)) { if (out.indexOf("INFILTRATE") < 0) out.push("INFILTRATE"); return; }
+    var t = (p.name || p.timing || "").replace(/\s*\[[^\]]*\]/g, "").trim(); if (/^REQUIRES/.test(p.timing)) t = "REQUIRES " + String(p.body).replace(/^a\s+|friendly\s+/gi, "").split(/[ .,]/)[0].toUpperCase();
+    if (t && out.indexOf(t) < 0) out.push(t); });
+  return out;
+}
+function drawGlance(u, S, o) {
+  var c = cv(CARD_W * S, CARD_H * S), g = c.getContext("2d"); g.scale(S, S);
+  var tp = TPL[u.cls] || TPL.JOINT, cap = isCap(u), img = IMG[u.id], gn = Math.max(1, Math.min(3, String(u.gen || "I").length)), fin = FIN[gn], meta = (G.meta || {})[u.name] || {};
+  rr(g, 0, 0, 280, 480, 16); g.fillStyle = tp[0]; g.fill(); rr(g, 8, 8, 264, 464, 11); g.fillStyle = tp[2]; g.fill(); g.strokeStyle = tp[1]; g.lineWidth = 1.5; g.stroke();
+  // cost badge, top left: Deploy cost (a Capability) or Supply cost (an Effect), in the Generation finish
+  var cs = String(u.cost || ""), cost = u.costn != null ? u.costn : (cs.match(/(\d+)\s*Supply/) || [])[1], isr = !cap && (meta.isr != null ? meta.isr : (cs.match(/(\d+)\s*ISR/) || [])[1]);
+  rr(g, 16, 16, 66, 66, 12); var gg = g.createLinearGradient(0, 16, 0, 82); gg.addColorStop(0, fin[0]); gg.addColorStop(1, fin[2]); g.fillStyle = gg; g.fill(); g.strokeStyle = fin[3]; g.lineWidth = 2.5; g.stroke();
+  g.fillStyle = fin[4]; g.textAlign = "center"; g.font = "46px " + BOO; g.fillText(cost == null ? "–" : String(cost), 49, 66);
+  if (isr) { rr(g, 50, 64, 40, 26, 7); g.fillStyle = "#24544f"; g.fill(); g.fillStyle = "#e8fbf6"; g.font = "19px " + BOO; g.fillText("+" + isr, 70, 84); }
+  // type word and name
+  g.textAlign = "left"; g.fillStyle = BRICK; g.font = "700 15px " + BAR; var tw = typeWord(u, cap).replace("EFFECT · ", ""); g.fillText(tw + (u.gen ? "  ·  GEN " + u.gen : ""), 94, 34);
+  g.fillStyle = INK; var nm = String(u.name || ""), fs = 34; g.font = fs + "px " + BOO; while (g.measureText(nm).width > 170 && fs > 19) { fs--; g.font = fs + "px " + BOO; }
+  if (g.measureText(nm).width > 170 && nm.indexOf(" ") > 0) { var ws = nm.split(" "), h = Math.ceil(ws.length / 2); g.font = "21px " + BOO; g.fillText(ws.slice(0, h).join(" "), 94, 58); g.fillText(ws.slice(h).join(" "), 94, 80); }
+  else g.fillText(nm, 94, 70);
+  // art, smaller than on the print face
+  var ay = 92, ah = 112; if (img) cover(g, img, 16, ay, 248, ah); else { g.fillStyle = "#cfcbb8"; g.fillRect(16, ay, 248, ah); }
+  g.strokeStyle = fin[1]; g.lineWidth = 2; g.strokeRect(16, ay, 248, ah);
+  var y0 = ay + ah + 10;
+  if (cap) {   // the key numbers, as large as the card allows
+    var left = Math.max(0, (u.dur || 0) - (u.dmg || 0)), cells = [];
+    if (u.atkn) cells.push(["ATK", String(u.atkn), RNG[u.range] || String(u.range || "").toUpperCase(), INK]);
+    cells.push(["SURV", String(u.surv == null ? "–" : u.surv), "", INK]);
+    cells.push(["DUR", left + "/" + (u.dur || 0), u.dmg ? "DAMAGED" : "", u.dmg ? BRICK : INK]);
+    cells.push(["CONC", String(u.conc == null ? "–" : u.conc), "", INK2]);
+    var cw = 248 / cells.length;
+    cells.forEach(function (ce, i) { var x = 16 + i * cw; rr(g, x + 2, y0, cw - 4, 112, 8); g.fillStyle = i === 0 && u.atkn ? "rgba(142,43,33,.12)" : "rgba(36,33,27,.07)"; g.fill();
+      g.textAlign = "center"; g.fillStyle = INK2; g.font = "700 15px " + BAR; g.fillText(ce[0], x + cw / 2, y0 + 20);
+      g.fillStyle = ce[3]; var f2 = ce[1].length > 3 ? 34 : ce[1].length > 2 ? 40 : 54; g.font = f2 + "px " + BOO; while (g.measureText(ce[1]).width > cw - 8 && f2 > 20) { f2--; g.font = f2 + "px " + BOO; } g.fillText(ce[1], x + cw / 2, y0 + 76);
+      if (ce[2]) { g.fillStyle = ce[3] === BRICK ? BRICK : INK2; var f3 = 14; g.font = "700 " + f3 + "px " + BAR; while (g.measureText(ce[2]).width > cw - 6 && f3 > 9) { f3--; g.font = "700 " + f3 + "px " + BAR; } g.fillText(ce[2], x + cw / 2, y0 + 102); } });
+    y0 += 124;
+  } else {   // an Effect: when it acts, then what it does in a few large words
+    var tm = +u.timer || 0, l0 = parseLine((u.lines || []).filter(function (l) { return !/^(REQUIRES|PULSE)/.test(String(l)); })[0] || (u.lines || [])[0] || ""), what = String(l0.body || "").replace(/\s+/g, " ");
+    g.textAlign = "left"; g.fillStyle = BRICK; g.font = "22px " + BOO; g.fillText(tm ? tm + " ROUND" + (tm > 1 ? "S" : "") + " TO H-HOUR" : u.sub === "Reaction" ? "WHEN TRIGGERED" : "AT ONCE", 18, y0 + 22);
+    g.fillStyle = INK; g.font = "600 21px " + BAR; y0 = wrap(g, what || l0.name || "", 18, y0 + 52, 244, 24, y0 + 52 + 24 * 3) + 4;
+  }
+  // one short tag for each ability line
+  var tags = glanceTags(u).slice(0, 4), tx = 16, ty = Math.max(y0 + 6, 360); g.textAlign = "left";
+  tags.forEach(function (t) { var f4 = 20; g.font = f4 + "px " + BOO; var w = g.measureText(t).width + 18; while (w > 248 && f4 > 12) { f4--; g.font = f4 + "px " + BOO; w = g.measureText(t).width + 18; }
+    if (tx + w > 264) { tx = 16; ty += 38; } if (ty > 432) return;
+    rr(g, tx, ty, w, 32, 7); g.fillStyle = INK; g.fill(); g.fillStyle = "#f3eedc"; g.fillText(t, tx + 9, ty + 23); tx += w + 6; });
+  if (!tags.length && cap) { g.fillStyle = INK2; g.font = "600 15px " + BAR; g.fillText("No special abilities.", 18, ty + 22); }
+  g.fillStyle = INK2; g.font = "600 12px " + BAR; g.textAlign = "center"; g.fillText("Hold to read the whole card", 140, 466); g.textAlign = "left";
+  overlays(g, u, o); return c;
+}
+function overlays(g, u, o) {
+  if (u.ex || (u.hidden && u.cls)) { g.fillStyle = "rgba(10,12,12,.5)"; rr(g, 0, 0, 280, 480, 16); g.fill(); g.fillStyle = "rgba(10,12,12,.88)"; g.fillRect(0, 136, 280, 36); g.fillStyle = u.hidden ? "#7fe0c8" : "#e0a85a"; g.font = "20px " + BOO; g.textAlign = "center"; g.fillText(u.hidden ? "FACE DOWN" : "EXHAUSTED", 140, 161); g.textAlign = "left"; }
+  if (u.spot || o.side) { g.strokeStyle = u.spot ? "#ffd27a" : o.side === "foe" ? "#d8674e" : "#7fb6d8"; g.lineWidth = u.spot ? 6 : 3.5; rr(g, 2, 2, 276, 476, 15); g.stroke(); }
+  if (o.shapes && o.side) {   // Settings > Side markers: a shape as well as a colour (friendly rectangle, hostile diamond, as on a map)
+    g.save(); g.lineWidth = 3; g.strokeStyle = "#0d0f0e"; g.fillStyle = o.side === "foe" ? "#d8674e" : "#7fb6d8"; g.beginPath();
+    if (o.side === "foe") { g.moveTo(140, 446); g.lineTo(162, 468); g.lineTo(140, 490); g.lineTo(118, 468); } else { g.rect(116, 452, 48, 30); }
+    g.closePath(); g.fill(); g.stroke(); g.restore(); }
+}
 function drawCard(u, S, o) {
-  o = o || {}; var c = cv(CARD_W * S, CARD_H * S), g = c.getContext("2d"); g.scale(S, S);
+  o = o || {}; if (o.glance) return drawGlance(u, S, o);
+  var c = cv(CARD_W * S, CARD_H * S), g = c.getContext("2d"); g.scale(S, S);
   var tp = TPL[u.cls] || TPL.JOINT, cap = isCap(u), img = (S >= 1.5 && HI[u.id]) || IMG[u.id], gn = Math.max(1, Math.min(3, String(u.gen || "I").length)), fin = FIN[gn], meta = (G.meta || {})[u.name] || {};
   rr(g, 0, 0, 280, 480, 16); g.fillStyle = tp[0]; g.fill();
   var seed = 7; for (var q = 0; q < String(u.name).length; q++) seed = (seed * 31 + u.name.charCodeAt(q)) % 9973; var rnd = function () { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
@@ -95,13 +161,7 @@ function drawCard(u, S, o) {
   g.textAlign = "right"; g.fillStyle = INK2; g.font = "500 7px " + BAR; g.fillText(String(u.id || ""), 264, 464); g.textAlign = "left"; g.fillText("Prototype · Shadows and Steel", 16, 464);
   // digital assists: not part of the printed card
   if (o.assist && cap && u.atkn) { rr(g, 206, 204, 56, 26, 6); g.fillStyle = "rgba(14,16,14,.88)"; g.fill(); g.strokeStyle = "#e0a85a"; g.lineWidth = 1.5; g.stroke(); g.fillStyle = "#e0a85a"; g.font = "16px " + BOO; g.textAlign = "center"; g.fillText(u.atkn + " " + ((u.range || "")[0] || ""), 234, 223); g.textAlign = "left"; }
-  if (u.ex || (u.hidden && u.cls)) { g.fillStyle = "rgba(10,12,12,.5)"; rr(g, 0, 0, 280, 480, 16); g.fill(); g.fillStyle = "rgba(10,12,12,.88)"; g.fillRect(0, 136, 280, 36); g.fillStyle = u.hidden ? "#7fe0c8" : "#e0a85a"; g.font = "20px " + BOO; g.textAlign = "center"; g.fillText(u.hidden ? "FACE DOWN" : "EXHAUSTED", 140, 161); g.textAlign = "left"; }
-  if (u.spot || o.side) { g.strokeStyle = u.spot ? "#ffd27a" : o.side === "foe" ? "#d8674e" : "#7fb6d8"; g.lineWidth = u.spot ? 6 : 3.5; rr(g, 2, 2, 276, 476, 15); g.stroke(); }
-  if (o.shapes && o.side) {   // Settings > Side markers: a shape as well as a colour (friendly rectangle, hostile diamond, as on a map)
-    g.save(); g.lineWidth = 3; g.strokeStyle = "#0d0f0e"; g.fillStyle = o.side === "foe" ? "#d8674e" : "#7fb6d8"; g.beginPath();
-    if (o.side === "foe") { g.moveTo(140, 446); g.lineTo(162, 468); g.lineTo(140, 490); g.lineTo(118, 468); } else { g.rect(116, 452, 48, 30); }
-    g.closePath(); g.fill(); g.stroke(); g.restore(); }
-  return c;
+  overlays(g, u, o); return c;
 }
 
 window.CardFace = {
