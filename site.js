@@ -7,7 +7,7 @@
 "use strict";
 var FORM = "1FAIpQLScLoaIfdtlwpAwo2e8hO7lLPttbrRoM4LbSxtEXnTW0DMSyqg";
 window.SS_SITE = {
-  build: "Battlefield v0.17.2 (playtest website, 2026-11-15) · Basic Training v0.2 · cards v0.15, decks v0.15",
+  build: "Battlefield v0.18 (playtest website, 2026-11-15) · Basic Training v0.2 · cards v0.15, decks v0.15",
   form: {
     action: "https://docs.google.com/forms/d/e/" + FORM + "/formResponse",
     view: "https://docs.google.com/forms/d/e/" + FORM + "/viewform",

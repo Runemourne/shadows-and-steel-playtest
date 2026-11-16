@@ -1,0 +1,400 @@
+{
+ "version": "0.1",
+ "about": "What the Battlefield page plays over and after the film (opening.js). Made by 04. Workbench/opening/build_page_files.py from timeline.json; edit those, not this file.",
+ "fps": 30,
+ "film_end": 38.0,
+ "music": {
+  "mood": "final",
+  "file": "music/final.mp3",
+  "name": "Last Duel",
+  "fade_out": [
+   52.5,
+   54.0
+  ]
+ },
+ "cues": [
+  [
+   0.8,
+   "vox",
+   "vox/hostiles_detected.mp3",
+   "Hostiles detected."
+  ],
+  [
+   4.5,
+   "fx",
+   "fx/ui_zoom.mp3"
+  ],
+  [
+   5.8,
+   "fx",
+   "fx/ui_ping.mp3"
+  ],
+  [
+   6.1,
+   "vox",
+   "vox/target_acquired.mp3",
+   "Target acquired."
+  ],
+  [
+   7.2,
+   "vox",
+   "vox/moving_into_position.mp3",
+   "Moving into position."
+  ],
+  [
+   8.3,
+   "vox",
+   "vox/fire_in_the_hole.mp3",
+   "Fire in the hole!"
+  ],
+  [
+   9.15,
+   "fx",
+   "fx/cannon_1.mp3"
+  ],
+  [
+   9.6,
+   "fx",
+   "fx/cannon_2.mp3"
+  ],
+  [
+   10.9,
+   "fx",
+   "fx/boom_2.mp3"
+  ],
+  [
+   12.25,
+   "fx",
+   "fx/burst_1.mp3"
+  ],
+  [
+   12.7,
+   "fx",
+   "fx/burst_2.mp3"
+  ],
+  [
+   13.0,
+   "vox",
+   "vox/incoming.mp3",
+   "Incoming!"
+  ],
+  [
+   14.2,
+   "fx",
+   "fx/impact_2.mp3"
+  ],
+  [
+   15.1,
+   "fx",
+   "fx/engine_2.mp3"
+  ],
+  [
+   15.9,
+   "vox",
+   "vox/contact.mp3",
+   "Contact!"
+  ],
+  [
+   18.1,
+   "fx",
+   "fx/launch_1.mp3"
+  ],
+  [
+   18.5,
+   "fx",
+   "fx/missile.mp3"
+  ],
+  [
+   20.7,
+   "vox",
+   "vox/status_report.mp3",
+   "Status report."
+  ],
+  [
+   24.9,
+   "vox",
+   "vox/transmission_received.mp3",
+   "Transmission received."
+  ],
+  [
+   29.6,
+   "fx",
+   "fx/ui_ability.mp3",
+   0.4
+  ],
+  [
+   30.15,
+   "fx",
+   "fx/ui_ability.mp3",
+   0.4
+  ],
+  [
+   30.7,
+   "fx",
+   "fx/ui_ability.mp3",
+   0.4
+  ],
+  [
+   31.25,
+   "fx",
+   "fx/ui_ability.mp3",
+   0.4
+  ],
+  [
+   31.8,
+   "fx",
+   "fx/ui_ability.mp3",
+   0.4
+  ],
+  [
+   32.35,
+   "fx",
+   "fx/ui_ability.mp3",
+   0.4
+  ],
+  [
+   32.9,
+   "fx",
+   "fx/ui_ability.mp3",
+   0.4
+  ],
+  [
+   34.4,
+   "vox",
+   "vox/move_out.mp3",
+   "Move out."
+  ],
+  [
+   35.95,
+   "fx",
+   "fx/card_place_2.mp3"
+  ]
+ ],
+ "tags": {
+  "show": [
+   29.0,
+   34.0
+  ],
+  "t0": 29.6,
+  "step": 0.55,
+  "names": [
+   "C2",
+   "INTEL",
+   "FIRES",
+   "M2",
+   "PROT",
+   "SUST",
+   "INFO"
+  ],
+  "colors": {
+   "C2": "#B0622E",
+   "INTEL": "#3F6A86",
+   "FIRES": "#9A3A31",
+   "M2": "#5B6038",
+   "PROT": "#4A7F7B",
+   "SUST": "#6E5A45",
+   "INFO": "#3A4046"
+  }
+ },
+ "card": {
+  "id": "EFF-109",
+  "name": "MOVEMENT TO CONTACT",
+  "t": 35.9,
+  "fade_out": [
+   37.4,
+   38.0
+  ],
+  "wide": [
+   0.7,
+   0.55,
+   260
+  ],
+  "tall": [
+   0.52,
+   0.72,
+   300
+  ]
+ },
+ "scene3": {
+  "schedule": [
+   [
+    38.0,
+    "start",
+    {
+     "i": 0
+    }
+   ],
+   [
+    38.0,
+    "paint",
+    {
+     "card": "CAP-102",
+     "to": 40.45,
+     "uid": "u7"
+    }
+   ],
+   [
+    38.4,
+    "fx",
+    {
+     "file": "fx/card_slide_2.mp3",
+     "vol": 0.8
+    }
+   ],
+   [
+    40.5,
+    "land",
+    {
+     "uid": "u7"
+    }
+   ],
+   [
+    40.5,
+    "fx",
+    {
+     "file": "fx/card_place_3.mp3",
+     "vol": 0.9
+    }
+   ],
+   [
+    41.2,
+    "frame",
+    {
+     "i": 1
+    }
+   ],
+   [
+    42.0,
+    "frame",
+    {
+     "i": 2
+    }
+   ],
+   [
+    42.9,
+    "frame",
+    {
+     "i": 3
+    }
+   ],
+   [
+    44.4,
+    "frame",
+    {
+     "i": 4
+    }
+   ],
+   [
+    45.1,
+    "frame",
+    {
+     "i": 5
+    }
+   ],
+   [
+    45.6,
+    "frame",
+    {
+     "i": 6
+    }
+   ],
+   [
+    45.6,
+    "showcase",
+    {
+     "card": "MOVEMENT TO CONTACT",
+     "label": "Played"
+    }
+   ],
+   [
+    46.95,
+    "frame",
+    {
+     "quiet": true,
+     "i": 7
+    }
+   ],
+   [
+    47.05,
+    "banner",
+    {
+     "big": "Last stand",
+     "small": "The bot defends the home edge"
+    }
+   ],
+   [
+    47.05,
+    "fx",
+    {
+     "file": "fx/alert_reaction.mp3",
+     "vol": 0.55
+    }
+   ],
+   [
+    47.85,
+    "vox",
+    {
+     "file": "vox/weapons_hot.mp3"
+    }
+   ],
+   [
+    47.9,
+    "frame",
+    {
+     "i": 8
+    }
+   ],
+   [
+    49.3,
+    "frame",
+    {
+     "i": 9
+    }
+   ]
+  ],
+  "camera": [
+   [
+    38.0,
+    1.9,
+    27,
+    0.26
+   ],
+   [
+    42.6,
+    0.6,
+    38,
+    0.4
+   ],
+   [
+    47.2,
+    -3.0,
+    44,
+    0.4
+   ],
+   [
+    49.6,
+    -2.0,
+    58,
+    0.62
+   ],
+   [
+    54.0,
+    0.0,
+    88,
+    1.0
+   ]
+  ]
+ },
+ "title": {
+  "title_in": 49.4,
+  "hook_in": 50.5,
+  "fade": [
+   52.5,
+   54.0
+  ],
+  "loop": 54.0,
+  "hook_new": "Can you break the last stand? Start with Basic Training.",
+  "hook_trained": "Playing with Doctrine"
+ },
+ "stand_in_art": "EFF-214, CAP-212 and CAP-115 use their Beta 3 stand-in pictures (Next Art Pass List v0.1). When new art lands, change the path here and re-render scene 1."
+}

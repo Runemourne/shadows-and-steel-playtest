@@ -10,7 +10,7 @@ var W = innerWidth, H = innerHeight, LAND = W > H * 1.05, T = 0;
 var G = { view: null, latest: null, pend: null, latestPend: null, queue: [], playing: false, since: 0, sel: null, over: null, err: null, speed: 1, muted: false, canUndo: false, hist: [], skip: false, info: null, started: false, busy: false, assist: true, calm: false, meta: {}, bases: {}, notes: [], paused: false, histWhy: {}, rate: {}, faces: {}, volFx: .9, volMus: .5, volVox: .85, capLast: {}, capUntil: 0 };
 (function () { try { var st = JSON.parse(localStorage.getItem("ss.sound") || "null"); if (st) { G.volFx = st.fx; G.volMus = st.mus; G.volVox = st.vox == null ? .85 : st.vox; G.muted = !!st.muted; } } catch (e) { } })();
 // Settings (v0.15): kept in localStorage under ss.settings; sound volumes stay under ss.sound
-var SETDEF = { text: 1, motion: "auto", shake: true, shapes: false, confirm: false, tips: true, captions: false, badges: true, speed: 1 };
+var SETDEF = { text: 1, motion: "auto", shake: true, shapes: false, confirm: false, tips: true, captions: false, badges: true, speed: 1, opening: true };   // opening (v0.18): the animated opening before the Main Menu
 var PREF = (function () { var d = {}, k; for (k in SETDEF) d[k] = SETDEF[k]; try { var st = JSON.parse(localStorage.getItem("ss.settings") || "null"); if (st) for (k in SETDEF) if (st[k] != null && typeof st[k] === typeof SETDEF[k]) d[k] = st[k]; } catch (e) { } return d; })();
 function savePrefs() { try { localStorage.setItem("ss.settings", JSON.stringify(PREF)); } catch (e) { } }
 G.speed = PREF.speed; G.assist = PREF.badges;
@@ -74,7 +74,7 @@ function musicTick() {
 }
 function musicState(v) { if (!v) { MUS.target = 0; return; } var low = Math.min(v.you.hf, v.bot.hf), stand = v.contact && (v.you.marker === 1 || v.bot.marker === v.Z); MUS.target = Math.max(0, Math.min(1, (20 - low) / 20 * .55 + (v.contact ? .2 : 0) + (stand ? .3 : 0))); G.stand = stand; if (G.started && !G.over) setMood(moodOf(v), stand || v.round >= v.last); }
 function unlock() {
-  try { if (!AC) audioInit(); if (AC && AC.state !== "running") AC.resume(); if (SND && AC) { SND.bless(); if (!G.sndLoad) { G.sndLoad = true; SND.preloadAll(); } if (!G.started && !G.view && !G.replay) setMood("menu", true); }
+  try { if (!AC) audioInit(); if (AC && AC.state !== "running") AC.resume(); if (SND && AC) { SND.bless(); if (!G.sndLoad) { G.sndLoad = true; SND.preloadAll(); } if (!G.started && !G.view && !G.replay && !G.opening) setMood("menu", true); }
     if (!silentEl) { var n = 4410, b = new ArrayBuffer(44 + n * 2), v = new DataView(b), w = function (o, s) { for (var i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
       w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 44100, true); v.setUint32(28, 88200, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
       silentEl = new Audio(URL.createObjectURL(new Blob([b], { type: "audio/wav" }))); silentEl.loop = true; silentEl.setAttribute("playsinline", ""); }
@@ -136,7 +136,8 @@ var SFX = {   // recorded sound (sound.js and audio/) when it is loaded; the gen
 };
 var moodAt = -99;
 function setMood(m, force) {   // recorded music: one mood at a time; the battle moods change at most every 25 seconds unless the moment demands it
-  if (!SND || !AC) return false; var cur = SND.mood(), t = AC.currentTime, calm = { approach: 1, contact: 1, intense: 1 };
+  if (!SND || !AC) return false; if (G.opening) return true;   // v0.18: the opening plays its own music (Last Duel)
+  var cur = SND.mood(), t = AC.currentTime, calm = { approach: 1, contact: 1, intense: 1 };
   if (m !== cur && !force && calm[cur] && calm[m] && t - moodAt < 25) return true; if (m !== cur) moodAt = t; return SND.music(m);
 }
 function moodOf(v) { return !v ? "menu" : G.over ? "debrief" : v.round >= v.last ? "final" : G.stand ? "stand" : v.contact ? (Math.min(v.you.hf, v.bot.hf) <= 8 ? "intense" : "contact") : "approach"; }
@@ -286,6 +287,7 @@ function fit() {
   camera.setViewOffset(W, H, 0, off * H / 2, W, H);
   camBase.copy(camera.position); scene.fog.near = hi + 4; scene.fog.far = hi + 20;
   $("feed").style.top = Math.max(W < 600 ? 62 : 58, tb - 6) + "px"; placeTrack(tb, botPx); $("preview").style.bottom = (botPx + 14) + "px";
+  if (G.dir) camera.clearViewOffset();
   if (G.view) sync(G.view);
 }
 addEventListener("resize", function () { fit(); });
@@ -418,7 +420,7 @@ function feed(text) {
   var d = document.createElement("div"); d.className = cls; d.textContent = (PREF.shapes && /own|foe/.test(cls) ? (/foe/.test(cls) ? "◆ " : "■ ") : "") + text.replace(/^--- | ---$/g, ""); $("feed").appendChild(d);
   while ($("feed").children.length > (H < 700 || W < 600 ? 2 : 4)) $("feed").removeChild($("feed").firstChild); setTimeout(function () { d.style.opacity = .3; }, 6000);
 }
-function banner(big, small) { if (G.skip) return; var b = $("banner"); b.innerHTML = esc(big) + (small ? "<small>" + esc(small) + "</small>" : ""); b.classList.remove("on"); void b.offsetWidth; b.classList.add("on"); }
+function banner(big, small) { if (G.skip || G.dirQuiet) return; var b = $("banner"); b.innerHTML = esc(big) + (small ? "<small>" + esc(small) + "</small>" : ""); b.classList.remove("on"); void b.offsetWidth; b.classList.add("on"); }
 function glossFor(u) {   // which keywords and game terms appear on this card, with their meanings (from browser_play.glossary)
   var GL = G.gloss || [], txt = [].concat(u.lines || [], [u.atk || "", u.range || "", u.sub || "", u.kind || ""]).join("  "), out = [], seen = {};
   GL.forEach(function (g) { if (out.length >= 8 || seen[g[0]]) return; try { if (new RegExp(g[1]).test(txt)) { seen[g[0]] = 1; out.push(g); } } catch (e) { } });
@@ -770,7 +772,7 @@ function finish() {
   render();
 }
 function playNext() {
-  if (!G.queue.length) { if (G.since < (G.lastN || 0)) { G.playing = false; return poll(); } return finish(); }
+  if (!G.queue.length) { if (G.dir) { G.playing = false; return; } if (G.since < (G.lastN || 0)) { G.playing = false; return poll(); } return finish(); }
   if (G.paused && !G.stepOnce && !G.skip) { G.waiting = true; G.playing = true; return render(); }
   G.stepOnce = false;
   G.playing = true; var f = G.queue.shift(), text = f.text, fx = f.fx || {}, wait = .7 + Math.min(1.3, text.length / 85);
@@ -812,6 +814,7 @@ function playNext() {
     if (prev) ["you", "bot"].forEach(function (k) { if (f.view[k].hf < prev[k].hf) { var d = document.createElement("div"); d.className = "dmg"; d.style.fontSize = "24px"; d.textContent = "Homefront −" + (prev[k].hf - f.view[k].hf); d.style.left = "50%"; d.style.top = (k === "you" ? H - 60 : 70) + "px"; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 1400); } });
     $("vig").className = G.stand ? "fx stand" : "fx"; render();
   } catch (e) { console.error(e); }
+  if (G.dir) { G.playing = false; return; }   // v0.18: the opening plays one frame at a time, on its own schedule
   var gen = G.pgen; after(wait, function () { if (gen === G.pgen) playNext(); });
 }
 
@@ -867,6 +870,7 @@ function showSettings() { audioInit(); unlock(); SFX.open && SFX.open();
     "<h4>Display</h4>" + segRow("text", "Text size", "", [[1, "100%"], [1.25, "125%"], [1.5, "150%"], [1.75, "175%"]]) +
     segRow("motion", "Reduced motion", "Stills the screen effects. Follows your device setting unless you choose.", [["auto", "Follow device"], ["on", "On"], ["off", "Off"]]) +
     segRow("shake", "Screen shake", "", [[true, "On"], [false, "Off"]]) +
+    segRow("opening", "Opening film", "Plays before the Main Menu each time the game opens. Skip or Esc goes straight to the menu; Reduced motion skips it.", [[true, "On"], [false, "Off"]]) +
     segRow("shapes", "Side markers", "Adds a shape to the side colours: your cards a rectangle, the enemy's a diamond, as on a map.", [[false, "Colour only"], [true, "Colour and shape"]]) +
     "<h4>Sound</h4>" + '<div class="row"><span>Mute everything</span><label class="ck"><input type="checkbox" id="sMute"' + (G.muted ? " checked" : "") + "> Mute</label></div>" + rng("sFx", "Effects", G.volFx) + rng("sMus", "Music", G.volMus) + rng("sVox", "Radio voices", G.volVox) +
     "<h4>Gameplay</h4>" + segRow("speed", "Speed", "How fast the bot's moves play out.", [[.5, "½×"], [1, "1×"], [2, "2×"]]) +
@@ -875,7 +879,7 @@ function showSettings() { audioInit(); unlock(); SFX.open && SFX.open();
     segRow("badges", "Attack badges", "The attack value on cards on the table.", [[true, "On"], [false, "Off"]]) +
     "<h4>Accessibility</h4>" + segRow("captions", "Captions for radio calls", "Shows each radio call as text, also when the voices are off.", [[false, "Off"], [true, "On"]]) +
     '<h4>About</h4><div class="about"><div class="logos">' + L.map(function (x) { return '<img class="' + x.key + '" alt="' + esc(x.alt) + '" src="' + x.src + '">'; }).join("") + "</div>" +
-    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.17" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
+    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.18" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
     "<p><b>Sound</b></p><ul>" + CR.map(function (c) { return "<li>" + esc(c.source) + ": " + esc(c.what) + "</li>"; }).join("") + "</ul>" + (MU.length ? "<p>Music: " + esc(MU.join(", ")) + ".</p>" : "") +
     "<p><b>Card art</b>: made for the project (Art Pass v6.0 and earlier passes); some cards show Beta 3 art until the next Art Pass.</p></div></div>";
   el.style.display = "block"; el.scrollTop = 0;
@@ -1134,8 +1138,8 @@ function showSetup() {
     $("cover").style.display = "block"; $("cover").classList.add("map");
     $("cover").firstElementChild.innerHTML = '<canvas class="contours" id="suMap"></canvas><div class="su"><header class="su-h"><h1 class="t">Shadows <span>&amp;</span> Steel</h1>' +
       '<div class="seg" data-set="mode"><button data-v="train" aria-pressed="' + (SET.mode === "train") + '">Basic Training</button><button data-v="bot" aria-pressed="' + (SET.mode === "bot") + '">Play the bot</button><button data-v="watch" aria-pressed="' + (SET.mode === "watch") + '">Watch the bot play itself</button><button data-v="replays" aria-pressed="' + (SET.mode === "replays") + '">Saved replays</button></div><button class="ghost gear" id="suFM">Field Manual</button><button class="ghost gear" id="suLib">Card library</button><button class="ghost gear" id="suGear">⚙ Settings</button>' + (LOCAL ? '<button class="ghost gear" id="suQuit">Quit</button>' : "") + (SITE ? '<button class="ghost gear" id="suSend">✉ Send notes</button>' : "") + '</header>' + (SITE ? siteWelcome() : "") +
-      '<div id="suBody"></div><footer class="su-f">Tap a card to read it during the game; glowing cards can act. The ☰ menu holds notes, the battle log, saving a replay and Settings. Cards: ' + esc(d.cards || "") + ". Decks: " + esc(d.decks || "") + ". Battlefield table v0.17.2.</footer>" + logoBand() + "</div>";
-    setupBody(d); requestAnimationFrame(function () { contourMap($("suMap"), SET.terrain); });
+      '<div id="suBody"></div><footer class="su-f">Tap a card to read it during the game; glowing cards can act. The ☰ menu holds notes, the battle log, saving a replay and Settings. Cards: ' + esc(d.cards || "") + ". Decks: " + esc(d.decks || "") + ". Battlefield table v0.18.</footer>" + logoBand() + "</div>";
+    setupBody(d); requestAnimationFrame(function () { contourMap($("suMap"), SET.terrain); if (window.SSOpening && window.SSOpening.menuShown) window.SSOpening.menuShown(); });
   }, function (e) { $("cover").style.display = "block"; $("cover").firstElementChild.innerHTML = "<h1 class='t'>Shadows &amp; Steel</h1><p class='lead'>The game engine did not start.</p><pre>" + esc(e.message) + "</pre>"; });
 }
 $("cover").addEventListener("click", function (e) {
@@ -1174,7 +1178,7 @@ function buildReplayFile(rec) {   // one HTML file that plays this game on the 3
   return Promise.all([get("index.html"), get("three.min.js"), get("heights.js"), get("art.js"), get("cardface.js"), get("battle.js"), TER.embed(tname), get("terrain.js")]).then(function (a) {
     var js = function (t) { return "<script>" + t.replace(/<\/script/gi, "<\\/script") + "<\/script>"; }, html = a[0].replace(/<script type="module">[\s\S]*?<\/script>/, "");
     var put = function (src, body) { html = html.replace('<script src="' + src + '"></script>', function () { return body; }); };
-    put("three.min.js", js(a[1])); put("heights.js", js(a[2])); put("art.js", js(a[3] + "\nwindow.ART_HI=[];")); put("cardface.js", js(a[4])); put("terrain.js", js(a[7])); put("sound.js", ""); put("brand.js", ""); put("site.js", "");
+    put("three.min.js", js(a[1])); put("heights.js", js(a[2])); put("art.js", js(a[3] + "\nwindow.ART_HI=[];")); put("cardface.js", js(a[4])); put("terrain.js", js(a[7])); put("sound.js", ""); put("brand.js", ""); put("site.js", ""); put("opening/opening.js", "");
     put("battle.js", '<script type="application/json" id="ss-replay">' + JSON.stringify(rec).replace(/</g, "\\u003c") + "<\/script>" + js(a[6] + "window.SS_TNAME=" + JSON.stringify(tname) + ";") + js(a[5]));
     html = html.replace(/<title>[^<]*<\/title>/, function () { return "<title>" + esc("Shadows & Steel replay: " + rec.name) + "</title>"; });
     return html.replace("<!DOCTYPE html>", function () { return "<!DOCTYPE html>\n<!--ss-replay " + JSON.stringify({ name: rec.name, saved: rec.saved, meta: rec.meta }).replace(/--/g, "- -") + "-->"; });
@@ -1323,6 +1327,30 @@ $("debrief").addEventListener("click", function (e) {
   if (b.id === "dBack") return exitReplay();
 });
 
+/* ================= v0.18: the animated opening's live scene (opening/opening.js drives it; RD-151) ================= */
+// Scene 3 plays Basic Training's own round 3 through the replay playback, one frame at a time on the opening's schedule ("director"
+// mode): no replay bar, no music changes, a scripted camera. opening.js owns the timing; this file only shows the frames.
+function dirStart(body, i) {
+  reset(); var fr = body.frames; G.opening = true; G.dir = true;
+  G.replay = { rec: null, body: body, standalone: false, rounds: [], dir: true };
+  G.faces = body.faces || G.faces || {}; G.meta = body.meta || G.meta || {}; G.bases = body.bases || G.bases || {}; handCv = {}; handKey = "";
+  G.info = body.info; G.queue = []; G.lastN = fr.length; G.since = fr.length; G.started = false; MUS.on = false;
+  G.view = fr[i].view; G.latest = G.view; sync(G.view); G.started = true; G.stand = false;
+  document.body.classList.add("replaying", "dir"); $("bot").style.visibility = "hidden"; camera.clearViewOffset(); camera.updateProjectionMatrix();
+  G.dirD = camBase.distanceTo(camTarget) || 30; render();
+}
+function dirFrame(f, quiet) { if (!G.dir) return; G.queue.push(f); G.dirQuiet = !!quiet; try { playNext(); } finally { G.dirQuiet = false; } }
+function dirEnd() { if (!G.dir) return; G.dirCam = null; G.dir = false; G.replay = null; document.body.classList.remove("dir", "replaying"); $("vig").className = "fx"; reset(); clearBoard(); fit(); }
+function dirShow(uid, on) { var o = O[uid]; if (!o) return; o.mesh.material.opacity = on ? 1 : 0; o.shadow.material.opacity = on ? .85 : 0; if (on) { groundFlash(o.tx, o.tz, 2.6, 0xd8c8a0, .35); shake = Math.max(shake, .08); } }
+function dirRect(uid) {   // where a card lies on the screen now: its four corners, projected
+  var o = O[uid]; if (!o) return null; var p = o.grp.position, s = o.grp.scale.y, xs = [], ys = [];
+  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(function (c) { var q = screenPos(new THREE.Vector3(p.x + c[0] * CW * s / 2, p.y, p.z + c[1] * CH * s / 2)); xs.push(q.x); ys.push(q.y); });
+  var x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys); return { x: x0, y: y0, w: Math.max.apply(null, xs) - x0, h: Math.max.apply(null, ys) - y0 };
+}
+function setMuted(on) { G.muted = !!on; if (master) master.gain.value = G.muted ? 0 : .9; saveSound(); }
+var OPDIR = { start: dirStart, frame: dirFrame, end: dirEnd, show: dirShow, rect: dirRect, cam: function (fn) { G.dirCam = fn; }, banner: banner, showcase: function (n, l) { if (showcase(n, l, false)) SFX.ability(); }, vig: function (on) { $("vig").className = on ? "fx stand" : "fx"; },
+  audioInit: audioInit, unlock: unlock, ac: function () { return AC; }, setMood: setMood, setMuted: setMuted, caption: caption, contourMap: contourMap, reducedMotion: reducedMotion, PREF: PREF, savePrefs: savePrefs, applyPrefs: applyPrefs, drawCard: drawCard, fit: fit };
+
 /* ================= loop ================= */
 var last = performance.now(), fc = 0;
 function frame(now) {
@@ -1345,7 +1373,8 @@ function frame(now) {
     if (o.jolt) { o.jolt = Math.max(0, o.jolt - raw * 2.5); g.rotation.z = Math.sin(o.jolt * 30) * .05 * o.jolt; }
     o.shadow.position.x = g.position.x + .2; o.shadow.position.z = g.position.z + .24; o.shadow.scale.setScalar(sc);
   });
-  aimUpdate(raw); if (G.calm) shake = 0; shake *= Math.pow(.004, raw); camera.position.set(camBase.x + (Math.random() - .5) * shake, camBase.y + (Math.random() - .5) * shake, camBase.z + (Math.random() - .5) * shake * .6); camera.lookAt(camTarget);
+  aimUpdate(raw); if (G.dirCam) try { G.dirCam(raw, camBase, camTarget, camera); } catch (e) { G.dirCam = null; }
+  if (G.calm) shake = 0; shake *= Math.pow(.004, raw); camera.position.set(camBase.x + (Math.random() - .5) * shake, camBase.y + (Math.random() - .5) * shake, camBase.z + (Math.random() - .5) * shake * .6); camera.lookAt(camTarget);
   renderer.render(scene, camera);
 }
 
@@ -1358,5 +1387,5 @@ var fontReady = (document.fonts && document.fonts.load) ? Promise.race([Promise.
 [1500, 6000, 15000].forEach(function (ms) { setTimeout(function () { dbReady().then(function (d) { if (d) recoverNotes(); }); }, ms); });
 (function () { var rj = document.getElementById("ss-replay"); if (!rj) return; try { window.SS_REPLAY = JSON.parse(rj.textContent); } catch (e) { return; }   // a saved-replay file: no engine, just the game
   Promise.all([artReady, fontReady]).then(function () { $("cover").classList.add("map"); $("cover").firstElementChild.innerHTML = standaloneCover(window.SS_REPLAY); requestAnimationFrame(function () { contourMap($("suMap"), (window.SS_REPLAY.meta || {}).terrain || window.SS_TNAME || ""); }); }); })();
-window.SS = { sendForm: sendForm, showSend: showSend, site: SITE, copyWhere: copyWhere, optWhere: optWhere, quitApp: quitApp, winTrack: winTrack, showLibrary: showLibrary, toggleWin: toggleWin, glossFor: glossFor, hintBox: hintBox, PREF: PREF, applyPrefs: applyPrefs, showSettings: showSettings, caption: caption, TER: TER, SND: SND, readCard: readCard, showPiles: showPiles, hitsBox: hitsBox, isCause: isCause, saveReplay: saveReplay, playReplay: playReplay, buildReplayFile: buildReplayFile, listReplays: listReplays, loadReplay: loadReplay, showDebrief: showDebrief, replayJump: replayJump, set: SET, drawCard: function (u, S) { return drawCard(u, S || 1); }, engine: function (handle) { Promise.all([artReady, fontReady]).then(function () { engineOk(handle); showSetup(); }); }, G: G, api: api, objs: function () { return O; }, choose: choose, tapObj: tapObj, zoom: zoom, resume: function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); } };
+window.SS = { sendForm: sendForm, showSend: showSend, site: SITE, copyWhere: copyWhere, optWhere: optWhere, quitApp: quitApp, winTrack: winTrack, showLibrary: showLibrary, toggleWin: toggleWin, glossFor: glossFor, hintBox: hintBox, PREF: PREF, applyPrefs: applyPrefs, showSettings: showSettings, caption: caption, TER: TER, SND: SND, readCard: readCard, showPiles: showPiles, hitsBox: hitsBox, isCause: isCause, saveReplay: saveReplay, playReplay: playReplay, buildReplayFile: buildReplayFile, listReplays: listReplays, loadReplay: loadReplay, showDebrief: showDebrief, replayJump: replayJump, set: SET, drawCard: function (u, S) { return drawCard(u, S || 1); }, engine: function (handle) { Promise.all([artReady, fontReady]).then(function () { engineOk(handle); G.engineUp = true; var gate = window.SSOpening && window.SSOpening.gate && window.SSOpening.gate(); (gate || Promise.resolve()).then(showSetup); }); }, op: OPDIR, G: G, api: api, objs: function () { return O; }, choose: choose, tapObj: tapObj, zoom: zoom, resume: function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); } };
 })();

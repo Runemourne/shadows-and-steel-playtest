@@ -26,7 +26,8 @@ function create(o) {   // o.ctx() -> AudioContext or null; o.bus(name) -> GainNo
     var c = C(), b = bufs[file], bus = o.bus(busName); if (!c || !b || !bus) return null;
     var s = c.createBufferSource(), g = c.createGain(); s.buffer = b; s.playbackRate.value = rate || 1; g.gain.value = vol == null ? 1 : vol; s.connect(g);
     if (pan && c.createStereoPanner) { var p = c.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, pan)); g.connect(p); p.connect(bus); } else g.connect(bus);
-    s.start(c.currentTime + (when || 0)); return s;
+    s.start(c.currentTime + (when || 0)); if (window.SS_SOUNDLOG) window.SS_SOUNDLOG.push([performance.now(), file, busName, vol == null ? 1 : vol, when || 0]);   // only a review capture sets SS_SOUNDLOG
+    return s;
   }
   function play(name, opt) {   // true when a recorded take of this sound starts; false (and it starts loading) when none is ready
     opt = opt || {}; var all = man && man.fx[name]; if (!all || !C()) return false;
@@ -61,24 +62,33 @@ function create(o) {   // o.ctx() -> AudioContext or null; o.bus(name) -> GainNo
     if (!players()) return; mus.el.forEach(function (a, i) { if (i === mus.cur || a.dataset.blessed) return; a.dataset.blessed = "1"; a.muted = true; if (!a.getAttribute("src")) a.src = silent();
       var p = a.play(); if (p && p.then) p.then(function () { if (i !== mus.cur) a.pause(); a.muted = false; }, function () { a.muted = false; a.dataset.blessed = ""; }); else { a.pause(); a.muted = false; } });
   }
-  function music(mood, fade) {   // true when this mood has a track (it plays now or is already playing)
+  function music(mood, fade, fromStart) {   // true when this mood has a track (it plays now or is already playing). fromStart (v0.18): play it again from 0
     var m = man && man.music && man.music[mood]; if (!m || !players()) return false;
+    if (mood === mus.mood && fromStart && mus.cur >= 0) { if (window.SS_SOUNDLOG) window.SS_SOUNDLOG.push([performance.now(), m.file, "music", 1, 0]); var ca = mus.el[mus.cur], cg = mus.g[mus.cur], cn = C().currentTime; try { ca.currentTime = 0; } catch (e) { } cg.gain.cancelScheduledValues(cn); cg.gain.setValueAtTime(1, cn); var p1 = ca.play(); if (p1 && p1.catch) p1.catch(function () { }); mus.on = true; return true; }
     if (mood === mus.mood) { if (mus.cur >= 0 && mus.el[mus.cur].paused) { var p0 = mus.el[mus.cur].play(); if (p0 && p0.catch) p0.catch(function () { }); } return true; }
     var c = C(), now = c.currentTime, fd = fade == null ? 2.5 : fade, nx = mus.cur < 0 ? 0 : 1 - mus.cur, a = mus.el[nx], g = mus.g[nx];
     if (mus.cur >= 0) { var og = mus.g[mus.cur], oa = mus.el[mus.cur]; og.gain.cancelScheduledValues(now); og.gain.setValueAtTime(Math.max(og.gain.value, .0001), now); og.gain.exponentialRampToValueAtTime(.0001, now + fd); setTimeout(function () { if (mus.el[mus.cur] !== oa) oa.pause(); }, fd * 1000 + 200); }
     a.src = base + m.file; try { a.currentTime = 0; } catch (e) { } var p = a.play(); if (p && p.catch) p.catch(function () { });
     g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(.0001, now); g.gain.exponentialRampToValueAtTime(1, now + fd);
-    mus.cur = nx; mus.mood = mood; mus.on = true; return true;
+    mus.cur = nx; mus.mood = mood; mus.on = true; if (window.SS_SOUNDLOG) window.SS_SOUNDLOG.push([performance.now(), m.file, "music", 1, 0]); return true;
   }
   function silence(fade) {
     if (mus.cur < 0) return; var c = C(), now = c.currentTime, g = mus.g[mus.cur], a = mus.el[mus.cur], fd = fade == null ? 1.5 : fade;
     g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(Math.max(g.gain.value, .0001), now); g.gain.exponentialRampToValueAtTime(.0001, now + fd);
-    setTimeout(function () { if (mus.mood === "") a.pause(); }, fd * 1000 + 200); mus.mood = ""; mus.on = false;
+    setTimeout(function () { if (mus.mood === "") a.pause(); }, fd * 1000 + 200); mus.mood = ""; mus.on = false; if (window.SS_SOUNDLOG) window.SS_SOUNDLOG.push([performance.now(), "", "silence", fd, 0]);
   }
   function duck(at, dur) {
     if (!mus.duck) return; var d = mus.duck.gain; d.cancelScheduledValues(at); d.setTargetAtTime(.5, at, .06); d.setTargetAtTime(1, at + dur + .1, .4);
   }
-  return { lastCall: function () { return lastCall; }, ready: ready, preload: preload, preloadAll: preloadAll, play: play, say: say, music: music, silence: silence, bless: bless,
+  /* v0.18, the animated opening: its cue list names files, played on the same buses (so the Sound sliders and Mute work) */
+  function loadFiles(list) { return ready.then(function () { return Promise.all(list.map(load)); }); }
+  function cue(file, kind, vol) {   // kind "vox" or "fx"; a voice ducks the music and holds the net like a radio call. Returns the take's length, or false
+    var c = C(), b = bufs[file]; if (!c || !b) { if (c) load(file); return false; }
+    var s = source(file, kind === "vox" ? "vox" : "fx", vol == null ? 1 : vol, 1, 0); if (!s) return false;
+    if (kind === "vox") { var now = c.currentTime; voice.until = now + b.duration + .35; duck(now, b.duration); lastCall = { file: file, wait: 0, dur: b.duration }; }
+    return b.duration;
+  }
+  return { loadFiles: loadFiles, cue: cue, musicEl: function () { return mus.cur >= 0 ? mus.el[mus.cur] : null; }, lastCall: function () { return lastCall; }, ready: ready, preload: preload, preloadAll: preloadAll, play: play, say: say, music: music, silence: silence, bless: bless,
     mood: function () { return mus.mood; }, state: function () { return mus.el.map(function (a, i) { return { src: a.src.split('/').pop(), paused: a.paused, t: Math.round(a.currentTime * 10) / 10, gain: Math.round(mus.g[i].gain.value * 100) / 100 }; }); }, playing: function () { return mus.on; }, has: function (n, kind) { return files(n, kind).some(function (f) { return bufs[f]; }); }, manifest: function () { return man; } };
 }
 window.SSSound = { create: create };
