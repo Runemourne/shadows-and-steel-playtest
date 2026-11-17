@@ -35,11 +35,15 @@ event as it happens: each is filled with card names and sent in the game info fo
 Tactical and Theater from the new Long shot entry, and adds ISR, Supply and Lift (DarKnight84's note, 15 Nov).
 0.16.1 (16 Nov 2026): the ISR entry gives the numbers (start, gain each Sustainment, cap); the Supply entry says which Base pays.
 0.16.2 (16 Nov 2026, Battlefield v0.19.4): the Mission Track entry says every Effect goes there and an Order lands at H-Hour (the
-project lead's note); it uses Mission, not the old Operations and Conditions."""
+project lead's note); it uses Mission, not the old Operations and Conditions.
+0.17 (16 Nov 2026, Battlefield v0.20, Patch 15): the Supply entry gives the 60/40 payment (the Hub pays its share of each cost,
+the Staging Base the rest; the number comes from the engine's pay_hub); the Lift entry counts THROUGHPUT; new keywords
+THROUGHPUT (FARP) and MAINTENANCE (WRENCH). GRAY ZONE's and STALL's person-only choices need nothing here: they arrive as
+ordinary prompts with plain answers. The engine is unchanged."""
 import json, random, traceback, os, re
 import merged_engine as E
 
-VERSION = "0.16.2"
+VERSION = "0.17"
 
 # 0.9 (14 Nov 2026): saved replays: Session.replay() and /play/replay (the whole game as frames, packed small).
 # 0.8 (14 Nov 2026, RD-133): one set of cards again. The Theory of Victory decks became cards and decks v0.11 and the
@@ -228,6 +232,8 @@ def glossary(R=None):
          ("EXPEND", "EXPEND", "After it resolves, this card goes to your Ash Heap, not your discard pile, so it never comes back."),
          ("DEGRADE", "DEGRADE", "The enemy loses that much ISR (or that much Supply from its Bases, if it says Base Supply)."),
          ("RECOVER", "RECOVER", "Remove that much damage."),
+         ("THROUGHPUT", "THROUGHPUT", "You get that much more Lift each Command phase, so more cards reach the fight."),
+         ("MAINTENANCE", "MAINTENANCE", "Recovering damage and upgrading each cost you that much less Supply (a repair still costs at least 1)."),
          ("DELAY / ADVANCE", "DELAY|ADVANCE", "Move a Mission Track card 1 round further from H-Hour (DELAY) or closer to it (ADVANCE).")]
     T = [("Exhaust", "\\bEXHAUST|[Ee]xhausted", "An exhausted card is turned sideways: it cannot attack, act or react until it is readied. Many lines cost [EXHAUST]."),
          ("Ready", "\\bREADY\\b|\\bReady\\b", "An exhausted card stands up again. In Sustainment you pay its Ready cost (usually 1 Supply) to ready it."),
@@ -238,8 +244,8 @@ def glossary(R=None):
          ("Theater", "\\bTheater\\b", "A Theater attack reaches any distance."),
          ("Long shot", "\\bTactical\\b|\\bTheater\\b|long shot", "Any attack that is not Close (Tactical or Theater) is a long shot: it costs %d more ISR, for the targeting data needed at a distance." % R.get("ranged_isr", 1)),
          ("ISR", "\\bISR\\b", "Intelligence, surveillance and reconnaissance: what your force knows about the enemy. An attack spends ISR to find its target (the target's Concealment, plus 1 for a long shot). You start with %d, gain %d each Sustainment (%d more when the enemy has at least 2 more face-up Capabilities than you), and hold at most %d. Some cards and events give more; a devastated Base gives its owner 3." % (R.get("isr0", 4), R.get("isr_income", 2), 1, R.get("isr_cap", 10))),
-         ("Supply", "\\bSupply\\b", "Pays to deploy, ready and repair cards. It sits on your Bases, and each Base restocks its own Supply each Sustainment, up to what it can hold. When you pay, the Supply comes from the Base holding the most."),
-         ("Lift", "\\bLift\\b", "How many cards you can deploy or upgrade this round: 2 for each Base, 1 for a devastated Base."),
+         ("Supply", "\\bSupply\\b", "Pays to deploy, ready and repair cards. It sits on your Bases, and each Base restocks its own Supply each Sustainment, up to what it can hold. When you pay, the Hub pays %d%% of the cost, rounded down (so a cost of 3 takes %d from the Hub and %d from the Staging Base), and the Staging Base pays the rest; if a Base runs short, the other Base covers it. The table shows each Base's share as it pays." % (R.get("pay_hub", 40), 3 * R.get("pay_hub", 40) // 100, 3 - 3 * R.get("pay_hub", 40) // 100) if R.get("pay_hub") else "Pays to deploy, ready and repair cards. It sits on your Bases, and each Base restocks its own Supply each Sustainment, up to what it can hold. When you pay, the Supply comes from the Base holding the most."),
+         ("Lift", "\\bLift\\b", "How many cards you can deploy or upgrade this round: 2 for each Base, 1 for a devastated Base, plus any THROUGHPUT."),
          ("Hidden", "\\bHidden\\b|face down", "A face-down card. Attacking it costs %d extra ISR; a Hidden Effect is a decoy and is discarded when revealed." % R.get("hidden_isr", 2)),
          ("Mission Track", "Mission Track|track card", "Where every Effect card goes, and where an Operator waits after INFILTRATE. An Order lands at H-Hour, so it happens right away; a Mission waits and moves 1 space toward H-Hour each Operations phase."),
          ("H-Hour", "H-Hour", "When a Mission Track card reaches H-Hour it resolves; nobody may react to it."),

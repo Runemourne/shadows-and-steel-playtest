@@ -1,27 +1,27 @@
 {
  "files": [
-  "SS_Merged_Cards_v0.16.csv",
-  "SS_Merged_Decks_v0.16.csv",
+  "SS_Merged_Cards_v0.17.1.csv",
+  "SS_Merged_Decks_v0.17.1.csv",
   "basic_training.json",
   "browser_play.py",
   "merged_engine.py"
  ],
- "cards": "SS_Merged_Cards_v0.16.csv",
- "decks": "SS_Merged_Decks_v0.16.csv",
+ "cards": "SS_Merged_Cards_v0.17.1.csv",
+ "decks": "SS_Merged_Decks_v0.17.1.csv",
  "builds": [
   {
    "key": "merged",
-   "cards": "SS_Merged_Cards_v0.16.csv",
-   "decks": "SS_Merged_Decks_v0.16.csv"
+   "cards": "SS_Merged_Cards_v0.17.1.csv",
+   "decks": "SS_Merged_Decks_v0.17.1.csv"
   }
  ],
- "built": "2026-11-16 14:08",
+ "built": "2026-11-16 22:01",
  "engine": "03. Beta 3.5 (Current Development)/L. Merged Baseline (3.5 + Gemini)/merged_engine.py",
  "sha256": {
-  "SS_Merged_Cards_v0.16.csv": "98a0813fa97df1e758010e8028a285492d942d5f901f838d7402171046932e30",
-  "SS_Merged_Decks_v0.16.csv": "3feb7a92eca785d4bbb7801176bc52aaf5aec9ae415cb8f65c0609333330607b",
-  "basic_training.json": "ed68711a0581a7736d56ba4297ecfc1654ebce871116c892057ea671c76d34cb",
-  "browser_play.py": "f5e3ba4c2a5e706a4b58c82a3147d450f24ce850ddde9d1628e769e53ed98329",
-  "merged_engine.py": "74a6c69b50785a29b8be79279c8ea13af0099e37828e710a5178b73bd97662b6"
+  "SS_Merged_Cards_v0.17.1.csv": "33a1262b6f9e9ddebd54b4b9767d3c9f1179ed182097b7c47f03651e8b18590c",
+  "SS_Merged_Decks_v0.17.1.csv": "0cb70c45fd31eede5a288cebc1a69c7749493dc538d02690e0f605bd156169de",
+  "basic_training.json": "53c7ba899a680e41c507bb1e7581a8e0361761e1eb75c23f029699df2a816874",
+  "browser_play.py": "ed778379f54eb24cbf64ca7a4312a3459d6fd1a9aa316724265e5567ec08631f",
+  "merged_engine.py": "f02cc41d2dfe696086116d3f1730c96b66358104a01d2cff04ab7e6dfe01a5ac"
  }
 }

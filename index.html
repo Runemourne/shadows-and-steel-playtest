@@ -82,6 +82,7 @@ button.opt{display:block;width:100%;text-align:left;font-family:Barlow,system-ui
 #preview .res{margin:6px 0;font-size:calc(14px * var(--ts));color:var(--amber)}#preview .row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px;flex-wrap:wrap}
 #preview .alt{border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
 .dmg{position:fixed;font-family:"Black Ops One",Impact,sans-serif;font-size:calc(30px * var(--ts));color:#ffcf9a;text-shadow:0 0 12px #e2571e,0 2px 0 #000;pointer-events:none;animation:up 1.3s ease-out forwards;z-index:4}
+.dmg.sup{font-family:Barlow,system-ui,sans-serif;font-weight:700;font-size:calc(19px * var(--ts));color:#f2c46b;text-shadow:0 0 8px #6b4a10,0 2px 0 #000;animation-duration:1.8s;white-space:nowrap;transform:translateX(-50%)}   /* v0.20: a Base's share of a payment (Patch 15, 60/40) */
 @keyframes up{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}15%{transform:translate(-50%,-70%) scale(1.25);opacity:1}100%{transform:translate(-50%,-190%) scale(1);opacity:0}}
 #banner{position:fixed;left:0;right:0;top:36%;text-align:center;font-size:calc(clamp(30px,9vw,72px) * var(--tsz));color:#fff;text-shadow:0 0 30px rgba(224,168,90,.8),0 3px 0 #000;pointer-events:none;opacity:0}
 #banner.on{animation:ban 1.5s ease-out}@keyframes ban{0%{opacity:0;letter-spacing:.5em}18%{opacity:1;letter-spacing:.12em}75%{opacity:1}100%{opacity:0}}

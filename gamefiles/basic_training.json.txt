@@ -1,6 +1,6 @@
 {
  "name": "Basic Training",
- "version": "0.3.3",
+ "version": "0.3.4",
  "game": {
   "seed": 1945,
   "terrain": "OPEN PLAIN",
@@ -108,7 +108,11 @@
    "card": "CAP-101",
    "label": "\\): Conceal",
    "pages": [
-    "{CAP-101} is an armored brigade. It hits hard (ATK 4), but only at Close range, so it needs Contact. It costs 4 Supply."
+    "{CAP-101} is an armored brigade. It hits hard (ATK 4), but only at Close range, so it needs Contact. It costs 4 Supply.",
+    {
+     "t": "Watch your Bases as you pay. The Hub pays 40% of each cost, rounded down, and the Staging Base pays the rest: so 1 Supply comes from the Hub and 3 from the Staging Base. ({CAP-102} cost 2, so all of it came from the Staging Base.)",
+     "spot": "bases"
+    }
    ],
    "do": "Deploy {CAP-101}."
   },

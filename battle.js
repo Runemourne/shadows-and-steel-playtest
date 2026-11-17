@@ -215,14 +215,15 @@ function removeObj(o, destroyed) {
   } else tween(.3, function (k) { o.mesh.material.opacity = 1 - k; o.shadow.material.opacity = .85 * (1 - k); o.glow.material.opacity = 0; o.ring.material.opacity = 0; }, kill);
 }
 function screenPos(v) { var p = v.clone().project(camera); return { x: (p.x + 1) / 2 * W, y: (1 - p.y) / 2 * H }; }
-function dmgNum(o, txt) { if (G.skip) return; var p = screenPos(o.grp.position), d = document.createElement("div"); d.className = "dmg"; d.textContent = txt; d.style.left = p.x + "px"; d.style.top = p.y + "px"; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 1400); }
+function dmgNum(o, txt, cls, dy) { if (G.skip) return; var p = screenPos(o.grp.position), d = document.createElement("div"); d.className = "dmg" + (cls ? " " + cls : ""); d.textContent = txt; d.style.left = p.x + "px"; d.style.top = (p.y + (dy || 0)) + "px"; document.body.appendChild(d); setTimeout(function () { d.remove(); }, cls ? 1900 : 1400); }
 function sync(v, text) {
   if (v && v.terrain) TER.set(v.terrain);
   if (!v) return; var list = layout(v), seen = {}, destroyed = /destroyed/.test(text || "");
   list.forEach(function (e) {
     seen[e.uid] = 1; var o = O[e.uid], fresh = !o; if (!o) o = makeObj(e);
     var was = o.u, wasType = o.type; o.type = e.type; o.side = e.side; o.tx = e.x; o.tz = e.z; o.ts = e.s;
-    if (!fresh && was) { var d = (e.u.dmg || 0) - (was.dmg || 0); if (d > 0) { dmgNum(o, "−" + d); o.jolt = 1; if (!G.skip) { SFX.thud(); if (e.side === "own") vox("hit", { delay: .3 }); } } }
+    if (!fresh && was) { var d = (e.u.dmg || 0) - (was.dmg || 0); if (d > 0) { dmgNum(o, "−" + d); o.jolt = 1; if (!G.skip) { SFX.thud(); if (e.side === "own") vox("hit", { delay: .3 }); } }
+      if (e.type === "base") { var ds = (was.sup || 0) - (e.u.sup || 0); if (ds > 0) dmgNum(o, "−" + ds + " Supply", "sup", d > 0 ? 34 : 0); } }   // v0.20 (Patch 15, 60/40 payment): each Base shows its share as it pays
     if (!fresh && wasType === "contact" && e.type === "card" && !G.skip) { SFX.ping(); vox(e.side === "foe" ? "spotted" : "detected", { delay: .2 }); sensorSweep({ x: e.x, z: e.z > 0 ? e.z - 4 : e.z + 4 }, { x: e.x, z: e.z }, .45); o.flip = 1; callout(o.grp.position, "IDENTIFIED: " + e.u.name, "#7fe0c8"); }
     setFace(o, e); o.u = e.u;
     if (fresh) { o.grp.scale.setScalar(e.s); if (!G.skip && G.started) { var air = /AIRBORNE/.test(String((G.faces[e.u.name] || {}).tags || "")) && /deploy/.test(text || ""); o.grp.position.y = air ? 7 : 2.4; o.drop = air ? 2 : 1; if (air) callout(new THREE.Vector3(e.x, .5, e.z), "AIRDROP", "#7fe0c8"); } }
@@ -963,7 +964,7 @@ function showSettings() { audioInit(); unlock(); SFX.open && SFX.open();
     segRow("badges", "Attack badges", "The attack value on cards on the table.", [[true, "On"], [false, "Off"]]) +
     "<h4>Accessibility</h4>" + segRow("captions", "Captions for radio calls", "Shows each radio call as text, also when the voices are off.", [[false, "Off"], [true, "On"]]) +
     '<h4>About</h4><div class="about"><div class="logos">' + L.map(function (x) { return '<img class="' + x.key + '" alt="' + esc(x.alt) + '" src="' + x.src + '">'; }).join("") + "</div>" +
-    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.19.4" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
+    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.20" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
     "<p><b>Sound</b></p><ul>" + CR.map(function (c) { return "<li>" + esc(c.source) + ": " + esc(c.what) + "</li>"; }).join("") + "</ul>" + (MU.length ? "<p>Music: " + esc(MU.join(", ")) + ".</p>" : "") +
     "<p><b>Card art</b>: made for the project (Art Pass v6.0 and earlier passes); some cards show Beta 3 art until the next Art Pass.</p></div></div>";
   el.style.display = "block"; el.scrollTop = 0;

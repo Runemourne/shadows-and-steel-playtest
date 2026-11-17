@@ -15,7 +15,7 @@ RULES = dict(hf=20, hand=5, isr0=4, isr_income=2, isr_cap=10, zones=5, front_lim
              hidden_isr=2, ambush=1, recover_cost=2, base_hf=3, span_max=3, supremacy=1, home_bonus=3, centre=1, war_cost=1, reshuffle_hf=1, lookahead=1,
              concepts=0, instant_end=0, forced_discard=0, ranged_isr=1, la_samples=2,
              shield_rockets=0, close_reach=0, contest_hf=1, no_fallback=0, contest_retreat=1, break_str=3, ie_first=1,
-             collapse_cap=4, collapse_min=3, collapse_all=1, comp_isr=0, pin_isr=1, pin_str=0, cascade_sup=0, sc_mill=2)  # v0.16-SC (RD-143): COLLAPSE OF WILL's cap, the smallest gap at which the bot fires it, and whether it empties your ISR (1) or costs ISR equal to the Homefront taken (0); the ISR cost of a COMPROMISE action, and of PIN; a PINNED card counts 0 for Frontline Strength (1) or still counts (0); SYSTEMS CASCADE hits Bases with this much Supply or less; when the bot COMPROMISEs: 2 = discard everything; 1 = discard everything when the reshuffle is close or WAR WEARINESS is out, otherwise only the strong cards; 0 = only the strong cards  # the last two are trial switches, both off: air defence also intercepts ROCKET attacks; Close attacks reach 1 Zone
+             collapse_cap=4, collapse_min=3, collapse_all=1, comp_isr=0, pin_isr=1, pin_str=0, cascade_sup=0, sc_mill=2, pay_hub=40, spec_zero=1, navwar=2, maint=1, convoy_value=1.0, grayzone=1, tw_hold=1, hk_dmg=2, dco_isr=2, stall=1)   # Patch 15 (RD-158, RD-156, RD-160, RD-162): the Hub pays pay_hub % of each cost, rounded down (0 = the old rule, the fullest Base pays; RD-161: 40); NAVIGATION WARFARE: advancing or pursuing costs navwar ISR (RD-161: 2); WRENCH's MAINTENANCE takes maint off each repair and upgrade (0 = off); STALL on (stall; was COMMAND DISRUPTION, renamed and simplified RD-162); DECISION ADVANTAGE costs 1 more Homefront when the enemy has no ISR; how much the bot values hitting a card with CONVOY; GRAY ZONE; TACTICAL WITHDRAWAL stops the enemy advancing next round; HARD KILL deals hk_dmg to the attacker; DEFENSIVE CYBERSPACE OPERATIONS drains dco_isr ISR from the attacker  # v0.16-SC (RD-143): COLLAPSE OF WILL's cap, the smallest gap at which the bot fires it, and whether it empties your ISR (1) or costs ISR equal to the Homefront taken (0); the ISR cost of a COMPROMISE action, and of PIN; a PINNED card counts 0 for Frontline Strength (1) or still counts (0); SYSTEMS CASCADE hits Bases with this much Supply or less; when the bot COMPROMISEs: 2 = discard everything; 1 = discard everything when the reshuffle is close or WAR WEARINESS is out, otherwise only the strong cards; 0 = only the strong cards  # the last two are trial switches, both off: air defence also intercepts ROCKET attacks; Close attacks reach 1 Zone
 CLASS_KEY = {"Movement & Maneuver": "M2", "Fires": "FIRES", "Protection": "PROT", "Intelligence": "INTEL", "Information": "INFO", "Command & Control": "C2", "Sustainment": "SUST", "Joint": "JOINT"}
 CLASS_NAME = {"M2": "Movement & Maneuver", "FIRES": "Fires", "PROT": "Protection", "INTEL": "Intelligence", "INFO": "Information", "C2": "Command & Control", "SUST": "Sustainment", "JOINT": "Joint"}
 BASE_TYPES = {"Hub": dict(stock=15, restock=1, surv=4, alone=2, dur=8, conc=0, hf=3, access=("SPACE", "MARITIME", "CYBER")),
@@ -34,7 +34,7 @@ CONCEPTS = {
                     criteria=[("6 or more Protection cards", lambda d: sum(c.cls == "PROT" for c in d) >= 6), ("4 or more Sustainment cards", lambda d: sum(c.cls == "SUST" for c in d) >= 4), ("3 or more cards with HOLD", lambda d: sum("HOLD" in c.keys for c in d) >= 3)]),
     "KILL CHAIN": dict(box="Shadow", isr=1, text="SENSOR TO SHOOTER. Start with 1 more ISR. Once a round, a Fires attack supported by an Intelligence card costs 0 ISR and ignores 1 more Survivability.",
                        criteria=[("8 or more Fires cards", lambda d: sum(c.cls == "FIRES" for c in d) >= 8), ("4 or more Intelligence cards", lambda d: sum(c.cls == "INTEL" for c in d) >= 4), ("3 or more cards with HOLD", lambda d: sum("HOLD" in c.keys for c in d) >= 3)]),
-    "SPECTRUM": dict(box="Shadow", isr=1, text="DECISION ADVANTAGE. Start with 1 more ISR. At Assessment, if you have 3 or more ISR more than the enemy, the enemy loses 1 Homefront.",
+    "SPECTRUM": dict(box="Shadow", isr=1, text="DECISION ADVANTAGE. Start with 1 more ISR. At Assessment, if you have 3 or more ISR more than the enemy, the enemy loses 1 Homefront (2 if it has no ISR).",
                      criteria=[("8 or more Information cards", lambda d: sum(c.cls == "INFO" for c in d) >= 8), ("4 or more Intelligence cards", lambda d: sum(c.cls == "INTEL" for c in d) >= 4), ("3 or more Operations or Conditions", lambda d: sum(c.sub in ("Operation", "Condition") for c in d) >= 3)])}
 # keyword list for the Workbench: word -> (when, how it is typed, what it does)
 ABILITY_TEXT = {
@@ -42,6 +42,8 @@ ABILITY_TEXT = {
     "SEIZE": ("Frontline", "SEIZE", "Your Force Marker may advance 1 extra Zone."), "OVERRUN": ("Contact", "OVERRUN", "When this card's attack destroys a Frontline card, ready this card (once a round)."), "UPGRADE_ONLY": ("Deploy", "FLAGSHIP", "Enters play only as an upgrade of a card in play (pay the difference)."), "INF_HIT": ("Infiltrate", "INFILTRATE: DIRECT ACTION {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour deal {n} damage to an enemy LAND card anywhere, then return to the Rear Area exhausted."), "INF_INTEL": ("Infiltrate", "INFILTRATE: SPECIAL RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain {n} ISR and draw 1, then return to the Rear Area exhausted."), "INF_REVEAL": ("Infiltrate", "INFILTRATE: COUNTER-RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain 2 ISR and reveal up to {n} Hidden enemy cards, then return to the Rear Area exhausted."), "A_RIPOSTE": ("Action", "RIPOSTE {n}", "Deal {n} damage to each Exhausted enemy Frontline card."), "DISRUPT": ("Infiltrate", "DISRUPT {n}", "At H-Hour, also cancel {n} enemy Mission Track card(s): Conditions first, then Operations, then Operators. Canceled cards go to their owner's discard pile."), "FLAGSHIP": ("Deploy", "FLAGSHIP", "Only one of this card in play per player."), "A_FLIP": ("Action", "FALSE PICTURE {n}", "Flip up to {n} of your other cards face down; revealing them again costs nothing."), "A_STRIKEPKG": ("Action", "STRIKE PACKAGE {n}", "Ready up to {n} of your FIRES cards."), "SHOOTER": ("Ability", "SENSOR-TO-SHOOTER {n}", "Your FIRES attacks cost {n} less ISR."), "RETARGET": ("Ability", "RE-ATTACK", "When your FIRES attack destroys a card or damages a Base, ready that card (once a round each)."), "RIPOSTE": ("Reaction", "RIPOSTE {n}", "When an enemy unit attacks your Frontline, deal {n} damage to it."), "IMMOVABLE": ("Frontline", "IMMOVABLE", "While in your Frontline, your Force Marker is pushed back at most 1 Zone."), "RAMPAGE": ("Contact", "BREAKTHROUGH ASSAULT", "Each time this card's attack destroys a card, ready this card."),
     "HIJACK_ATK": ("Attack", "HIJACK", "Take control of 1 enemy DRONE or ROBOT, even if it is exhausted, and attack with its ATK. Then exhaust it."),
     "SPOT_ISR": ("Action", "SPOTLIGHT +{n} ISR", "SPOTLIGHT also gains {n} ISR."),
+    "LIFT": ("Ability", "THROUGHPUT {n}", "You get +{n} Lift each Command phase."),
+    "MAINT": ("Ability", "MAINTENANCE {n}", "Recovering damage and upgrading each cost you {n} less Supply (repairs at least 1)."),
     "A_PIN": ("Action", "PIN {n}", "Pay 1 ISR: exhaust {n} enemy Frontline card(s); a PINNED card does not ready at the Recovery of this round."),
     "A_COMPROMISE": ("Action", "COMPROMISE {n}", "Look at the top {n} cards of the enemy Main Force; discard any of them and put the rest back in any order."),
     "ADV_DRAW": ("Sustainment", "ADVANTAGE: DRAW {n}", "At Recovery, if you have more ISR than the enemy, draw {n}."),
@@ -274,6 +276,16 @@ class Game:
         whose = "your" if s.is_human(q) else "the enemy's"
         return "%s %s %s (H-Hour in %d round%s, then %d)" % ("Delay" if d > 0 else "Advance", whose, t["c"].name, t["t"], "" if t["t"] == 1 else "s", t["t"] + d)
     def pay(s, p, n):
+        k = s.R.get("pay_hub", 0)
+        if k:   # Patch 15 (RD-158): the Hub pays k% of each cost (rounded down), the Staging Base the rest; a Base that can't cover its part leaves the rest to the other
+            hub = n * k // 100; left = 0
+            for kind, m in (("Staging Base", n - hub), ("Hub", hub)):
+                for b in [b for b in p.bases if (b.kind == "Hub") == (kind == "Hub")]:
+                    t = min(m, b.sup); b.sup -= t; m -= t
+                left += m
+            for b in sorted(p.bases, key=lambda b: -b.sup):
+                t = min(left, b.sup); b.sup -= t; left -= t
+            return
         for b in sorted(p.bases, key=lambda b: -b.sup):
             t = min(n, b.sup); b.sup -= t; n -= t
             if not n: break
@@ -340,7 +352,7 @@ class Game:
     def tsurv(s, d, t, base=False):
         if base: return (t.t()["alone"] if t.t().get("alone") is not None and all(x.dev for x in d.bases if x is not t) else t.t()["surv"]) + (2 if d.ben == "BULWARK" else 0) + (1 if d.has("DOME") else 0) + (1 if s.cond(d, "E_DEPTH") else 0)
         return t.c.surv + (1 if t.row == "R" and d.has("DOME") else 0) + (1 if t.row == "F" and (s.cond(d, "E_DEPTH") or d.fl.get("wd")) else 0)
-    def unit_value(s, u): return 1.5 + u.c.cost * 0.6 + u.c.hf * 1.5 + (0.5 if u.c.gi > 1 else 0)
+    def unit_value(s, u): return 1.5 + u.c.cost * 0.6 + u.c.hf * 1.5 + (0.5 if u.c.gi > 1 else 0) + s.R.get("convoy_value", 0) * u.c.keys.get("CONVOY", 0)
     # ------------------------------------------------------------ damage and loss
     def destroy(s, d, u, why="destroyed"):
         if u not in d.units: return
@@ -377,7 +389,9 @@ class Game:
     def raid(s, p, n, src):
         """Damage to an enemy Base that ignores Survivability (SABOTAGE, CYBER, EXPLOIT): the Staging Base first, then the Hub."""
         o = s.opp(p); bs = [b for b in o.bases if not b.dev]
-        if s.cond(o, "E_DCO"): n -= 2; s.say("DEFENSIVE CYBERSPACE OPERATIONS: the damage is reduced by 2.")
+        if s.cond(o, "E_DCO"):
+            n -= 2; s.say("DEFENSIVE CYBERSPACE OPERATIONS: the damage is reduced by 2.")
+            if s.R.get("dco_isr", 0) and p.isr: s.gain_isr(p, -s.R["dco_isr"]); s.say("DEFENSIVE CYBERSPACE OPERATIONS traces the attack:", s.who(p), "loses %d ISR." % s.R["dco_isr"])
         if not bs or n <= 0: return
         b = next((x for x in bs if x.kind == "Staging Base"), bs[0])
         if b.kind == "Hub" and s.R.get("raid_hub", 9) < n:  # sabotage and cyber bite less on the Hub (raid_hub = most damage; 0 = costs 1 Homefront instead)
@@ -531,6 +545,7 @@ class Game:
             if "E_HARDKILL" in c.keys:
                 res["cancel"] = True
                 if isinstance(t, Unit): t.ex = False
+                if u is not None and s.R.get("hk_dmg", 0) and u in p.units: s.say("HARD KILL strikes back:", u.c.name, "takes %d damage." % s.R["hk_dmg"]); s.hit_unit(p, u, s.R["hk_dmg"])
             elif "E_JAMSWEEP" in c.keys:
                 if p.isr >= 3 and s.decide(p, "pay", "JAMMING SWEEP: pay 3 ISR to push your action through?", [(1, "Pay 3 ISR", 1), (0, "Let it be canceled", 0)]): p.isr -= 3; s.say(s.who(p), "pays 3 ISR to push through the jamming.")
                 else: res["cancel"] = True
@@ -605,7 +620,7 @@ class Game:
         if c.cls == "FIRES" and u in p.units:
             cf = next((x for x in o.units if x.k("R_COUNTERFIRE") and not x.ex), None)
             if cf and not noreact and s.decide(o, "reaction", "%s fired. Use %s to counterfire (2 damage to it)?" % (c.name, cf.c.name), [(1.5, "Yes, counterfire", 1), (0, "No", 0)]):
-                cf.ex = True; s.say(s.who(o) + "'s", cf.c.name, "counterfires:", c.name, "takes 2 damage."); s.hit_unit(p, u, 2)
+                cf.ex = True; s.say(s.who(o) + "'s", cf.c.name, "counterfires:", c.name, "takes %d damage." % s.R.get("cf_dmg", 2)); s.hit_unit(p, u, s.R.get("cf_dmg", 2))   # RD-163 (2)
         for x in sup:
             n = x.k("SUSTAIN") or x.k("SUSTAINR")
             if n: s.add_supply(p, n)
@@ -639,7 +654,9 @@ class Game:
             "E_DROP": 1.2 + 0.4 * len(myex), "E_SEAD": 2.0 if E(pred=lambda u: u.c.tags & {"DEFENSE", "AIR-DEFENSE", "SENSOR"}) else -1, "E_CRUISE": 2.4, "E_EYE": 1.4 + 0.7 * sum(1 for x in o.units if x.hidden) - (0.6 if p.isr >= 8 else 0), "E_DYNTGT": (2.0 if any(u.c.cls == "FIRES" for u in p.units if not u.hidden) else -1), "E_FASCAM": (2.1 if s.dist() <= 2 else 0.6), "E_BATTLEPOS": (1.9 if s.dist() <= 2 else 0.9), "E_DCO": 1.4, "E_COUNTERATK": (2.6 if s.contact() and sum(1 for u in o.front() if u.ex) >= 2 else -1), "E_INFOADV": 1.9, "E_NAVWAR": (2.2 if s.dist() >= 1 else 0.8), "E_NARR": 1.6, "E_MTC": (2.4 if s.dist() == 1 and any(not u.ex and not u.hidden and u.c.cls == "M2" and u.c.atk for u in p.units) else (1.0 if s.dist() >= 2 else -1)), "E_CONVERGE": 3.2,
             "E_COMMS": (1.7 if len(o.hand) >= 2 else (0.6 if o.hand else -1)), "E_OVERLOAD": (1.6 if len(o.mf) <= 8 or s.cond(p, "E_WEARY") else 1.0) if (o.mf or o.discard) and not o.ie else -1, "E_COUNTERMAND": (1.2 + 0.25 * len(o.hand)) if len(o.hand) >= 3 and not o.ie else -1,
             "E_WEARY": (2.2 if len(o.mf) <= 9 and not o.ie else 1.0),
-            "E_COLLAPSE": s.collapse_value(p), "E_CASCADE": s.cascade_value(p)}.get(k, -1)
+            "E_COLLAPSE": s.collapse_value(p), "E_CASCADE": s.cascade_value(p),
+            "E_WITHDRAW": ((1.8 if p.ben in ("KILL CHAIN", "SPECTRUM") or s.strength(p) < s.strength(o) else -1) if s.contact() and s.pos[p.i] != (1 if p.i == 0 else s.Z) else -1),
+            "E_GRAYZONE": 1.0 + 0.6 * len(p.track)}.get(k, -1)   # Patch 15: TACTICAL WITHDRAWAL is an Order (RD-156 (2)); GRAY ZONE is worth more with more cards on your track (RD-160)
         if k == "E_FRAGO" and len(myex) and s.is_human(p): v = 1
         return v
     def collapse_n(s, p): return max(0, min(s.R["collapse_cap"], p.isr - s.opp(p).isr))
@@ -648,6 +665,18 @@ class Game:
         if n <= 0: return -1
         if n >= o.hf - s.R["war_cost"]: return 9.0
         return 1.2 + 0.5 * n if (n >= min(s.R["collapse_cap"], s.R["collapse_min"]) or (n >= 2 and s.round >= s.R["last"] - 1)) else -1
+    def grayzone(s, p, c):   # Patch 15 (RD-160): GRAY ZONE, while on your track, fires each time another of your track cards reaches H-Hour
+        if not s.R.get("grayzone", 0) or s.winner is not None: return
+        n = max([t["c"].keys.get("E_GRAYZONE", 0) for t in p.track if t["kind"] == "cond" and t["c"] is not c] + [0])
+        if not n: return
+        o = s.opp(p); bs = [b for b in o.bases if not b.dev]
+        opts = [(1.0, "GRAY ZONE: the enemy loses %d Homefront" % n, "hf")]
+        if bs:
+            b = next((x for x in bs if x.kind == "Staging Base"), bs[0])
+            opts.append((1.4 if b.t()["dur"] - b.dmg <= n + 2 else 0.8, "GRAY ZONE: deal %d damage to %s" % (n, b.name), "base"))
+        ch = s.decide(p, "target", "%s reached H-Hour. GRAY ZONE: hit an enemy Base or its Homefront?" % c.name, opts); s.ev(p, "GRAY ZONE")
+        if ch == "base": s.raid(p, n, "GRAY ZONE")
+        else: s.lose_hf(o, n, "GRAY ZONE")
     def cascade_bases(s, p): return [b for b in s.opp(p).bases if not b.dev and b.sup <= s.R["cascade_sup"]]
     def cascade_value(s, p):
         bs = s.cascade_bases(p); o = s.opp(p); n = 0
@@ -769,6 +798,10 @@ class Game:
             for t in E(p, 1, pred=lambda u: u.row == "R"): s.strike(p, 2, t, dmg=True)
         elif k == "E_PSYOP":
             for t in E(p, 2, pred=lambda u: not u.ex): t.ex = True
+        elif k == "E_WITHDRAW":   # Patch 15: an Order: fall back 1 Zone (Contact ends), the Frontline gets +1 Survivability this round, and the enemy can't advance next round
+            if s.pos[p.i] != (1 if p.i == 0 else s.Z): s.pos[p.i] += -1 if p.i == 0 else 1
+            p.fl["wd"] = 1; s.say(s.who(p), "falls back 1 Zone, breaking Contact. Its Frontline gets +1 Survivability this round.")
+            if s.R.get("tw_hold", 0): p.hold_off = s.round + 1; s.say(s.who(o), "can't advance its Force Marker next round.")
         elif k == "E_COMMS":   # COMPROMISED COMMS: the enemy reveals its hand; discard 1 Effect. ADVANTAGE: any 1 card instead, and draw 1
             a = s.adv(p); pool = [x for x in o.hand if a or not x.cap]; s.info += 1
             s.say(s.who(o), "reveals its hand:", (", ".join(x.name for x in o.hand) or "no cards") + ".")
@@ -963,7 +996,7 @@ class Game:
             if x is None: break
             p.hand.remove(x); p.discard.append(x)
         s.draw(p, max(0, R["hand"] + (1 if p.concept == "NEXUS" else 0) - len(p.hand)))
-        p.lift = sum(1 if b.dev else 2 for b in p.bases); fl = getattr(p, "fl_next", 0); p.fl_next = 0; used = [False]
+        p.lift = sum(1 if b.dev else 2 for b in p.bases) + sum(u.k("LIFT") for u in p.units if not u.hidden); fl = getattr(p, "fl_next", 0); p.fl_next = 0; used = [False]   # Patch 15: LIFT (FARP's THROUGHPUT)
         def discount():  # FORWARD STOCKS (old), DELIVER on a card in play, PREPOSITIONED STOCKS on the Mission Track: the first deploy or upgrade of the phase
             if used[0]: return 0
             return fl + max([u.k("DELIVER") for u in p.units if not u.hidden] + [0]) + (2 if s.cond(p, "E_PREPO") else 0)
@@ -980,7 +1013,7 @@ class Game:
                     cost = max(0, c.cost - disc)
                     host = s.up_hosts(p, c)
                     for u in (host if s.is_human(p) else (sorted(host, key=lambda u: (-u.c.cost, -u.dmg))[:1] if s.R.get("upgrade_fix", 1) else host[:1])):   # a person may upgrade any eligible card; the bot picks the host that makes the upgrade cheapest (fix 14 Nov)
-                        d = max(0, c.cost - u.c.cost - disc)
+                        d = max(0, c.cost - u.c.cost - disc - (s.R.get("maint", 0) if any(x.k("MAINT") for x in p.units if not x.hidden) else 0))   # Patch 15: WRENCH's MAINTENANCE
                         if p.sup() >= d: opts.append((3 + c.cost, "Upgrade %s to %s (pay %d Supply, 1 Lift)" % (u.c.name, c.name, d), ("up", c, u, d)))
                     if c.keys.get("UPGRADE_ONLY"): pass   # a flagship arrives only as an upgrade of a card already in play
                     elif p.sup() >= cost: opts.append((2 + c.cost * 0.3 + (c.atk * 0.2) + (0.8 if c.keys.get("CONVOY") else 0) - (1.5 if p.sup() - cost < reserve else 0) - (0.6 if len(p.units) >= 8 else 0), "Deploy %s (%d Supply, %d Lift): %s" % (c.name, cost, 0 if c.keys.get("AIRDROP") else 1, c.stats()), ("dep", c, cost)))
@@ -1019,6 +1052,7 @@ class Game:
         d = s.dist(); o = s.opp(p); mx = 2 if any(u.k("SEIZE") and u.row == "F" for u in p.units) and not (s.obstacle(o) and not p.fl.get("noobs")) else 1
         out = [0] + [n for n in range(1, mx + 1) if n <= d]
         if s.cond(o, "E_FASCAM"): out = [0]  # SCATTERABLE MINES: the enemy cannot advance
+        if getattr(o, "hold_off", 0) == s.round: out = [0]  # Patch 15: the enemy played TACTICAL WITHDRAWAL last round
         if s.cond(o, "E_NAVWAR") and p.isr < s.R.get("navwar", 1): out = [0]  # NAVIGATION WARFARE: advancing costs 2 ISR
         if s.pos[p.i] != (1 if p.i == 0 else s.Z) and not s.R["no_fallback"] and not s.fixed(p): out.append(-1)
         return out
@@ -1087,11 +1121,12 @@ class Game:
                     elif t.get("sab"): s.raid(p, t["sab"], c.name)
                     else: s.lose_hf(o, t.get("n", 2), c.name)
                     for _ in range(t.get("dis", 0)): s.cancel_track(o, c.name)
+                    s.grayzone(p, c)
                     ot = [x for x in s.opp(p).track if x["t"] < 3]
                     if ot and t.get("op", "INF_PSYOP") == "INF_PSYOP": ot[0]["t"] += 1
                     continue
                 s.say("H-Hour:", s.who(p) + "'s", c.name, ("resolves." if t["kind"] == "op" else "ends.")); s.ev(p, "H:" + next(iter(c.keys)))
-                (p.ash if c.expend else p.discard).append(c); s.resolve(p, c)
+                (p.ash if c.expend else p.discard).append(c); s.resolve(p, c); s.grayzone(p, c)
         passes = 0; i = 0; guard = 0
         while passes < 2 and guard < 80:
             guard += 1; p = order[i % 2]; i += 1
@@ -1136,8 +1171,9 @@ class Game:
                     if ch.c.name in air: air.remove(ch.c.name)
                 for u, c0, d0 in paid:
                     if u.c.air: p.units.remove(u); p.discard.append(u.c); s.say(s.who(p) + "'s", u.c.name, "returns to base (discarded, no Homefront loss).")
+            rc = max(1, R["recover_cost"] - (R.get("maint", 0) if any(x.k("MAINT") for x in p.units if not x.hidden) else 0))   # Patch 15: WRENCH's MAINTENANCE makes repairs cheaper
             for u in sorted([u for u in p.units if u.dmg and not u.hidden], key=lambda u: -(u.dmg + s.unit_value(u))):
-                while u.dmg and p.sup() >= R["recover_cost"] + (0 if s.is_human(p) else 4) and s.decide(p, "ready", "Recover 1 damage on %s for %d Supply? You have %d Supply." % (u.c.name, R["recover_cost"], p.sup()), [(1 if u.c.dur - u.dmg <= 2 else -1, "Pay and remove 1 damage", 1), (0, "No", 0)]): s.pay(p, R["recover_cost"]); u.dmg -= 1
+                while u.dmg and p.sup() >= rc + (0 if s.is_human(p) else 4) and s.decide(p, "ready", "Recover 1 damage on %s for %d Supply? You have %d Supply." % (u.c.name, rc, p.sup()), [(1 if u.c.dur - u.dmg <= 2 else -1, "Pay and remove 1 damage", 1), (0, "No", 0)]): s.pay(p, rc); u.dmg -= 1
         for p in s.P:
             for u in p.units: u.spot = False; u.over = False; u.fresh = False; u.rl = False; u.rt = False
     def assessment(s):
@@ -1157,13 +1193,20 @@ class Game:
                 rt = max([u.k("ROUT") for u in w.units if u.row == "F" and not u.hidden] + [1 if w.fl.get("rout") else 0])
                 if rt and (w.fl.get("noobs") or not s.obstacle(l)): n += rt
                 if any(u.k("IMMOVABLE") and u.row == "F" and not u.hidden for u in l.units) and s.decide(l, "reaction", "BREAKWATER: NEVER RETREAT. Hold your ground instead of falling back %d Zone(s)?" % n, [(1, "Never retreat: hold", 1), (0, "Fall back", 0)]): n = 0; s.say(s.who(l), "holds the line: NEVER RETREAT.")
-                home = 1 if l.i == 0 else s.Z; room = abs(s.pos[l.i] - home)
-                if room == 0 and s.R["supremacy"]: s.say(s.who(l), "is pushed off the home edge."); s.end(w, "Supremacy: the enemy was driven off its home edge", True)
-                n = min(n, room); s.pos[l.i] += -n if l.i == 0 else n
-                s.say(s.who(w), "wins the contest.", s.who(l), "retreats %d Zone%s." % (n, "" if n == 1 else "s")); s.lose_hf(l, s.R["contest_hf"], "lost the Frontline contest")
+                home = 1 if l.i == 0 else s.Z; room = abs(s.pos[l.i] - home); halted = False
+                cd = next((c for c in l.hand if "E_STALL" in c.keys and l.sup() >= c.cost and l.isr >= c.isr), None) if s.R.get("stall", 1) else None   # Patch 15 (RD-161, RD-162): STALL cancels the contest's result
+                if cd and s.decide(l, "reaction", "%s wins the Frontline contest. Play STALL (%s): cancel the result, so you don't fall back or lose Homefront for it?" % (s.who(w), cd.cost_text()), [(3.0 if room == 0 else 1.2, "Play STALL", 1), (0, "No", 0)]):
+                    s.pay(l, cd.cost); l.isr -= cd.isr; l.hand.remove(cd); l.discard.append(cd); s.ev(l, "E_STALL"); s.stats["reactions"] += 1; halted = True
+                    s.say(s.who(l), "plays STALL: the enemy's win is cancelled, and it holds its ground.")
+                if halted: pass
+                elif room == 0 and s.R["supremacy"]: s.say(s.who(l), "is pushed off the home edge."); s.end(w, "Supremacy: the enemy was driven off its home edge", True)
+                if not halted:
+                    n = min(n, room); s.pos[l.i] += -n if l.i == 0 else n
+                    s.say(s.who(w), "wins the contest.", s.who(l), "retreats %d Zone%s." % (n, "" if n == 1 else "s")); s.lose_hf(l, s.R["contest_hf"], "lost the Frontline contest")
+                else: n = 0
                 if n: s.pursue(w, l)
                 ex = max([u.k("EXPLOIT") for u in w.front() if not u.hidden] + [0])
-                if ex and s.winner is None: s.raid(w, ex, "EXPLOITATION")
+                if ex and s.winner is None and not halted: s.raid(w, ex, "EXPLOITATION")   # RD-162: STALL cancels the whole result
         if s.R["centre"]:
             c = (s.Z + 1) / 2.0; ha, hb = s.pos[0] >= c, s.pos[1] <= c
             if ha != hb:
@@ -1172,7 +1215,7 @@ class Game:
                 else: s.lose_hf(s.opp(w), s.R["centre"], "the enemy holds the centre")
         for p in s.P:
             o = s.opp(p)
-            if p.ben == "SPECTRUM" and p.isr >= o.isr + s.R.get("spec_gap", 3): s.lose_hf(o, 1, "DECISION ADVANTAGE")
+            if p.ben == "SPECTRUM" and p.isr >= o.isr + s.R.get("spec_gap", 3): s.lose_hf(o, 1 + (1 if s.R.get("spec_zero", 0) and o.isr <= 0 else 0), "DECISION ADVANTAGE")
             if s.cond(p, "E_PSYOP"): s.lose_hf(o, 1, "PSYOP CAMPAIGN")
             if s.cond(p, "E_INFOADV") and p.isr >= o.isr + s.R.get("infoadv_gap", 1): s.lose_hf(o, 1, "INFORMATION ADVANTAGE")
         wc = s.R["war_cost"] + (1 if s.R.get("escalate", 0) and s.round >= s.R["escalate"] else 0)   # ESCALATION: the cost of war rises late in the war
