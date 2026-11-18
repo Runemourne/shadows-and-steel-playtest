@@ -1,7 +1,7 @@
 /* UNLISTED ZOOM TEST PAGE ONLY (not part of the game): a build label and a zoom recorder,
    so a crash on a real phone leaves a record the Studio Lead can read back from the page's store. */
 (function () {
-  var BUILD = "LIVE 5";
+  var BUILD = "LIVE 6" + (window.__ssT ? " [" + window.__ssT + "]" : " [plain]");
   var id = "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   var S = { build: BUILD, id: id, started: new Date().toISOString(), ua: navigator.userAgent, w: innerWidth, h: innerHeight, dpr: window.devicePixelRatio || 1,
     framed: (function () { try { return window.top !== window.self; } catch (e) { return true; } })(),
@@ -23,13 +23,13 @@
   function dist(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) || 1; }
   function ratio(e) { if (typeof e.scale === "number" && e.scale > 0) { S.hasTouchScale = true; return e.scale; } if (S.hasTouchScale === null) S.hasTouchScale = false; return dist(e.touches) / g.d0; }
   /* registered on window, so these run after the game's own handlers on document and can see what it stopped */
-  addEventListener("touchstart", function (e) { if (e.touches.length !== 2) return; g = { d0: dist(e.touches), z0: S.est, z: S.est, blocked: 0 }; S.pinches++; S.last = "start"; save(); }, { passive: true });
+  addEventListener("touchstart", function (e) { if (e.touches.length >= 2) window.__ssPinch = true; if (e.touches.length !== 2) return; g = { d0: dist(e.touches), z0: S.est, z: S.est, blocked: 0 }; S.pinches++; S.last = "start"; save(); }, { passive: true });
   addEventListener("touchmove", function (e) { if (e.touches.length < 2 || !g) return; var r = ratio(e);
     if (!e.cancelable) S.notCancelable++;
     if (e.defaultPrevented) { S.blockedMoves++; g.blocked++; S.last = "stopped at x" + r.toFixed(2); }
     else { S.freeMoves++; g.z = g.z0 * r; S.est = Math.max(1, g.z); S.maxEst = Math.max(S.maxEst, S.est); S.last = "moving x" + r.toFixed(2); }
     save(); }, { passive: true });
-  function lift(e) { if (!g || e.touches.length >= 2) return; if (g.blocked) S.blockedPinches++; S.est = Math.max(1, g.z); if (S.est < 1.05) S.est = 1; g = null; S.last = "lifted"; save(); push(true); }
+  function lift(e) { if (e.touches.length < 2) window.__ssPinch = false; if (!g || e.touches.length >= 2) return; if (g.blocked) S.blockedPinches++; S.est = Math.max(1, g.z); if (S.est < 1.05) S.est = 1; g = null; S.last = "lifted"; save(); push(true); }
   addEventListener("touchend", lift, { passive: true }); addEventListener("touchcancel", lift, { passive: true });
   addEventListener("gesturechange", function () { S.gestureEvents++; }, { passive: true });
   addEventListener("pagehide", function () { S.clean = true; S.last = "closed normally"; save(); push(true); });
@@ -43,7 +43,7 @@
     var hist = []; try { hist = JSON.parse(localStorage.getItem("ssdiagHist") || "[]"); } catch (e) { }
     if (prev && prev.id && !(hist.length && hist[hist.length - 1].id === prev.id)) { hist.push(prev); hist = hist.slice(-8); try { localStorage.setItem("ssdiagHist", JSON.stringify(hist)); } catch (e) { } }
     var open = false; badge.addEventListener("click", function (e) { e.stopPropagation(); open = !open; if (!open) return show();
-      badge.textContent = BUILD + " | earlier runs, newest last (tap to close)\n" + (hist.length ? hist.map(function (h) { return (h.clean ? "ok   " : "ENDED") + " " + Math.round((h.t - Date.parse(h.started)) / 1000) + "s " + h.screen + " zoom~" + (+h.est).toFixed(1) + " max~" + (+h.maxEst).toFixed(1) + " real " + (+h.maxVv).toFixed(1) + " pinches " + h.pinches + " stopped " + h.blockedPinches + " resized " + (h.resizes || 0) + " 3Dlost " + (h.ctxLost || 0); }).join("\n") : "none yet"); });
+      badge.textContent = BUILD + " | earlier runs, newest last (tap to close)\n" + (hist.length ? hist.map(function (h) { return (h.clean ? "ok   " : "ENDED") + " " + String(h.build || "").replace("LIVE ", "L") + " " + Math.round((h.t - Date.parse(h.started)) / 1000) + "s " + h.screen + " zoom~" + (+h.est).toFixed(1) + " max~" + (+h.maxEst).toFixed(1) + " real " + (+h.maxVv).toFixed(1) + " pinches " + h.pinches + " stopped " + h.blockedPinches + " resized " + (h.resizes || 0) + " 3Dlost " + (h.ctxLost || 0); }).join("\n") : "none yet"); });
     show(); save();
     if (window.claude && window.claude.use) window.claude.use("db").then(function (d) { db = d || null; if (!db) return;
       if (prev && prev.id) { prev.recovered = true; try { db.collection("diag").doc(prev.id).set(prev).then(function () { push(true); }, function () { push(true); }); } catch (e) { } } else push(true); }, function () { });

@@ -17,8 +17,9 @@ G.speed = PREF.speed; G.assist = PREF.badges;
 function saveSound() { try { localStorage.setItem("ss.sound", JSON.stringify({ fx: G.volFx, mus: G.volMus, vox: G.volVox, muted: G.muted })); } catch (e) { } }
 
 /* ================= scene ================= */
-var renderer = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: true, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+var TSW = window.__ssT || "";   // zoom test switches (unlisted test page only)
+var renderer = new THREE.WebGLRenderer({ canvas: $("gl"), antialias: TSW.indexOf("c") < 0, powerPreference: "high-performance" });
+renderer.setPixelRatio(TSW.indexOf("c") < 0 ? Math.min(devicePixelRatio || 1, 2) : 1);
 var HAZE = 0x2a302c; renderer.setClearColor(HAZE);
 var scene = new THREE.Scene(); scene.fog = new THREE.Fog(HAZE, 30, 62);
 var camera = new THREE.PerspectiveCamera(19, W / H, .5, 400), camBase = new THREE.Vector3(), camTarget = new THREE.Vector3(), shake = 0;
@@ -1499,7 +1500,7 @@ function frame(now) {
   });
   aimUpdate(raw); if (G.dirCam) try { G.dirCam(raw, camBase, camTarget, camera); } catch (e) { G.dirCam = null; }
   if (G.calm) shake = 0; shake *= Math.pow(.004, raw); camera.position.set(camBase.x + (Math.random() - .5) * shake, camBase.y + (Math.random() - .5) * shake, camBase.z + (Math.random() - .5) * shake * .6); camera.lookAt(camTarget);
-  renderer.render(scene, camera);
+  if (!(window.__ssPinch && TSW.indexOf("p") >= 0)) renderer.render(scene, camera);
 }
 
 /* ================= start ================= */
