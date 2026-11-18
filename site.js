@@ -12,12 +12,14 @@ window.SS_SITE = {
     action: "https://docs.google.com/forms/d/e/" + FORM + "/formResponse",
     view: "https://docs.google.com/forms/d/e/" + FORM + "/viewform",
     // the form's fields, in form order (Playtest Website Setup v0.1; titles confirmed against the answers Sheet, 15 Nov)
-    name: "entry.34619924", build: "entry.90262889", overall: "entry.471770139", fair: "entry.1167658390",
-    pacing: "entry.1584703091", unbalanced: "entry.842879544", notes: "entry.1329073961", code: "entry.1661233936"
+    name: "entry.34619924", build: "entry.90262889", overall: "entry.471770139", mode: "entry.1085585192", fair: "entry.1167658390",
+    pacing: "entry.1584703091", unbalanced: "entry.842879544", notes: "entry.1329073961", code: "entry.1661233936",
+    pages: "0,1"   // the form has two pages since 18 Nov 2026 (page 2 is Game Balance); Google needs this to keep page 2's answers
   },
-  // the answer choices, copied word for word from the form (a choice that differs from the form is not recorded)
-  fairChoices: ["Well balanced: Game systems felt right. I felt like I could win even when I lost.", "Mixed: most things feel about right. A little bit of swing and a few over/underpowered cards.", "Unbalanced: Felt too swingy, many aspects were over or underpowered, costs were all over the place."],
-  unbalancedChoices: ["Card/Unit Costs", "Damage Output / Scaling", "Resource Generation", "Turn Order / Initiative", "Effects / Class Abilities"],
+  // the answer choices, copied word for word from the form as the project lead edited it on 18 Nov 2026 (a choice that differs from the form voids the whole answer)
+  modeChoices: ["Tutorial (Basic Training or AIT)", "Game against the bot (Skirmish or another single player mode)", "Game against a person"],
+  fairChoices: ["Well balanced: Game systems felt right. I felt like I had a reasonable chance to win when playing.", "Mixed: most things feel about right. A little bit of swing and a few over/underpowered cards.", "Unbalanced: Felt too swingy, many aspects were over or underpowered, costs were all over the place."],
+  unbalancedChoices: ["User Interface (UI) / User Experience (UX)", "Capabilities Cards / Unit Costs", "Effects Cards / Class Abilities", "Damage Output / Scaling", "Resources (Generation and Costs)"],
   ends: {"overall": ["Poor", "Excellent"], "pacing": ["Too Slow", "Too Fast"]},   // the words at each end of the 1 to 5 scales
   required: []
 };

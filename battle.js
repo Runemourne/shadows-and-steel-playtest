@@ -1126,8 +1126,9 @@ function sendForm(root) {
     var g = G2, nm = q('[data-f="name"]').value.trim(), more = q('[data-f="more"]').value.trim(), notes = notesOf(g && g.notes);
     var body = "Game: " + (g ? gameLine(g) : "none") + "\nScreen: " + innerWidth + " x " + innerHeight + (matchMedia("(pointer: coarse)").matches ? " (touch)" : "") + "\n\nNotes during the game:\n" + (notes || "None.") + "\n\nOther notes:\n" + (more || "None.");
     var code = g && g.record ? JSON.stringify(Object.assign({}, g.record, { notes: g.notes || [] })) : "";
-    var F = S.form, pairs = [[F.name, nm], [F.build, S.build], [F.overall, A.overall], [F.fair, A.fair], [F.pacing, A.pacing]];
-    A.unb.forEach(function (c) { pairs.push([F.unbalanced, c]); }); pairs.push([F.notes, body]); pairs.push([F.code, code]);
+    var F = S.form, tut = !!(g && g.tutorial), ok = function (v, list) { return (list || []).indexOf(v) >= 0 ? v : ""; }, pairs = [[F.name, nm], [F.build, S.build], [F.overall, A.overall], [F.mode, g && S.modeChoices ? S.modeChoices[tut ? 0 : 1] : ""], [F.fair, tut ? "" : ok(A.fair, S.fairChoices)], [F.pacing, tut ? "" : A.pacing]];   // the form has two pages; balance is not asked after a tutorial; a choice the form no longer has is not sent (it would void the whole answer)
+    if (S.form.pages) pairs.push(["pageHistory", S.form.pages]);
+    if (!tut) A.unb.forEach(function (c) { if (ok(c, S.unbalancedChoices)) pairs.push([F.unbalanced, c]); }); pairs.push([F.notes, body]); pairs.push([F.code, code]);
     return { pairs: pairs.filter(function (x) { return x[1] !== "" && x[1] != null; }), text: "Name: " + nm + "\nBuild: " + S.build + "\nOverall: " + (A.overall || "-") + "\nFair: " + (A.fair || "-") + "\nPacing: " + (A.pacing || "-") + "\nUnbalanced: " + (A.unb.join("; ") || "-") + "\n\n" + body + "\n\nGame code:\n" + code };
   };
   var refresh = function () { var c = q('[data-copy="1"]'); if (c) c.value = payload().text; };
