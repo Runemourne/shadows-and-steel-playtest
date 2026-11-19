@@ -10,7 +10,7 @@ var W = innerWidth, H = innerHeight, LAND = W > H * 1.05, T = 0;
 var G = { view: null, latest: null, pend: null, latestPend: null, queue: [], playing: false, since: 0, sel: null, over: null, err: null, speed: 1, muted: false, canUndo: false, hist: [], skip: false, info: null, started: false, busy: false, assist: true, calm: false, meta: {}, bases: {}, notes: [], paused: false, histWhy: {}, rate: {}, faces: {}, volFx: .9, volMus: .5, volVox: .85, capLast: {}, capUntil: 0 };
 (function () { try { var st = JSON.parse(localStorage.getItem("ss.sound") || "null"); if (st) { G.volFx = st.fx; G.volMus = st.mus; G.volVox = st.vox == null ? .85 : st.vox; G.muted = !!st.muted; } } catch (e) { } })();
 // Settings (v0.15): kept in localStorage under ss.settings; sound volumes stay under ss.sound
-var SETDEF = { text: 1, motion: "auto", shake: true, shapes: false, confirm: false, tips: true, captions: false, badges: true, speed: 1, opening: true, glance: true, steady: false };   // steady (WP3): "Steadier touch", a wider slop before a press becomes a drag   // glance (v0.19.1, RD-153 (2)): the glance face for cards in the hand and on the table   // opening (v0.18): the animated opening before the Main Menu
+var SETDEF = { text: 1, motion: "auto", shake: true, shapes: true, confirm: false, tips: true, captions: false, badges: true, speed: 1, opening: true, glance: true, steady: false };   // steady (WP3): "Steadier touch", a wider slop before a press becomes a drag   // glance (v0.19.1, RD-153 (2)): the glance face for cards in the hand and on the table   // opening (v0.18): the animated opening before the Main Menu
 var PREFOK = { text: [1, 1.25, 1.5, 1.75, 2], speed: [.5, 1, 2], motion: ["auto", "on", "off"] };   // v0.21 (checkers): a stored value the Settings do not offer (a speed of 0 stopped every game) falls back to the default
 var PREF = (function () { var d = {}, k; for (k in SETDEF) d[k] = SETDEF[k]; try { var st = JSON.parse(localStorage.getItem("ss.settings") || "null"); if (st) for (k in SETDEF) if (st[k] != null && typeof st[k] === typeof SETDEF[k] && (!PREFOK[k] || PREFOK[k].indexOf(st[k]) >= 0)) d[k] = st[k]; } catch (e) { } return d; })();
 function savePrefs() { try { localStorage.setItem("ss.settings", JSON.stringify(PREF)); } catch (e) { } }
@@ -305,8 +305,9 @@ function capDock() {   // v0.20.2: sets the panel's fixed height for this screen
   }
   if (room < floor) floor = Math.max(Math.round(33 * ts + 44), Math.min(floor, room));   // the smallest screens: the panel goes down to its buttons and one line of text before the table gives way
   var tsc = Math.min(1.4, ts), design = short ? H * .46 : desk ? Math.min(230, Math.max(140, H * .2)) * tsc : Math.min(236, Math.max(140, H * .25)) * tsc;
+  if (W < 600 && !(G.info && G.info.tutorial)) design = Math.round(2 * 21 * ts + 50 * tsc + 34);   // v0.21 (Council M2): with no coach, the phone panel is two lines and its buttons; the height goes to the table
   var cap = Math.round(Math.min(H * (short ? .46 : .38), Math.max(floor, Math.min(design, room))));
-  var two = Math.round(2 * 46 * Math.min(1.4, ts) + 16 * ts + 44); cap = Math.round(Math.min(H * (short ? .46 : .38), Math.max(cap, Math.min(room, two))));
+  var two = W < 600 && !(G.info && G.info.tutorial) ? 0 : Math.round(2 * 46 * Math.min(1.4, ts) + 16 * ts + 44); cap = Math.round(Math.min(H * (short ? .46 : .38), Math.max(cap, Math.min(room, two))));
   cap = Math.max(60, Math.min(cap, Math.floor(H - top - TABLE_FLOOR * H - other)));   // the stated floor: whatever the screen and text size, the table keeps at least a quarter of the height   // v0.21: room for two rows of pinned buttons from the start when the table can spare it, so the panel need not grow mid-game
   pr.style.height = cap + "px"; pr.style.maxHeight = cap + "px"; pr.dataset.cap = String(cap);
   var me = $("me"); if (me) me.style.maxHeight = short ? cap + "px" : "";   // landscape phones: the dock is one row, so no part of it may be taller than the panel
@@ -324,7 +325,7 @@ function keepBars() { ["top", "me"].forEach(function (id) { var e = $(id), h = e
     var spare = FR ? Math.floor((FR.B - FR.T) - MIN_TABLE * H) : 0;
     if (need > cap - 24 && cap < H * .5 && spare > 4) { var nc = Math.round(Math.min(H * .5, need + 24, cap + spare)); pr.style.height = pr.style.maxHeight = nc + "px"; pr.dataset.cap = String(nc); cap = nc; requestFit(); }   // the smallest screens: the panel grows (once, never back) until its buttons fit; the table gives way, never a choice
     ft.style.maxHeight = Math.round(Math.max(48, need > cap - one ? cap - 24 : cap - one)) + "px"; }   // v0.21: the pinned buttons may take all but one line of the body, and on the smallest screens the whole panel: no choice is ever cut off
-  if (pr && !(pr.querySelector(".pbody") || {}).scrollTop) requestAnimationFrame(function () { unslice(pr.querySelector(".pbody"), 28); promptCue(); });
+  if (pr && !(pr.querySelector(".pbody") || {}).scrollTop) requestAnimationFrame(function () { unslice(pr.querySelector(".pbody"), pr.classList.contains("more") ? 0 : 28); promptCue(); });
   document.documentElement.classList.toggle("tight", (W < 420 && PREF.text >= 1.5) || (H < 420 && W < 600)); }   // narrow and large text: Undo and Hint become icons (their names stay as labels)   // v0.21: the pinned buttons may take all but one line of the body, so no choice is ever cut off
 function feedLine() { return W < 900 ? Math.round(12 * PREF.text * 1.25 + 12) : 0; }   // on narrow screens the feed shows one line over the table's top edge: that line is kept free
 function topEdge(feed) {   // below the top bar, below the menu buttons where they reach down over the table and, with feed, below the feed's one line (narrow screens)
@@ -426,7 +427,7 @@ function tally(list) { var c = {}, order = []; (list || []).forEach(function (n)
 function showPiles(side) { SFX.open();
   var v = G.view; if (!v) return; side = side === "bot" ? "bot" : "you"; var p = v[side], pl = p.piles || {}, el = $("piles"), mine = side === "you", sp = G.info && G.info.spectate, nm = (G.info && G.info.names) || ["You", "The bot"];
   var lab = function (k) { return sp ? nm[k === "you" ? 0 : 1] : k === "you" ? "Yours" : "The enemy's"; }, ie = tally(pl.ie), mf = tally(pl.mf);
-  el.innerHTML = '<div class="pb"><button class="ghost" id="pilesX">Close</button><h3 class="t">Discard piles and Ash Heaps</h3><p class="pd">Round ' + v.round + ". Both players' piles are face up (RD-137). Tap a card to read it.</p>" +
+  el.innerHTML = '<div class="pb"><button class="ghost" id="pilesX">Close</button><h3 class="t">Discard piles and Ash Heaps</h3><p class="pd">Round ' + v.round + ". Both players' piles are face up. Tap a card to read it.</p>" +
     '<div class="psw" role="tablist">' + ["you", "bot"].map(function (k) { return '<button role="tab" aria-selected="' + (k === side) + '" class="' + (k === side ? "on" : "") + '" data-side="' + k + '">' + esc(lab(k)) + "</button>"; }).join("") + "</div>" +
     "<h4>Discard pile <b>" + p.discard + "</b></h4><p class=\"pd\">Played and discarded cards, newest first. When the Main Force runs out, this pile is shuffled to make a new one.</p>" + pileThumbs(pl.discard || []) +
     "<h4>Ash Heap <b>" + p.ash + "</b></h4><p class=\"pd\">Destroyed and expended cards, newest first. They never return.</p>" + pileThumbs(pl.ash || []) +
@@ -448,7 +449,7 @@ function winTrack() {   // the four ways to win, from the board as it stands (ru
   var I = G.info || {}, hf0 = I.hf0 || 20, last = I.last || v.last || 8, y = v.you, b = v.bot, Z = v.Z || 5;
   var bar = function (cls, who, val, max, txt) { return '<div class="wbar ' + cls + '"><span>' + who + "</span><i><em style=\"width:" + Math.max(0, Math.min(100, 100 * val / max)) + '%"></em></i><u>' + txt + "</u></div>"; };
   var roomY = Math.abs((y.marker || 1) - 1), roomB = Math.abs(Z - (b.marker || Z)), devY = (y.bases || []).filter(function (x) { return x.dev; }).length, devB = (b.bases || []).filter(function (x) { return x.dev; }).length, nb = Math.max((y.bases || []).length, 1);
-  var lead = y.hf === b.hf ? "level" : (y.hf > b.hf ? "you lead by " + (y.hf - b.hf) : "the bot leads by " + (b.hf - y.hf));
+  var lead = y.hf === b.hf ? "the Homefronts are level" : (y.hf > b.hf ? "you lead by " + (y.hf - b.hf) : "the bot leads by " + (b.hf - y.hf));
   var row = function (hot, title, sub, body) { return '<div class="wr' + (hot ? " hot" : "") + '"><b>' + title + "</b><small>" + sub + "</small>" + body + "</div>"; };
   el.innerHTML = '<h4>How each side can win</h4><small style="color:var(--dim)">Checked at Assessment, the end of each round. Amber marks a side close to it.</small>' +
     row(Math.min(y.hf, b.hf) <= 6, "Homefront collapse", "A side whose Homefront reaches 0 loses.", bar("you", "You", y.hf, hf0, y.hf + " of " + hf0) + bar("foe", "Bot", b.hf, hf0, b.hf + " of " + hf0)) +
@@ -474,7 +475,7 @@ function hand() {
     var hi = hi0++; if (M.card[c.id] && !G.playing) im.className = "can"; if (G.sel === c.id) im.className = "sel"; if (G.multi && G.multi.picked.some(function (x) { return x.id === c.id && x.ix === hi; })) im.className = "sel";
     im.dataset.ix = hi; im.draggable = false; im.tabIndex = 0; im.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tapHand(c, hi); } }); im.setAttribute("role", "button"); im.setAttribute("aria-label", c.name + (M.card[c.id] && !G.playing ? ", can be played" : "") + ". Tap to read it"); im.addEventListener("pointerdown", function (e) { peekHide(); handDown(e, c, hi, im); }); im.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse" && !e.buttons) handPeek(im, c); }); im.addEventListener("pointerleave", peekHide); im.oncontextmenu = function (e) { e.preventDefault(); if (rightCancel()) return; readCard(c, hi); };   /* v0.20.2: right-click cancels a selection, otherwise reads the card. v0.21: a tap is read on the pointer's up (input section) */ el.appendChild(im); });
   hand0.insertAdjacentHTML("beforeend", '<button type="button" class="hnav l" aria-label="Scroll the hand left">‹</button><button type="button" class="hnav r" aria-label="Scroll the hand right">›</button><button type="button" class="hhandle" aria-expanded="false"></button>');
-  drawerFit(el); el.scrollLeft = keepX; drawerAuto();
+  drawerFit(el); el.scrollLeft = keepX; drawerAuto(); readyTabs(el, M);
   if (G.pend && !G.playing && isMulti(G.pend)) pickHand(el, M);
 }
 /* v0.21 (WP9, spec 2): on a phone held upright the hand is a drawer. Tucked, it is a 48 px handle ("HAND 6 · 3 READY") under the table; open,
@@ -486,6 +487,22 @@ function hand() {
 function isDesk() { return document.documentElement.classList.contains("desk"); }
 function deskColumn() { var de = document.documentElement, top = Math.round(($("top").offsetHeight || 0) + 10), me = $("me"), bot = Math.round((me ? me.offsetHeight : 40) + 14), w = Math.round(Math.min(380, Math.max(300, W * .25)));
   de.style.setProperty("--colTop", top + "px"); de.style.setProperty("--colBot", bot + "px"); de.style.setProperty("--colW", w + "px"); var pr = $("prompt"); if (pr) pr.dataset.cap = String(Math.max(160, H - top - bot)); }
+/* v0.21 (Council M3): a card that can act now carries a tab that names its move (DEPLOY, PLAY, REACT, UPGRADE), by shape and text, not by
+   glow alone; in a decision, a card that cannot act is dimmed but stays readable */
+function readyTabs(strip, M) {
+  var live = liveDecision() && !isMulti(G.pend), verb = function (id) { var t = ((G.pend.meta || [])[(M.card[id] || [])[0]] || {}).t; return t === "dep" || t === "hide" ? "DEPLOY" : t === "effect" ? "PLAY" : t === "react" ? "REACT" : t === "up" ? "UPGRADE" : "READY"; };
+  Array.prototype.forEach.call(strip.querySelectorAll("img[data-card]"), function (im) { var id = im.dataset.card, ok = live && M.card[id] && !G.playing; im.classList.toggle("cant", !!(live && !ok));
+    if (!ok) return; var t = document.createElement("span"); t.className = "rdy"; t.textContent = verb(id); t.setAttribute("aria-hidden", "true"); t.dataset.ix = im.dataset.ix; strip.appendChild(t); });
+  placeTabs(strip); Array.prototype.forEach.call(strip.querySelectorAll("img"), function (im) { if (!im.complete) im.addEventListener("load", function () { drawerFit(strip); placeTabs(strip); }, { once: true }); });   // a card picture has no width until it has loaded
+}
+function placeTabs(strip) { Array.prototype.forEach.call(strip.querySelectorAll(".rdy"), function (t) { var im = strip.querySelector('img[data-ix="' + t.dataset.ix + '"]'); if (!im) return; t.style.left = Math.round(im.offsetLeft + 4) + "px"; t.style.top = Math.round(im.offsetTop - 7) + "px"; }); }
+/* v0.21 (Council M8): while targeting, each legal target carries a TARGET plate under it, so the choice is plain at any card size */
+function targetPlates() {
+  var el = $("tplates"); if (!el) { el = document.createElement("div"); el.id = "tplates"; document.body.appendChild(el); }
+  var M = liveDecision() && G.sel ? maps() : null, ids = M ? Object.keys(M.dsts) : [], key = ids.join(",") + "|" + W + "x" + H + "|" + (G.fitN || 0) + "|" + (camEase ? "e" : "") + "|" + ($("zoom").style.display === "flex" ? "z" : "") + "|" + (pvOpen() ? "p" : "");
+  if (el.dataset.k === key) return; el.dataset.k = key; el.innerHTML = ""; if (camEase || $("zoom").style.display === "flex" || pvOpen()) return;
+  ids.forEach(function (uid) { var o = O[uid]; if (!o || !o.alive) return; var r = objRect(o), t = document.createElement("span"); t.textContent = "TARGET"; t.style.left = Math.round((r.l + r.r) / 2) + "px"; t.style.top = Math.round(r.b + 2) + "px"; el.appendChild(t); });
+}
 function isPh() { return document.documentElement.classList.contains("ph"); }
 function drawerFit(strip) {   // cards side by side while they fit, then overlapping down to 44 px each, then the strip scrolls
   var ims = strip.querySelectorAll("img"); Array.prototype.forEach.call(ims, function (im) { im.style.marginLeft = ""; });
@@ -505,6 +522,7 @@ function drawerAuto() {
   if (drag && drag.on) want = false;
   var was = h.classList.contains("open"); h.classList.toggle("open", want);
   if (hb) { hb.setAttribute("aria-expanded", want ? "true" : "false"); hb.innerHTML = "<span>HAND " + n + (live && ready ? " · " + ready + " READY" : "") + '</span><i aria-hidden="true">' + (want ? "▼" : "▲") + "</i>"; hb.setAttribute("aria-label", "Hand, " + n + " card" + (n === 1 ? "" : "s") + (ready ? ", " + ready + " ready" : "") + (want ? ". Tuck it" : ". Open it")); }
+  var st2 = h.querySelector(".strip"); if (st2 && st2.clientWidth && st2.dataset.fw !== String(st2.clientWidth)) { st2.dataset.fw = String(st2.clientWidth); drawerFit(st2); } if (st2) placeTabs(st2);   // the strip's width is known only once it is laid out
   if (was !== want && isPh()) { try { spotlight(); } catch (e) { } }
 }
 $("hand").addEventListener("click", function (e) {
@@ -548,13 +566,13 @@ function prompt() {
   if (G.err) h = "<p><b>The game stopped on an error. Please pass this text to Claude.</b></p><pre style='white-space:pre-wrap;font-size:calc(12px * var(--ts))'>" + esc(G.err) + "</pre>";
   else if (G.moment) h = momentBox();
   else if (G.over && !G.playing && !G.queue.length && G.info && G.info.tutorial && !G.replay) h = coachEnd();
-  else if (G.over && !G.playing && !G.queue.length) h = '<p class="t" style="font-size:calc(16px * var(--ts));color:var(--amber)">' + (/^Nobody/.test(G.over.winner) ? "A draw" : esc(G.over.winner) + (G.over.winner === "You" ? " win" : " wins")) + " in round " + G.over.round + '</p><p class="h">' + esc(G.over.how) + '.</p><div class="btns"><button id="pDebrief">Debrief</button>' + (SITE && !G.replay ? '<button id="pSend">✉ Provide Feedback</button>' : "") + (G.replay ? '<button class="ghost" id="rExit">' + (G.replay.standalone ? "Stop" : "Exit replay") + "</button>" : '<button class="ghost" id="pNew">Exit to the Main Menu</button>') + "</div>";
+  else if (G.over && !G.playing && !G.queue.length) h = '<p class="t" style="font-size:calc(16px * var(--ts));color:var(--amber)">' + (/^Nobody/.test(G.over.winner) ? "A draw" : esc(G.over.winner) + (G.over.winner === "You" ? " win" : " wins")) + " in round " + G.over.round + '</p><p class="h">' + esc(overHow(G.over)) + '.</p><div class="btns"><button id="pDebrief">Debrief</button>' + (SITE && !G.replay ? '<button id="pSend">✉ Provide Feedback</button>' : "") + (G.replay ? '<button class="ghost" id="rExit">' + (G.replay.standalone ? "Stop" : "Exit replay") + "</button>" : '<button class="ghost" id="pNew">Exit to the Main Menu</button>') + "</div>";
   else if (G.replay) h = "<p>" + esc(G.caption || "…") + "</p>" + (G.why && G.whyAt === G.shownN && G.info && G.info.spectate ? '<p class="why">' + esc(whyLine(G.why)) + "</p>" : "") + replayBar();
   else if (G.busy) h = "<p class='h'>Working…</p>";
   else if (pend && !G.playing && G.confirm && G.confirm.n === pend.n) h = '<div class="cf"><p>' + esc(pend.options[G.confirm.i]) + '?</p><p class="h">Once the bot answers, this cannot be taken back. (Settings: Ask before moves you cannot take back.)</p><div class="btns"><button class="go" id="cfYes">Confirm</button><button class="ghost" id="cfNo">Back</button></div></div>';
   else if (pend && !G.playing) {
     var M = maps(), n = Object.keys(M.src).length + Object.keys(M.card).length;
-    h = coachBox(pend) + hitsBox() + (pend.coach && !coachReady(pend) ? "" : "<p>" + esc(pend.prompt) + "</p>") + (pend.coach ? "" : tipLine(pend));
+    h = coachBox(pend) + (pend.coach && !coachReady(pend) ? "" : '<p class="instr">' + esc(pend.prompt) + "</p>") + hitsBox() + (pend.coach ? "" : tipLine(pend));   // v0.21 (Council M4): the instruction first, then what happened and the tip
     if (pend.coach && !coachReady(pend)) return setPrompt(el, h, true);
     if (isMulti(pend)) return multiPrompt(el, h, M);
     if (G.sel) {   // v0.21 (WP4): targeting. The heading says what to do; CANCEL is in the pinned footer (also Esc, a right-click, empty table, or the card again)
@@ -587,7 +605,7 @@ function setPrompt(el, h, top) {
   el.innerHTML = '<div class="pwrap"><div class="pbody"></div><button type="button" class="pmore" tabindex="-1" aria-hidden="true">More ▼</button></div>';
   body = el.querySelector(".pbody"); while (t.firstChild) body.appendChild(t.firstChild);
   if (foot.firstChild) el.appendChild(foot);
-  body.scrollTop = keep; body.addEventListener("scroll", promptCue, { passive: true }); promptCue(); requestAnimationFrame(function () { if (!keep) unslice(el.querySelector(".pbody"), 28); promptCue(); });
+  body.scrollTop = keep; body.addEventListener("scroll", promptCue, { passive: true }); promptCue(); requestAnimationFrame(function () { if (!keep) { var pb2 = el.querySelector(".pbody"); unslice(pb2, $("prompt").classList.contains("more") ? 0 : 28); if (pb2) pb2.scrollTop = 0; } promptCue(); });
 }
 /* v0.21 (craft notes): no sliced lines. A scrolling box that has more than it shows is trimmed so its last visible line of text (or row, chip
    or button) is whole; the "More" pill sits in the space below it. Measured when the box is drawn, at its top. */
@@ -603,12 +621,19 @@ function unslice(sc, reserve) {
 }
 function promptCue() {   // "More ▼" while the panel's body has text below what it shows
   var el = $("prompt"), b = el && el.querySelector(".pbody"); if (!b) return;
-  el.classList.toggle("more", b.scrollHeight - b.clientHeight - b.scrollTop > 6);
+  var was = el.classList.contains("more"), now = b.scrollHeight - b.clientHeight - b.scrollTop > 6 || (was && b.scrollTop > 0); el.classList.toggle("more", now);
+  if (now && !was && !b.scrollTop) requestAnimationFrame(function () { b.dataset.mh = ""; unslice(b, 0); });   // the More pill took a row: trim again so no line is sliced
 }
 function render() { hud(); hand(); prompt(); requestFit(); try { spotlight(); } catch (e) { } try { inspRefresh(); } catch (e) { } }   // v0.20.1: the bars may have changed size: refit on the next frame if the safe frame moved
 /* what caused a loss: the last attack, played or fired card, ability or H-Hour before it (consequence lines are not causes) */
 function isCause(text, fx) { if (/takes \d+ damage|is destroyed|loses? \d+ Homefront|is suppressed|covers the target|intercepts|reloads|^--- /.test(text)) return false; return (fx && fx.kind === "attack") || /^H-Hour|\b(attacks|plays|fires|uses|puts|resolves|ends|completes)\b|spills onto/.test(text); }
 function hitsBox() { if (!G.hits || !G.hits.length) return ""; return '<div class="hits"><b>Since your last move:</b>' + G.hits.slice(-3).map(function (x) { return '<div class="hit1">' + (x.cause ? '<span class="cz">' + esc(x.cause.replace(/^H-Hour: (The |Your )?/, function (m, w) { return "At H-Hour, " + (w ? w.toLowerCase() : ""); })) + "</span>" : "") + '<span class="out">' + esc(x.lines.join(" ")) + "</span></div>"; }).join("") + "</div>"; }
+/* v0.21 (Council M9, ruling B): the end of a game is told from the player's side; the engine's line is written from the winner's */
+function overHow(o) { var how = String((o && o.how) || ""); if (!o || (G.info && G.info.spectate) || G.replay) return how; var won = o.winner === "You", lost = o.winner === "The bot";
+  if (/^Supremacy/.test(how)) return won ? "ROUTED: you drove the enemy off its home edge (Supremacy)" : lost ? "ROUTED: you were driven off your home edge (Supremacy)" : how;
+  if (/^Devastation/.test(how)) return won ? "Devastation: both enemy Bases destroyed" : lost ? "Devastation: both your Bases destroyed" : how;
+  if (/^Homefront collapse/.test(how)) return won ? "Homefront collapse: the enemy's Homefront fell to 0" : lost ? "Homefront collapse: your Homefront fell to 0" : how;
+  return how; }
 function feed(text) {
   var nm = (G.info && G.info.names) || ["You", "The bot"], tx = text.replace(/^H-Hour: /, ""), cls = tx.indexOf(nm[1]) === 0 ? "foe" : (tx.indexOf(nm[0]) === 0 || /^Your /.test(tx)) ? "own" : ""; if (/destroyed|devastated|Homefront|wins|Contact/.test(text)) cls += " big";
   var d = document.createElement("div"); d.className = cls; d.textContent = (PREF.shapes && /own|foe/.test(cls) ? (/foe/.test(cls) ? "◆ " : "■ ") : "") + text.replace(/^--- | ---$/g, ""); $("feed").appendChild(d);
@@ -635,7 +660,8 @@ function inspRules(u, o) {
   var f = Object.assign({}, (G.faces || {})[u.name] || {}, u), h = "", tm = +f.timer || 0;
   if (!f.lines && !f.cls) return '<p class="zl">' + esc(u.name || "") + "</p>";
   var cap = isCap(f);
-  h += '<p class="zk">' + esc([cap ? "Capability" : (f.sub || f.kind || "Effect"), f.cls, f.gen ? "Generation " + f.gen : "", f.cost || ""].filter(Boolean).join(" · ")) + "</p>";
+  var subW = f.sub === "Operation" ? "Mission" : f.sub;   // v0.21 (Council M7): the word the card's type line prints (MISSION); the name itself is the lead's call
+  h += '<p class="zk">' + esc([cap ? "Capability" : (subW || f.kind || "Effect"), f.cls, f.gen ? "Generation " + f.gen : "", cap ? (f.costn != null ? "Deploy: " + f.costn + " Supply" : f.cost) : (f.cost ? "Cost: " + f.cost : "")].filter(Boolean).join(" · ")) + "</p>";
   var stats = "";
   if (cap) { var chip = function (k, v, t) { return '<span title="' + t + '"><i>' + k + "</i><b>" + v + "</b></span>"; };   // v0.21 (craft pass): a tidy stat row under the rules, not a run-on line
     stats = '<div class="zstats" role="list" aria-label="Numbers">' + (f.atkn ? chip("ATK", f.atkn + (f.range ? " <small>" + esc(f.range) + "</small>" : ""), "Attack") : "") + chip("SURV", f.surv, "Survivability") + chip("DUR", f.dmg ? Math.max(0, f.dur - f.dmg) + "/" + f.dur : f.dur, "Durability") + chip("CONC", f.conc, "Concealment") + chip("READY", f.ready, "Ready cost") + chip("HF", f.hf, "Homefront loss") + "</div>"; }
@@ -693,13 +719,13 @@ function zoom(u, o) {
   INS.act = o.act || null; INS.u = u; INS.o = o; var acts = inspActions(o.act, u, o); $("zAct").innerHTML = acts; $("zAct").style.display = acts ? "" : "none";
   var z = $("zoom"), was = z.style.display === "flex"; z.classList.toggle("over", $("lib").style.display === "block");   // above the card library
   if (!was) INS.prev = document.activeElement; z.classList.toggle("big", PREF.text >= 1.5 && !((W >= 900 && H >= 521) || (H <= 520 && W >= 600))); z.style.display = "flex";
-  var wide = (W >= 900 && H >= 521), hd = $("hand").getBoundingClientRect(); var pmh = wide && G.view && hd.height && hd.top > 380 ? Math.round(hd.top - 12 - H * .02) : 0; $("zPanel").style.maxHeight = pmh ? pmh + "px" : ""; $("zImg").style.maxHeight = pmh ? Math.max(200, pmh - 150) + "px" : ""; /* the card picture stays inside the panel; wide screens: the hand dock stays visible under it */ $("zBody").scrollTop = 0; zCue(); setTimeout(function () { unslice($("zBody"), 30); zCue(); }, 60); peekHide(); SFX.click();
+  var wide = (W >= 900 && H >= 521), hd = $("hand").getBoundingClientRect(); var pmh = wide && G.view && hd.height && hd.top > 380 ? Math.round(hd.top - 12 - H * .02) : 0; $("zPanel").style.maxHeight = pmh ? pmh + "px" : ""; $("zImg").style.maxHeight = pmh ? Math.max(200, pmh - 150) + "px" : ""; /* the card picture stays inside the panel; wide screens: the hand dock stays visible under it */ $("zBody").scrollTop = 0; zCue(); setTimeout(function () { unslice($("zBody"), $("zoom").classList.contains("more") ? 0 : 30); zCue(); }, 60); peekHide(); SFX.click();
   try { $("zClose").focus({ preventScroll: true }); } catch (e) { } setTimeout(function () { try { if ($("zoom").style.display === "flex" && !$("zoom").contains(document.activeElement)) $("zClose").focus({ preventScroll: true }); } catch (e) { } }, 60);   // after a touch tap the browser's own focus change comes later: take focus again
   G.zoomId = u.id; if (u.id && !o.canvas && CF.hi) CF.hi(u.id, function (fresh) { if (fresh && G.zoomId === u.id && $("zoom").style.display === "flex") try { $("zImg").src = drawCard(clean, 2.5, oo).toDataURL(); } catch (e) {} });
   try { pickTable(); } catch (e) { }
 }
 function zCue() { var b = $("zBody"); $("zoom").classList.toggle("more", b.scrollHeight - b.clientHeight - b.scrollTop > 6); }   // the "More" cue while the sheet has more below
-$("zBody").addEventListener("scroll", zCue, { passive: true }); $("zImg").addEventListener("load", function () { if (!$("zBody").scrollTop) unslice($("zBody"), 30); zCue(); });
+$("zBody").addEventListener("scroll", zCue, { passive: true }); $("zImg").addEventListener("load", function () { if (!$("zBody").scrollTop) unslice($("zBody"), $("zoom").classList.contains("more") ? 0 : 30); zCue(); });
 $("zMore").addEventListener("click", function (e) { e.stopPropagation(); var b = $("zBody"); b.scrollBy({ top: Math.max(40, b.clientHeight * .8), behavior: G.rm ? "auto" : "smooth" }); });
 function inspRefresh() { if ($("zoom").style.display !== "flex" || !INS.u) return; var acts = inspActions(INS.act, INS.u, INS.o); if ($("zAct").innerHTML !== acts) { $("zAct").innerHTML = acts; $("zAct").style.display = acts ? "" : "none"; } }   // a decision arrived or went while it is open
 function closeInspector(silent) { var z = $("zoom"); if (z.style.display !== "flex") return; z.style.display = "none"; G.zoomPick = null; G.zoomId = null; INS.u = null; if (!silent && SFX.close) SFX.close(); var p = INS.prev; INS.prev = null; try { if (p && p.focus && document.contains(p)) p.focus({ preventScroll: true }); } catch (e) { } try { pickTable(); } catch (e) { } }
@@ -805,7 +831,7 @@ function pvFit(el) {   // phones: a sheet from the bottom of the screen up to ju
   pb.style.maxHeight = Math.max(80, avail - (ft ? ft.offsetHeight : 0) - (hd ? hd.offsetHeight : 0) - 20) + "px"; el.style.setProperty("--pvf", (ft ? ft.offsetHeight : 64) + "px");
 }
 function pvOpen() { var d = $("preview").style.display; return !!d && d !== "none"; }
-function pvCue(el) { if (!el.dataset.cut) { el.dataset.cut = "1"; var pbx = el.querySelector(".pvb"); if (pbx && !pbx.scrollTop) { pbx.dataset.mh = pbx.style.maxHeight; unslice(pbx, 30); } el.dataset.cut = ""; } pvCue0(el); }
+function pvCue(el) { if (!el.dataset.cut) { el.dataset.cut = "1"; var pbx = el.querySelector(".pvb"); if (pbx && !pbx.scrollTop) { pbx.dataset.mh = pbx.style.maxHeight; unslice(pbx, el.classList.contains("more") ? 0 : 30); } el.dataset.cut = ""; } pvCue0(el); }
 function pvCue0(el) { var pb = el.querySelector(".pvb"); if (pb) el.classList.toggle("more", pb.scrollHeight - pb.clientHeight - pb.scrollTop > 6); }
 /* ---- why the bot did that: the engine reports what it chose and how it rated every option ---- */
 function shortOpt(l) { l = String(l); var i = l.indexOf(": "), j = l.indexOf(" ("); if (/^(Deploy|Upgrade|Attack|Play|Start|Use)/.test(l)) { var c = Math.min(i < 0 ? 999 : i, j < 0 ? 999 : j); if (c < 999) l = l.slice(0, c); } return l.length > 46 ? l.slice(0, 44) + "…" : l; }
@@ -923,6 +949,7 @@ addEventListener("pointerup", function (e) {
 /* v0.17.1: pointing at an option button draws the aim line from the card that acts to its target */
 $("prompt").addEventListener("mouseover", function (e) { var b = e.target.closest && e.target.closest("button[data-i]"); var m = b && G.pend && G.pend.meta && G.pend.meta[+b.dataset.i]; G.btnAim = m && m.src && m.dst ? { a: m.src, b: m.dst } : null; });
 $("prompt").addEventListener("mouseleave", function () { G.btnAim = null; });
+$("prompt").addEventListener("click", function (e) { var t = e.target.closest && e.target.closest(".ftip"); if (t && !e.target.closest("button")) { t.classList.toggle("open"); requestAnimationFrame(function () { unslice($("prompt").querySelector(".pbody"), $("prompt").classList.contains("more") ? 0 : 28); promptCue(); }); } });   // the first-time tip is folded to two lines; a tap unfolds it
 $("prompt").onclick = function (e) {
   var b = e.target.closest("button"); if (!b) return;
   if (b.classList.contains("pmore")) { var pb = $("prompt").querySelector(".pbody"); if (pb) pb.scrollBy({ top: Math.max(30, pb.clientHeight * .8), behavior: G.rm ? "auto" : "smooth" }); return; }
@@ -1162,7 +1189,7 @@ function spotNow() {
   var p = G.pend; if (!p || G.playing || !p.coach || coachReady(p)) return null; var pg = coachPages(p)[G.cpage[p.n] || 0]; return pg && pg.spot;
 }
 function spotlight() {
-  try { pickTable(); } catch (e) { }   // v0.21: the PICK boxes on table cards follow the table as the outlines do
+  try { pickTable(); targetPlates(); } catch (e) { }   // v0.21: the PICK boxes and TARGET plates follow the table as the outlines do
   var el = $("spots"); if (!el) { el = document.createElement("div"); el.id = "spots"; document.body.appendChild(el); }
   var sp = spotNow(), list = !sp ? [] : Array.isArray(sp) ? sp : [sp], key = list.join(",") + "|" + W + "x" + H + "|" + (G.fitN || 0) + "|" + (camEase ? "e" : "");
   if (el.dataset.k === key) return; el.dataset.k = key; el.innerHTML = "";
@@ -1231,7 +1258,7 @@ function tipLine(p) {
   if (!(G.tipNow && G.tipNow.n === p.n)) { var s = tipsSeen(), v = G.view, t = null; G.tipNow = null;
     for (var i = 0; i < TIPS.length; i++) { if (s[TIPS[i][0]]) continue; try { if (TIPS[i][1](p, v)) { t = TIPS[i]; break; } } catch (e) { } }
     if (t) { var R = (G.setupData && G.setupData.rules) || {}; G.tipNow = { key: t[0], text: t[2].replace(/\{(\w+)\}/g, function (m, k) { return R[k] != null ? R[k] : m; }), n: p.n }; } }
-  return G.tipNow && G.tipNow.key ? '<p class="ftip tip"><b>First time:</b> ' + esc(G.tipNow.text) + ' <button class="ghost lk" id="tipX">Got it</button></p>' : "";
+  return G.tipNow && G.tipNow.key ? '<div class="ftip tip"><button class="ghost lk" id="tipX">Got it</button><p><b>First time:</b> ' + esc(G.tipNow.text) + "</p></div>" : "";
 }
 
 /* ================= talking to the engine ================= */
@@ -1277,7 +1304,7 @@ function finish() {
   if (G.pend && G.autoQ && !G.over) { if (G.pend.kind === G.autoQ.kind) { setTimeout(autoStep, 60); return render(); } G.autoQ = null; }
   if (G.pend && G.multi && G.multi.kind !== G.pend.kind) G.multi = null;
   if (G.replay && !G.over && !G.queue.length) G.over = G.replay.body.over || null;
-  if (G.over && !G.overShown) { G.overShown = true; if (!G.replay) { storeGame(); $("bQuit").textContent = "Exit game"; } var won = G.over.winner === "You", gen = G.pgen; banner(G.info && G.info.spectate || G.replay ? G.over.winner : won ? "Victory" : G.over.winner === "The bot" ? "Defeat" : "Draw", G.over.how); (won ? SFX.win : SFX.lose)(); if (SND) { setMood("debrief", true); if (!(G.info && G.info.spectate)) vox(won ? "win" : "lose", { delay: .5 }); } if (G.info && G.info.tutorial) { if (won) try { localStorage.setItem("ss.trained", "1"); } catch (e) { } } else setTimeout(function () { if (gen === G.pgen && G.over) showDebrief(); }, 1900); }
+  if (G.over && !G.overShown) { G.overShown = true; if (!G.replay) { storeGame(); $("bQuit").textContent = "Exit game"; } var won = G.over.winner === "You", gen = G.pgen; banner(G.info && G.info.spectate || G.replay ? G.over.winner : won ? "Victory" : G.over.winner === "The bot" ? "Defeat" : "Draw", overHow(G.over)); (won ? SFX.win : SFX.lose)(); if (SND) { setMood("debrief", true); if (!(G.info && G.info.spectate)) vox(won ? "win" : "lose", { delay: .5 }); } if (G.info && G.info.tutorial) { if (won) try { localStorage.setItem("ss.trained", "1"); } catch (e) { } } else setTimeout(function () { if (gen === G.pgen && G.over) showDebrief(); }, 1900); }
   else if (G.pend) tone(.1, 880, 880, .06);
   render();
 }
@@ -1294,7 +1321,10 @@ function playNext() {
     if (/^--- Round/.test(text) && (f.view.you.track.length || f.view.bot.track.length)) { tone(.05, 1500, 1500, .07, "square", .9); tone(.05, 1500, 1500, .07, "square", 1.1); $("mtrack").classList.remove("tick"); void $("mtrack").offsetWidth; $("mtrack").classList.add("tick"); }
     if (/^--- Round/.test(text)) { banner("Round " + f.view.round, f.view.terrain); SFX.round(); if (f.view.round === 1 && !G.shuffled) { G.shuffled = true; SFX.shuffle(); } else vox("round", { delay: .4 }); wait = 1.5; }
     else if (/^H-Hour/.test(text)) { var hm = text.match(/'s ([A-Z0-9][A-Z0-9 '\-]+?) (resolves|ends|completes)/); SFX.hhour(); vox(/^H-Hour: Your /.test(text) ? "hhour" : "incoming"); flashScreen(.12); wait = 1.7; if (!(hm && showcase(hm[1], "H-Hour: " + (hm[2] === "ends" ? "ends" : "resolves now"), true))) banner("H-Hour", ""); $("mtrack").classList.remove("tick"); void $("mtrack").offsetWidth; $("mtrack").classList.add("tick"); }
-    else if (/^Frontline contest/.test(text) && G.stand && G.standRound !== f.view.round) { G.standRound = f.view.round; var home = f.view.you.marker === 1 ? ((G.info && G.info.names) || ["You"])[0] : ((G.info && G.info.names) || ["", "The bot"])[1]; banner("Last stand", home + " " + (home === "You" ? "defend" : "defends") + " the home edge"); SFX.react(); vox(home === "You" ? "stand" : "advance"); shake = .25; wait = 1.9; }
+    else if (/^Frontline contest/.test(text) && G.stand && G.standRound !== f.view.round) { G.standRound = f.view.round; var home = f.view.you.marker === 1 ? ((G.info && G.info.names) || ["You"])[0] : ((G.info && G.info.names) || ["", "The bot"])[1]; banner("Last stand", home + " " + (home === "You" ? "defend" : "defends") + " the home edge"); SFX.react(); vox(home === "You" ? "stand" : "advance"); shake = .25; wait = 1.9;
+      var cm = text.match(/^Frontline contest: (.+?) (\d+), (.+?) (\d+)\./), nm2 = (G.info && G.info.names) || ["You", "The bot"], youHome = f.view.you.marker === 1;   // v0.21 (ruling B): the result is REPELLED or ROUTED, from the player's side
+      if (cm && !(G.info && G.info.spectate)) { var ys = cm[1] === nm2[0] ? +cm[2] : +cm[4], bs = cm[1] === nm2[0] ? +cm[4] : +cm[2], held = youHome ? ys >= bs : bs >= ys; var g2 = G.pgen;
+        after(1.6, function () { if (g2 === G.pgen) banner(held ? "REPELLED" : "ROUTED", youHome ? (held ? "You held your home edge" : "You were driven off your home edge") : (held ? "The enemy held its home edge" : "You drove the enemy off its home edge")); }); wait = 3.2; } }
     else if ((pm = text.match(/ (plays|puts) ([A-Z0-9][A-Z0-9 '\-]+?)( on the Mission Track \((\d+) round|[:.])/)) && showcase(pm[2], pm[1] === "puts" ? "On the Mission Track: " + pm[4] + " round" + (pm[4] === "1" ? "" : "s") + " to H-Hour" : isOrder(pm[2]) ? "Mission Track · H-Hour: happens now" : "Played", false)) { SFX.ability(); wait = Math.max(wait, 1.5); if (pm[1] === "plays" && isOrder(pm[2])) hhPulse(); }
     else if ((pm = text.match(/ fires ([A-Z0-9][A-Z0-9 '\-]+?):/)) && showcase(pm[1], "Reaction", true)) { SFX.react(); wait = Math.max(wait, 2.2); }
     else if (/reveals a Hidden card/.test(text)) { wait += .4; }
@@ -1696,7 +1726,7 @@ function showSetup() {
     $("cover").firstElementChild.innerHTML = '<canvas class="contours" id="suMap"></canvas><div class="su"><header class="su-h"><h1 class="t">Shadows <span>&amp;</span> Steel</h1>' +
       '<div class="seg" data-set="mode"><button data-v="train" aria-pressed="' + (SET.mode === "train") + '">Basic Training</button><button data-v="bot" aria-pressed="' + (SET.mode === "bot") + '">Play the bot</button><button data-v="watch" aria-pressed="' + (SET.mode === "watch") + '">Watch the bot play itself</button><button data-v="replays" aria-pressed="' + (SET.mode === "replays") + '">Saved replays</button></div><button class="ghost gear" id="suFM">Field Manual</button><button class="ghost gear" id="suLib">Card library</button><button class="ghost gear" id="suGear">⚙ Settings</button>' + (LOCAL ? '<button class="ghost gear" id="suQuit">Quit</button>' : "") + (SITE ? '<button class="ghost gear" id="suSend">✉ Provide Feedback</button>' : "") + '</header>' + (SITE ? siteWelcome() : "") +
       '<div id="suBody"></div><footer class="su-f">Tap a card to read it during the game; glowing cards can act. The ☰ menu holds notes, the battle log, saving a replay and Settings. Cards: ' + esc(d.cards || "") + ". Decks: " + esc(d.decks || "") + ". Battlefield table v0.20.</footer>" + logoBand() + "</div>";
-    setupBody(d); requestAnimationFrame(function () { contourMap($("suMap"), SET.terrain); if (window.SSOpening && window.SSOpening.menuShown) window.SSOpening.menuShown(); });
+    setupBody(d); if (G.autoStart) { G.autoStart = false; setTimeout(function () { var pg = $("pgo"); if (pg && !pg.disabled) pg.click(); }, 60); } requestAnimationFrame(function () { contourMap($("suMap"), SET.terrain); if (window.SSOpening && window.SSOpening.menuShown) window.SSOpening.menuShown(); });
     if (SITE) noticeGate();   // v0.20.2: the playtest website asks for the notice once before the Main Menu can be used
   }, function (e) { $("cover").style.display = "block"; $("cover").firstElementChild.innerHTML = "<h1 class='t'>Shadows &amp; Steel</h1><p class='lead'>The game engine did not start.</p><pre>" + esc(e.message) + "</pre>"; });
 }
@@ -1858,10 +1888,10 @@ function showDebrief() {
   var m = { you: G.info.you, bot: G.info.bot, names: nm, spectate: spect, winner: o.winner, how: o.how, finished: true, rounds: o.round };
   var rows = (G.aar || []).slice(); if (G.aarLast) rows.push(G.aarLast);
   el.innerHTML = '<div class="db"><p class="dbk ' + kc + '">' + esc(key) + "</p><h2>" + esc(resultLine(m).replace(/ \((you|bot)\)/g, "")) + "</h2>" +
-    '<p class="dbs">' + esc(o.how) + ". Final Homefront: " + esc(nm[0]) + " " + o.you_hf + ", " + esc(nm[1]) + " " + o.bot_hf + ".</p>" +
+    '<p class="dbs">' + esc(overHow(o)) + ". Final Homefront: " + esc(nm[0]) + " " + o.you_hf + ", " + esc(nm[1]) + " " + o.bot_hf + ".</p>" +
     (rows.length > 1 ? '<div class="dbc"><p class="dbl">Homefront by round</p><canvas id="dbC"></canvas></div>' : "") +
     '<div class="dbt"><p class="dbl">Turning points</p><ol>' + (turningPoints().map(function (e) { return "<li><b>Round " + e.round + "</b> " + esc(e.text) + "</li>"; }).join("") || "<li>None recorded.</li>") + "</ol></div>" +
-    '<div class="dba">' + (R ? '<button class="big" id="dAgain">Watch again</button>' : '<button class="big" id="dSave">Save replay</button>') + '<button class="ghost" id="dAAR">After-action review</button><button class="ghost" id="dLog">Battle log</button>' +
+    '<div class="dba">' + (R ? '<button class="big" id="dAgain">Watch again</button>' : '<button class="big" id="dRedeploy">Redeploy</button>' + (SITE ? '<button id="dFeedback">✉ Provide Feedback</button>' : "") + '<button class="ghost" id="dSave">Save replay</button>') + '<button class="ghost" id="dAAR">After-action review</button><button class="ghost" id="dLog">Battle log</button>' +
     (R ? (R.standalone ? "" : '<button class="ghost" id="dBack">Saved replays</button>') : '<button class="ghost" id="dNew">Exit to the Main Menu</button>') + '<button class="ghost" id="dClose">Look at the board</button></div><p id="dMsg" class="dbm">' + (G.savedReplay ? savedText(G.savedReplay) : "") + "</p>" + (SITE && !R ? '<div class="dbn"><p class="dbl">✉ Provide Feedback: your verdict, for the team</p><div id="dSendBox"></div></div>' : "") + "</div>";
   el.style.display = "flex"; requestAnimationFrame(function () { hfChart($("dbC"), rows, nm); }); if (SITE && !R) sendForm($("dSendBox"));
 }
@@ -1882,6 +1912,8 @@ $("debrief").addEventListener("click", function (e) {
   if (b.id === "dAAR") return showAAR();
   if (b.id === "dLog") return showLog();
   if (b.id === "dNew") { $("debrief").style.display = "none"; return quit(true); }
+  if (b.id === "dRedeploy") { $("debrief").style.display = "none"; G.autoStart = true; return quit(true); }   // v0.21 (Council M11): the same matchup again
+  if (b.id === "dFeedback") return showSend();
   if (b.id === "dAgain") { var R = G.replay; return playReplay(R.rec, { standalone: R.standalone }); }
   if (b.id === "dBack") return exitReplay();
 });
@@ -1946,5 +1978,5 @@ var fontReady = (document.fonts && document.fonts.load) ? Promise.race([Promise.
 [1500, 6000, 15000].forEach(function (ms) { setTimeout(function () { dbReady().then(function (d) { if (d) recoverNotes(); }); }, ms); });
 (function () { var rj = document.getElementById("ss-replay"); if (!rj) return; try { window.SS_REPLAY = JSON.parse(rj.textContent); } catch (e) { return; }   // a saved-replay file: no engine, just the game
   Promise.all([artReady, fontReady]).then(function () { $("cover").classList.add("map"); $("cover").firstElementChild.innerHTML = standaloneCover(window.SS_REPLAY); requestAnimationFrame(function () { contourMap($("suMap"), (window.SS_REPLAY.meta || {}).terrain || window.SS_TNAME || ""); }); }); })();
-window.SS = { sendForm: sendForm, showSend: showSend, site: SITE, copyWhere: copyWhere, optWhere: optWhere, quitApp: quitApp, winTrack: winTrack, showLibrary: showLibrary, toggleWin: toggleWin, glossFor: glossFor, hintBox: hintBox, PREF: PREF, applyPrefs: applyPrefs, showSettings: showSettings, caption: caption, TER: TER, SND: SND, readCard: readCard, showPiles: showPiles, hitsBox: hitsBox, isCause: isCause, saveReplay: saveReplay, playReplay: playReplay, buildReplayFile: buildReplayFile, listReplays: listReplays, loadReplay: loadReplay, showDebrief: showDebrief, replayJump: replayJump, set: SET, drawCard: function (u, S) { return drawCard(u, S || 1); }, engine: function (handle) { Promise.all([artReady, fontReady]).then(function () { engineOk(handle); G.engineUp = true; var gate = window.SSOpening && window.SSOpening.gate && window.SSOpening.gate(); (gate || Promise.resolve()).then(showSetup); }); }, op: OPDIR, G: G, api: api, objs: function () { return O; }, fitInfo: fitInfo, choose: choose, tapObj: tapObj, objAt: objAt, peekAt: peekAt, zoom: zoom, resume: function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); } };
+window.SS = { unslice: unslice, sendForm: sendForm, showSend: showSend, site: SITE, copyWhere: copyWhere, optWhere: optWhere, quitApp: quitApp, winTrack: winTrack, showLibrary: showLibrary, toggleWin: toggleWin, glossFor: glossFor, hintBox: hintBox, PREF: PREF, applyPrefs: applyPrefs, showSettings: showSettings, caption: caption, TER: TER, SND: SND, readCard: readCard, showPiles: showPiles, hitsBox: hitsBox, isCause: isCause, saveReplay: saveReplay, playReplay: playReplay, buildReplayFile: buildReplayFile, listReplays: listReplays, loadReplay: loadReplay, showDebrief: showDebrief, replayJump: replayJump, set: SET, drawCard: function (u, S) { return drawCard(u, S || 1); }, engine: function (handle) { Promise.all([artReady, fontReady]).then(function () { engineOk(handle); G.engineUp = true; var gate = window.SSOpening && window.SSOpening.gate && window.SSOpening.gate(); (gate || Promise.resolve()).then(showSetup); }); }, op: OPDIR, G: G, api: api, objs: function () { return O; }, fitInfo: fitInfo, choose: choose, tapObj: tapObj, objAt: objAt, peekAt: peekAt, zoom: zoom, resume: function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); } };
 })();
