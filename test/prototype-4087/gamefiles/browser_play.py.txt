@@ -1,0 +1,690 @@
+"""Shadows & Steel: the Merged Baseline game for a web page, with no server.
+
+The Workbench (merged_api.py) runs a game in its own thread and waits for the player. A web page cannot do that, so this
+plays the same game a different way: every time you choose, the game is played again from the start with your choices so
+far, and stops at the next question. The dice come from the seed, so the game is the same every time. The bot's look-ahead
+results are remembered, which keeps the replay fast. The answers have the same shape as merged_api.py, so web/table.js works
+unchanged. Runs on Python 3.8 or later and inside Pyodide.
+
+0.7 (13 Nov 2026): two card builds side by side. Each build is a card file and a deck file (newest by version number):
+the Baseline (SS_Merged_) and the Theory of Victory test build (SS_ToV_). The chosen build is in the game's info and record.
+The box, and so the Bases and the terrain, follow the deck file's Box column. New reasons for blocked moves and cards.
+0.7.1: box product names (Crimson Reign, Stormwatch; RD-131) map to the engine's terrain sets through E.box_key.
+0.10 (14 Nov 2026): the board you see also lists your own discard pile and Ash Heap (newest first) and the cards still in
+your Initial Entry and Main Force (in no order), so the table can show them as on the tabletop. The engine is unchanged.
+0.11 (14 Nov 2026, RD-137): discard piles and Ash Heaps are open to both players, so the board also lists the enemy's
+discard pile and Ash Heap. The enemy's decks stay secret (only their counts are shown).
+0.12 (14 Nov 2026, evening): card faces carry the Upgrades From line (Patch 13 grammar: "[Class or Any] [Gen] ([Tag] or [Tag])"),
+so the card can print what it upgrades from.
+0.13 (14 Nov 2026, Battlefield v0.15): a card you cannot deploy or upgrade says why with the real price: the card in play it
+would upgrade and the difference you pay, or what it needs in play; flagships only ever speak of upgrading. The Operators
+"Either row" test switch is gone (RD-141 (1)): op_anyrow stays 0.
+0.14 (15 Nov 2026, Battlefield v0.16, Stage C player aids): the glossary (keywords and game terms, with the engine's numbers) for
+"what does this word mean" on an enlarged card and in the card library; the bot's rating of your options (pending "rate") for
+the Hint button; reasons for ACTION lines you cannot use; the starting Homefront in the game info for the win tracker.
+0.15 (15 Nov 2026, Battlefield v0.17, Stage D tutorial): Basic Training. A start with tutorial="basic" plays the guided game in
+basic_training.json (next to this file): both forces are built from card IDs in a fixed draw order, the bot follows the
+script's moves and otherwise holds back, and each of your prompts carries a "coach" (the lesson, what to do, and which
+options are allowed). Card names in the lessons come from the card file, so renames need no script change. The engine is
+unchanged; normal games are unchanged.
+0.16 (15 Nov 2026, Basic Training v0.3, RD-153 (1)): the teach follows the TOM method (Theme, Objective, Mechanics). A lesson
+page may be a plain sentence or {"t": text, "h": heading, "spot": what to point at}; the script's "briefing" pages come before
+step 1. "deal" hands you each card as its lesson starts: your hand still holds what the engine dealt, but cards not yet dealt
+carry held=True and the table does not show them (the game, and so the opening's scene 3, are unchanged). "moments" explain an
+event as it happens: each is filled with card names and sent in the game info for the table to show. The glossary splits
+Tactical and Theater from the new Long shot entry, and adds ISR, Supply and Lift (DarKnight84's note, 15 Nov).
+0.16.1 (16 Nov 2026): the ISR entry gives the numbers (start, gain each Sustainment, cap); the Supply entry says which Base pays.
+0.16.2 (16 Nov 2026, Battlefield v0.19.4): the Mission Track entry says every Effect goes there and an Order lands at H-Hour (the
+project lead's note); it uses Mission, not the old Operations and Conditions.
+0.17 (16 Nov 2026, Battlefield v0.20, Patch 15): the Supply entry gives the 60/40 payment (the Hub pays its share of each cost,
+the Staging Base the rest; the number comes from the engine's pay_hub); the Lift entry counts THROUGHPUT; new keywords
+THROUGHPUT (FARP) and MAINTENANCE (WRENCH). GRAY ZONE's and STALL's person-only choices need nothing here: they arrive as
+ordinary prompts with plain answers. The engine is unchanged.
+0.17.1 (19 Nov 2026, Basic Training v0.3.5): the glossary retires "Long shot" (draft entry A: an attack at Tactical or Theater range
+costs 1 more ISR, now said in the Tactical, Theater and ISR entries); adds "Supported" (entry C, worded for the released engine, where
+supporters back attacks only); Close reads "This attack needs Contact" (the Studio Lead's call: Close means in Contact); the SWARM and
+SUSTAIN patterns match only cards that carry those keywords (not MOTE SWARM's HUNTER SWARM, MYRMIDON's SWARM PODS or a SUSTAINMENT heading);
+the drift message says "the project team". No rule changes."""
+import json, random, traceback, os, re
+import merged_engine as E
+
+VERSION = "0.17.2"   # engine v0.17.2 (cards and decks v0.17.1): the person's repair list. A game record with an older version replays with the rule repair_list 0
+
+# 0.9 (14 Nov 2026): saved replays: Session.replay() and /play/replay (the whole game as frames, packed small).
+# 0.8 (14 Nov 2026, RD-133): one set of cards again. The Theory of Victory decks became cards and decks v0.11 and the
+# old sets were archived, so the table plays the newest SS_Merged_ cards and decks only. The build machinery stays, with one entry.
+BUILD_DEFS = [("merged", "Cards and decks {v}", "SS_Merged_Cards_", "SS_Merged_Decks_")]
+
+
+def _ver(f): return (re.search(r"(v[\d.]+)\.csv$", f or "") or [None, ""])[1]
+
+
+def builds():
+    out = []
+    for key, lab, cp, dp in BUILD_DEFS:
+        cf, df = E.latest(cp), E.latest(dp)
+        if not cf or not df: continue
+        v = _ver(cf) if _ver(cf) == _ver(df) else "%s, decks %s" % (_ver(cf), _ver(df))
+        if _ver(cf) != _ver(df): lab = "Cards {v}"
+        out.append(dict(key=key, label=lab.format(v=v), cards=cf, decks=df))
+    return out
+
+
+_CACHE = {}
+def build_data(key):
+    """Cards and decks of one build, loaded once."""
+    bs = dict((b["key"], b) for b in builds())
+    b = bs.get(key) or (builds() or [None])[0]
+    if b is None: raise ValueError("No card files found.")
+    if b["key"] not in _CACHE:
+        cards, cf = E.load_cards(os.path.join(E.HERE, b["cards"]))
+        decks = E.load_decks(cards, os.path.join(E.HERE, b["decks"]))
+        _CACHE[b["key"]] = (b, cards, decks)
+    return _CACHE[b["key"]]
+
+
+def deck_box(decks, name): return (decks.get(name) or {}).get("box") or E.CONCEPTS[name]["box"]
+
+
+def move_notes(g, p):
+    """Why the Force Marker cannot advance, naming the card that stops it (or nothing)."""
+    out = []
+    try:
+        o = g.opp(p)
+        for t in o.track:
+            ks = t["c"].keys if t.get("kind") == "cond" else []
+            if "E_FASCAM" in ks: out.append("You cannot advance: the enemy's %s is on its Mission Track." % t["c"].name)
+            if "E_NAVWAR" in ks: out.append("The enemy's %s: advancing or pursuing costs you 2 ISR (you have %d)." % (t["c"].name, p.isr))
+        if g.fixed(p) and g.pos[p.i] != (1 if p.i == 0 else g.Z):
+            fx = [u.c.name for u in o.units if u.k("FIX") and u.row == "F"]
+            out.append("You cannot fall back: the enemy's %s fixes you." % " and ".join(fx))
+    except Exception: pass
+    return out
+
+
+def show_piles(g):
+    """Add the piles to every board you are shown: both discard piles and Ash Heaps newest first (open to both players, RD-137),
+    and your own decks sorted (their order stays secret; the enemy's decks are not listed)."""
+    real = g.view
+    def view(pid, *a, **k):
+        v = real(pid, *a, **k)
+        try:
+            p = g.P[pid]
+            v["you"]["piles"] = dict(discard=[c.name for c in reversed(p.discard)], ash=[c.name for c in reversed(p.ash)], ie=sorted(c.name for c in p.ie), mf=sorted(c.name for c in p.mf))
+            o = g.P[1 - pid]; v["bot"]["piles"] = dict(discard=[c.name for c in reversed(o.discard)], ash=[c.name for c in reversed(o.ash)])
+        except Exception: pass
+        return v
+    g.view = view
+
+
+class Pause(BaseException):
+    """Raised inside the engine when the game needs the player's next choice."""
+
+
+def why_not(g, p, labels):
+    """For the Operations prompt: one plain line for each of your attacking cards that has no attack to offer right now, saying why."""
+    out = []
+    try:
+        for u in p.units:
+            c = u.c
+            if not c.cap or not c.atk: continue
+            if any(("with %s " % c.name) in l or ("with %s alone" % c.name) in l or ("Reveal %s " % c.name) in l for l in labels if "ttack" in l): continue
+            if u.hidden:
+                if p.sup() < c.cost: out.append("Your Hidden %s costs %d Supply to reveal; you have %d." % (c.name, c.cost, p.sup()))
+                continue
+            if u.ex: out.append("%s is exhausted: it has already acted, reacted or been suppressed this round." % c.name); continue
+            if not g.targets(p, u):
+                if c.range == "Close" and not g.contact(): out.append("%s attacks at Close range: the Force Markers must be in Contact." % c.name)
+                else: out.append("%s has no enemy card or Base it can reach." % c.name)
+                continue
+            out.append("%s: every target it can reach needs more ISR than you have (%d)." % (c.name, p.isr))
+        out += ability_reasons(g, p, labels)
+    except Exception: pass
+    return list(dict.fromkeys(out))[:10]   # two copies of a card give one line
+
+
+def ability_reasons(g, p, labels):
+    """For each of your cards with an ACTION or INFILTRATE line that the Operations prompt does not offer: why not. The engine itself is asked
+    on a copy of the game: with the card ready and plenty of ISR and Supply, would the line be offered? (Changes nothing in the game.)"""
+    import copy
+    out = []
+    for u in p.units:
+        c = u.c
+        if not c.cap or not any(k.startswith(("A_", "INF_")) for k in c.keys): continue
+        if any(("Use %s" % c.name) in l or ("%s " % c.name) in l and ("nfiltrat" in l or "Mission Track" in l) for l in labels): continue
+        what = "INFILTRATE" if any(k.startswith("INF_") for k in c.keys) and not any(k.startswith("A_") for k in c.keys) else "ACTION"
+        if u.hidden and p.sup() < c.cost: out.append("Your Hidden %s costs %d Supply to reveal and act; you have %d." % (c.name, c.cost, p.sup())); continue
+        if u.ex: out.append("%s is exhausted: its %s line needs it ready." % (c.name, what)); continue
+        if what == "INFILTRATE" and u.row != "F": out.append("%s can INFILTRATE only from your Frontline." % c.name); continue
+        try:
+            h = copy.deepcopy(g); h.human = None; h.log = None; h.on_event = None; h.on_decide = None
+            q = h.P[p.i]; v = [x for x in q.units if x.uid == u.uid][0]; v.ex = False; q.isr = 10
+            for b in q.bases: b.sup = 99
+            offered = any(c.name in str(o[1]) for o in h.ability_options(q))
+        except Exception: offered = None
+        if offered: out.append("%s: its %s line costs more ISR or Supply than you have (%d ISR, %d Supply)." % (c.name, what, p.isr, p.sup()))
+        elif offered is False: out.append("%s: its %s line has nothing it can affect right now." % (c.name, what))
+    return out
+
+
+def why_hand(g, p, kind, labels):
+    """For cards in your hand that cannot be played at this prompt: card name -> one plain reason."""
+    out = {}
+    try:
+        text = " | ".join(labels)
+        for c in p.hand:
+            if c.name in out or (" %s" % c.name) in text: continue
+            if kind == "deploy":
+                if not c.cap: out[c.name] = "Effects are played during Operations, not during Command."; continue
+                out[c.name] = deploy_reason(g, p, c); continue
+            if c.cap: out[c.name] = "Capabilities deploy during Command, not during Operations."; continue
+            if c.sub == "Reaction": out[c.name] = "%s is a Reaction: you are offered it when its trigger happens%s." % (c.name, " (an enemy attack on your Frontline)" if "E_FPF" in c.keys else ""); continue
+            if p.sup() < c.cost: out[c.name] = "%s costs %d Supply; you have %d." % (c.name, c.cost, p.sup()); continue
+            if p.isr < c.isr: out[c.name] = "%s costs %d ISR; you have %d." % (c.name, c.isr, p.isr); continue
+            r = c.req or []
+            if r[:1] == ["PULSE"] and not g.req_ok(p, c):
+                acc = [x for x in r[1:-1]]; have = [b for b in p.bases if set(acc) & set(b.t()["access"])]
+                why = "you have no Base with that access" if not have else "; ".join("%s %s" % (b.name, "is devastated" if b.dev else "has already fired its Pulse this round" if b.ex else "is ready") for b in have)
+                out[c.name] = "%s is a PULSE: it needs a Ready Base with %s access, and firing it exhausts that Base. Right now: %s." % (c.name, " or ".join("[%s]" % a for a in acc), why); continue
+            if r[:1] == ["CONTACT"] and not g.req_ok(p, c): out[c.name] = "%s needs the forces to be in Contact." % c.name; continue
+            if r[:1] == ["CULMINATE"] and not g.req_ok(p, c):
+                n = sum(1 for u in g.opp(p).front() if u.ex)
+                out[c.name] = "%s needs the forces in Contact and 2 or more enemy Frontline cards exhausted. Right now: %s, %d exhausted." % (c.name, "in Contact" if g.contact() else "not in Contact", n); continue
+            if r and not g.req_ok(p, c): out[c.name] = "%s needs %s of your %s cards in play." % (c.name, "two" if r[0] == "UNITS2" else "one", " or ".join(r[1:])); continue
+            out[c.name] = "%s has no legal use right now." % c.name
+    except Exception: pass
+    return out
+
+
+def upgrade_need(c):
+    """What a card can upgrade from, in words: 'an Information II card with EW or CYBER'."""
+    prev = {2: "I", 3: "II"}.get(c.gi, "")
+    cls = "any" if c.up_cls == "*" else E.CLASS_NAME.get(c.up_cls or c.cls, c.up_cls or c.cls)
+    tags = sorted(c.up_tags)
+    what = ("a Generation %s card" % prev) if cls == "any" else ("%s %s %s card" % ("an" if cls[:1] in "AEIOU" else "a", cls, prev))
+    return what + ((" with %s" % " or ".join(tags)) if tags else "")
+
+
+def glossary(R=None):
+    """Keywords and game terms, each with a plain meaning, for the page: [term, pattern (a JavaScript regular expression), meaning].
+    Keywords match in capitals only; game terms match in any case. Numbers come from the rules in force."""
+    R = R or E.RULES
+    K = [("SEIZE", "SEIZE", "In your Frontline: when you move, your Force Marker may advance 1 extra Zone (not if the enemy has OBSTACLE)."),
+         ("ROUT", "ROUT", "If you win the Frontline contest, the enemy retreats 1 more Zone (none if it has OBSTACLE)."),
+         ("PURSUE", "PURSUE|PURSUIT", "When the enemy Force Marker falls back or is pushed back, yours may follow 1 Zone (not past OBSTACLE)."),
+         ("OBSTACLE", "OBSTACLE", "In your Frontline: the enemy cannot SEIZE or PURSUE, and enemy ROUT has no effect."),
+         ("FIX", "FIX", "In your Frontline: while the Force Markers are 1 Zone apart or in Contact, the enemy marker cannot fall back."),
+         ("HOLD", "HOLD \\d", "In your Frontline: counts as that number for Frontline Strength."),
+         ("DEEP FIRES", "DEEP FIRES", "Out of Contact, this attack may target the Rear Area and Bases."),
+         ("FLANK", "FLANK", "In Contact, this attack may target the Rear Area and Bases."),
+         ("PRECISION", "PRECISION", "The attack ignores that much of the target's Survivability."),
+         ("SUPPRESS", "SUPPRESS", "The target is exhausted before it can react."),
+         ("FIRE SUPPORT", "FIRE SUPPORT", "As a supporter: the attack gets that much more ATK."),
+         ("CROSS-CUE", "CROSS-CUE", "As a supporter: the action costs that much less ISR."),
+         ("JAM", "JAM", "As a supporter: the enemy must pay that much ISR to react."),
+         ("SUSTAIN", "\\bSUSTAIN\\b", "As a supporter: after the action, put that much Supply on your Bases."),
+         ("COMMAND", "COMMAND \\d", "Your Span of Control (how many supporters an attack may have) goes up by that much, to at most 3."),
+         ("COVER", "COVER", "Reaction: exhaust this card to give the targeted card or Base that much more Survivability against the attack."),
+         ("ESCORT", "ESCORT", "Air defense for the Frontline: COVER a Frontline card, or cancel an AIR attack on it."),
+         ("GUARD", "GUARD", "Air defense for the Rear Area and Bases: COVER one, or cancel an AIR or ROCKET attack on it."),
+         ("CANCEL", "CANCEL|INTERCEPT", "The attack or Effect does nothing. An attack that cannot be canceled ignores a card's cancel; a Reaction card from hand still works."),
+         ("SWARM", "· SWARM(?! [A-Z])", "+1 ATK for each other ROBOT or DRONE card you control."),
+         ("FLAGSHIP", "FLAGSHIP", "Only one of this card in play per player."),
+         ("INFILTRATE", "INFILTRATE", "From your Frontline, pay the mission cost: the card goes onto your Mission Track for its Timer. At H-Hour its mission happens and it returns to your Rear Area exhausted."),
+         ("ON STATION", "ON STATION", "Air time: in Sustainment an exhausted AIR card must be paid for to ready, or it returns to base (discarded, no Homefront loss)."),
+         ("PULSE", "PULSE", "A Joint Pulse needs a ready Base with the named access, and firing it exhausts that Base. Hub: SPACE, MARITIME, CYBER. Staging Base: LAND, AIR."),
+         ("REQUIRES", "REQUIRES", "You may play this card only with a card of the named Class in play."),
+         ("EXPEND", "EXPEND", "After it resolves, this card goes to your Ash Heap, not your discard pile, so it never comes back."),
+         ("DEGRADE", "DEGRADE", "The enemy loses that much ISR (or that much Supply from its Bases, if it says Base Supply)."),
+         ("RECOVER", "RECOVER", "Remove that much damage."),
+         ("THROUGHPUT", "THROUGHPUT", "You get that much more Lift each Command phase, so more cards reach the fight."),
+         ("MAINTENANCE", "MAINTENANCE", "Recovering damage and upgrading each cost you that much less Supply (a repair still costs at least 1)."),
+         ("DELAY / ADVANCE", "DELAY|ADVANCE", "Move a Mission Track card 1 round further from H-Hour (DELAY) or closer to it (ADVANCE).")]
+    T = [("Exhaust", "\\bEXHAUST|[Ee]xhausted", "An exhausted card is turned sideways: it cannot attack, act or react until it is readied. Many lines cost [EXHAUST]."),
+         ("Ready", "\\bREADY\\b|\\bReady\\b", "An exhausted card stands up again. In Sustainment you pay its Ready cost (usually 1 Supply) to ready it."),
+         ("Contact", "\\bContact\\b", "Both Force Markers are in the same Zone. Close attacks and the Frontline contest need Contact."),
+         ("Force Marker", "Force Marker", "Your piece on the Terrain. It stands in one Zone and moves at Maneuver: 1 Zone toward the enemy, 1 toward home, or it stays. You control your Zone and every Zone behind it."),
+         ("Close", "\\bClose\\b", "This attack needs Contact (both Force Markers in the same Zone)."),
+         ("Tactical", "\\bTactical\\b", "A Tactical attack has a range of 0 to %d Zones: it reaches when the Force Markers are %d Zones apart or less. An attack at Tactical or Theater range costs %d more ISR." % (R.get("tac_reach", 3), R.get("tac_reach", 3), R.get("ranged_isr", 1))),
+         ("Theater", "\\bTheater\\b", "A Theater attack reaches any distance. An attack at Tactical or Theater range costs %d more ISR." % R.get("ranged_isr", 1)),
+         ("ISR", "\\bISR\\b", "Intelligence, surveillance and reconnaissance: what your force knows about the enemy. An attack spends ISR to find its target: the target's Concealment, and %d more for an attack at Tactical or Theater range. You start with %d, gain %d each Sustainment (%d more when the enemy has at least 2 more face-up Capabilities than you), and hold at most %d. Some cards and events give more; a devastated Base gives its owner 3." % (R.get("ranged_isr", 1), R.get("isr0", 4), R.get("isr_income", 2), 1, R.get("isr_cap", 10))),
+         ("Supply", "\\bSupply\\b", "Pays to deploy, ready and repair cards. It sits on your Bases, and each Base restocks its own Supply each Sustainment, up to what it can hold. When you pay, the Hub pays %d%% of the cost, rounded down (so a cost of 3 takes %d from the Hub and %d from the Staging Base), and the Staging Base pays the rest; if a Base runs short, the other Base covers it. The table shows each Base's share as it pays." % (R.get("pay_hub", 40), 3 * R.get("pay_hub", 40) // 100, 3 - 3 * R.get("pay_hub", 40) // 100) if R.get("pay_hub") else "Pays to deploy, ready and repair cards. It sits on your Bases, and each Base restocks its own Supply each Sustainment, up to what it can hold. When you pay, the Supply comes from the Base holding the most."),
+         ("Lift", "\\bLift\\b", "How many cards you can deploy or upgrade this round: 2 for each Base, 1 for a devastated Base, plus any THROUGHPUT."),
+         ("Hidden", "\\bHidden\\b|face down", "A face-down card. Attacking it costs %d extra ISR; a Hidden Effect is a decoy and is discarded when revealed." % R.get("hidden_isr", 2)),
+         ("Mission Track", "Mission Track|track card", "Where every Effect card goes, and where an Operator waits after INFILTRATE. An Order lands at H-Hour, so it happens right away; a Mission waits and moves 1 space toward H-Hour each Operations phase."),
+         ("H-Hour", "H-Hour", "When a Mission Track card reaches H-Hour it resolves; nobody may react to it."),
+         ("Frontline", "\\bFrontline\\b", "Your front row, at most %d cards. It shields your Rear Area and Bases and decides the Frontline contest." % R.get("front_limit", 4)),
+         ("Rear Area", "Rear Area", "Your back row. The enemy can hit it only when your Frontline is empty, or with DEEP FIRES, FLANK or a spotlight."),
+         ("Supported", "\\b[Ss]upported\\b", "An attack that another of your cards is helping. A ready card with a SUPPORT line can be exhausted to back one attack, which then gets that line's bonus (for example, +2 ATK, or 2 less ISR). Each supporter must differ in Class from the attacker and from the other supporters, and your Span of Control limits how many. In this version only attacks can be supported."),
+         ("Span of Control", "Span of Control", "How many supporters one attack may have: 1, plus your COMMAND numbers, at most %d." % R.get("span_max", 3)),
+         ("Survivability", "Survivability|\\bSurv\\b", "Taken off each attack's ATK before damage."),
+         ("Concealment", "Concealment", "The ISR the enemy pays to target this card."),
+         ("Homefront", "Homefront", "Your nation's will to fight, starting at %d. At 0 your side collapses; after round %d the higher Homefront wins." % (R.get("hf", 20), R.get("last", 8))),
+         ("Base", "\\bBases?\\b|Staging Base|\\bHub\\b", "Supply sits on your Bases. Hub: holds 15, adds 1 a round. Staging Base: holds 10, adds 5 a round, costs 2 ISR to target. A devastated Base costs you 3 Homefront.")]
+    return [list(x) + ["keyword"] for x in K] + [list(x) + ["term"] for x in T]
+
+
+def deploy_reason(g, p, c):
+    """Why a Capability in your hand cannot be deployed or upgraded at this Command prompt: one plain line, with the real price."""
+    sup = p.sup(); flag = bool(c.keys.get("UPGRADE_ONLY"))
+    if c.keys.get("FLAGSHIP") and any(u.c.name == c.name for u in p.units): return "%s is a flagship: only one in play per player, and yours is already on the table." % c.name
+    lift = "" if p.lift > 0 or c.keys.get("AIRDROP") else "No Lift left this round: each deployment or upgrade takes 1 Lift (2 a round for each Base, 1 if it is devastated)."
+    try: disc = max([u.k("DELIVER") for u in p.units if not u.hidden] + [0]) + (2 if g.cond(p, "E_PREPO") else 0)
+    except Exception: disc = 0
+    dtxt = (", minus %d discount" % disc) if disc else ""
+    up = ""
+    if c.gi > 1:
+        hosts = g.up_hosts(p, c)
+        if hosts:
+            u = min(hosts, key=lambda u: c.cost - u.c.cost); d = max(0, c.cost - u.c.cost - disc)
+            up = "Upgrading your %s to %s costs %d Supply (%d minus %d%s)%s." % (u.c.name, c.name, d, c.cost, u.c.cost, dtxt, "; you have %d" % sup if sup < d else "")
+        else:
+            hid = g.up_hosts(p, c, hidden=True)
+            up = ("Upgrading to %s needs %s in play, face up: reveal your Hidden %s first." % (c.name, upgrade_need(c), hid[0].c.name)) if hid else ("Upgrading to %s needs %s in play." % (c.name, upgrade_need(c)))
+    if flag: return " ".join(x for x in (lift, up, "%s is a flagship: it enters play only as an upgrade." % c.name) if x)
+    cost = max(0, c.cost - disc)
+    dep = ("Deploying %s costs %d Supply%s; you have %d." % (c.name, cost, (" (%d%s)" % (c.cost, dtxt)) if disc else "", sup)) if sup < cost else ""
+    return " ".join(x for x in (lift, dep, up) if x) or "You cannot deploy %s now." % c.name
+
+
+TRAINING_FILE = "basic_training.json"
+_TRAIN = {}
+
+
+def training():
+    """The Basic Training script (basic_training.json, next to this file or the engine). None if it is missing."""
+    if "s" not in _TRAIN:
+        _TRAIN["s"] = None
+        for d in (os.path.dirname(os.path.abspath(__file__)), os.path.dirname(os.path.abspath(E.__file__))):
+            f = os.path.join(d, TRAINING_FILE)
+            if os.path.isfile(f):
+                with open(f, encoding="utf-8-sig") as fh: _TRAIN["s"] = json.load(fh)
+                break
+    return _TRAIN["s"]
+
+
+class Coach:
+    """Runs Basic Training inside one play of the game: which lesson step a prompt belongs to, which of your options it allows,
+    and what the bot does. Everything follows from the answers so far, so every replay of the game gives the same lessons."""
+    def __init__(self, script, cards):
+        self.S = script; self.byid = {c.id: c for c in cards.values()}
+        self.steps = script.get("steps", []); self.bot = script.get("bot_moves", [])
+        self.i = 0; self.b = 0; self.drift = []; self.botdrift = []
+        self.deal = {int(k): list(v) for k, v in (script.get("deal") or {}).items()}   # 0.16: cards handed to you as their lessons start
+        you = script.get("you", {}); self.total = {}
+        for cid in you.get("draw", []) + you.get("main", []): self.total[cid] = self.total.get(cid, 0) + 1
+
+    def name(self, cid): c = self.byid.get(cid); return c.name if c else cid
+
+    def fill(self, t):
+        """{CAP-102} in a lesson becomes the card's name from the card file."""
+        return re.sub(r"\{([A-Z]+-\d+)\}", lambda m: self.name(m.group(1)), str(t or ""))
+
+    def deck(self, ids): return [self.name(x) for x in ids]
+
+    def page(self, x, **extra):
+        """0.16: a lesson page for the table, always {"t": text} plus any "h" (heading) and "spot" (what to point at)."""
+        d = dict(x) if isinstance(x, dict) else dict(t=x)
+        d["t"] = self.fill(d.get("t"))
+        if d.get("h"): d["h"] = self.fill(d["h"])
+        if not d.get("spot"): d.pop("spot", None)
+        d.update(extra); return d
+
+    def briefing(self):
+        """0.16: the briefing pages (Theme, Objective, Mechanics), shown before the first step."""
+        b = self.S.get("briefing") or {}; ps = b.get("pages", []); les = self.fill(b.get("lesson") or "Briefing")
+        return [self.page(x, lesson=les, k="%d of %d" % (i + 1, len(ps))) for i, x in enumerate(ps)]
+
+    def moments(self):
+        """0.16: the explanations shown as an event happens. "match" becomes a pattern for the event text, with card names filled in."""
+        out = []
+        for m in self.S.get("moments", []):
+            pat = re.sub(r"\{([A-Z]+-\d+)\}", lambda q: re.escape(self.name(q.group(1))).replace("\\ ", " "), m.get("match", ""))
+            out.append(dict(round=m.get("round"), match=pat, title=self.fill(m.get("title")), lesson=self.fill(m.get("lesson") or ""), pages=[self.page(x) for x in m.get("pages", [])]))
+        return out
+
+    def held(self, g, p):
+        """0.16: which cards in your hand Basic Training has not dealt yet (True for each one, in hand order). A card counts as
+        dealt once its round in "deal" has come; cards already played count against the cards dealt."""
+        if not self.deal: return [False] * len(p.hand)
+        dealt = {}
+        for r, ids in self.deal.items():
+            if r <= g.round:
+                for cid in ids: dealt[cid] = dealt.get(cid, 0) + 1
+        hand = [c.id for c in p.hand]; left = {}
+        for cid, n in self.total.items():
+            left[cid] = n - sum(1 for c in p.ie if c.id == cid) - sum(1 for c in p.mf if c.id == cid) - hand.count(cid)
+        shown = {}; out = []
+        for cid in hand:
+            ok = shown.get(cid, 0) < max(0, dealt.get(cid, 0) - left.get(cid, 0)); out.append(not ok)
+            if ok: shown[cid] = shown.get(cid, 0) + 1
+        return out
+
+    @staticmethod
+    def ids(g, m):
+        """The card IDs an option is about: (source, destination)."""
+        um = {}
+        for q in g.P:
+            for u in q.units: um[u.uid] = u.c.id
+            for b in q.bases: um["b:" + b.name] = "BASE"
+        src = um.get(m.get("src")) or m.get("card"); dst = um.get(m.get("dst"), m.get("dst"))
+        return src, dst
+
+    def match(self, g, spec, labels, meta):
+        out = []
+        for i, l in enumerate(labels):
+            m = meta[i] if i < len(meta) else {}; src, dst = self.ids(g, m or {})
+            if spec.get("card") and src != spec["card"]: continue
+            if spec.get("dst") and dst != spec["dst"]: continue
+            if spec.get("label") and not re.search(spec["label"], l): continue
+            out.append(i)
+        return out
+
+    def person(self, g, kind, labels, meta):
+        """The lesson for this prompt of yours: dict(allow, auto, coach). Moves on to the next step."""
+        if self.i >= len(self.steps):
+            f = self.S.get("free", {}); return dict(allow=None, auto=None, coach=dict(n=len(self.steps), of=len(self.steps), free=True, title=self.fill(f.get("title")), pages=[self.page(x) for x in f.get("pages", [])], do=self.fill(f.get("do"))))
+        st = self.steps[self.i]
+        if st.get("kind") != kind or (st.get("round") and st["round"] != g.round):
+            self.drift.append("step %d expects %s in round %s; the game asks %s in round %d" % (self.i + 1, st.get("kind"), st.get("round", "any"), kind, g.round))
+            return dict(allow=None, auto=None, coach=dict(n=self.i, of=len(self.steps), drift=True, title="Your call", pages=[], do="Choose any option. (The lesson script and the game have drifted apart: please tell the project team.)"))
+        al = self.match(g, st, labels, meta)
+        if not al:
+            self.drift.append("step %d (%s, round %d): no option matches %s" % (self.i + 1, kind, g.round, {k: st[k] for k in ("card", "dst", "label") if k in st}))
+            al = None
+        first = self.i == 0; self.i += 1
+        pages = (self.briefing() if first else []) + [self.page(x) for x in st.get("pages", [])]
+        c = dict(n=self.i, of=len(self.steps), lesson=self.fill(st.get("lesson")), title=self.fill(st.get("title")), pages=pages, do=self.fill(st.get("do")), nudge=self.fill(st.get("nudge") or ""))
+        return dict(allow=al, auto=(al[0] if (st.get("auto") and al) else None), coach=c)
+
+    def bot_pick(self, g, p, kind, opts):
+        """The bot's move: the next scripted move if this prompt is it, else it holds back (Pass, Done, Hold, No), else as usual."""
+        if self.b < len(self.bot):
+            st = self.bot[self.b]
+            if st.get("kind") == kind and st.get("round", g.round) == g.round:
+                labels = [o[1] for o in opts]; meta = [g.opt_meta(o[2]) for o in opts]; al = self.match(g, st, labels, meta)
+                self.b += 1
+                if al: return opts[al[0]]
+                self.botdrift.append("bot move %d (%s, round %d) matched nothing" % (self.b, kind, g.round))
+        for o in opts:
+            if o[2] is None or (o[2] == 0 and not isinstance(o[2], bool)) or o[1].startswith(("Hold position", "Keep it Hidden", "Leave it", "No", "Stay")): return o
+        return None
+
+
+def stack(g, coach):
+    """Basic Training: each force's cards in the script's order (the first listed is drawn first)."""
+    for p, side in zip(g.P, ("you", "bot")):
+        sp = coach.S[side]
+        p.ie = [g.cards[n] for n in reversed(coach.deck(sp.get("draw", [])))]; p.mf = [g.cards[n] for n in reversed(coach.deck(sp.get("main", [])))]
+
+
+def coach_view(g, coach):
+    """0.16: Basic Training: cards in your hand that the lesson has not dealt yet carry held=True; the table leaves them out."""
+    real = g.view
+    def view(pid, *a, **k):
+        v = real(pid, *a, **k)
+        try:
+            if pid == 0 and v.get("you", {}).get("hand"):
+                for c, h in zip(v["you"]["hand"], coach.held(g, g.P[0])):
+                    if h: c["held"] = True
+        except Exception: pass
+        return v
+    g.view = view
+
+
+def coach_game(g, coach):
+    """Basic Training: the bot follows the script (see Coach.bot_pick). The engine itself is unchanged."""
+    real = g.decide
+    def decide(p, kind, prompt, opts):
+        if not opts or g.is_human(p): return real(p, kind, prompt, opts)
+        o = coach.bot_pick(g, p, kind, opts)
+        if o is None: return real(p, kind, prompt, opts)
+        g.info += 1
+        if g.on_decide and len(opts) > 1: g.on_decide(p, kind, prompt, opts, o)
+        return o[2]
+    g.decide = decide
+
+
+class Session:
+    def __init__(self, b):
+        if b.get("tutorial"): b = self.tutorial_setup(b)
+        bd, self.cards, decks = build_data(b.get("build") or "merged")
+        self.build = bd; self.card_file = bd["cards"]
+        you, bot = b.get("you"), b.get("bot")
+        if you not in E.CONCEPTS or bot not in E.CONCEPTS or you not in decks or bot not in decks: raise ValueError("Choose two Concepts from the list.")
+        self.seed = int(b.get("seed") or random.randrange(1, 10 ** 6)); rng = random.Random(self.seed)
+        bx = sorted({deck_box(decks, you), deck_box(decks, bot)})   # the deck file's Box column decides the box
+        key = getattr(E, "box_key", lambda x: x)   # product names (Crimson Reign, Stormwatch) -> the engine's terrain sets
+        terr = [t for t, v in E.TERRAIN.items() if v["box"] in {key(x) for x in bx}]
+        self.terrain = b.get("terrain") if b.get("terrain") in E.TERRAIN else rng.choice(terr)
+        self.first = {"you": 0, "bot": 1}.get(b.get("first"), rng.randrange(2))
+        self.rules = {k: int(b[k]) for k in ("hf", "hand", "concepts", "forced_discard", "instant_end", "repair_list") if str(b.get(k) or "").strip()}
+        if b.get("tutorial"): self.rules.update({k: int(v) for k, v in (b.get("rules") or {}).items()})
+        self.spectate = str(b.get("spectate") or "") in ("1", "true", "True")   # watch the bot play both sides
+        self.names = ([you, bot] if you != bot else [you + " (south)", bot + " (north)"]) if self.spectate else ["You", "The bot"]
+        self.info = dict(you=you, bot=bot, terrain=self.terrain, seed=self.seed, cards=self.card_file, decks=bd["decks"], build=bd["key"], build_label=bd["label"], mode="Sample decks", boxes=" and ".join(bx), first=self.names[self.first], spectate=self.spectate, names=self.names, hf0=int(self.rules.get("hf", E.RULES["hf"])), last=int(self.rules.get("last", E.RULES["last"])))
+        self.specs = [dict(decks.get(you, {}), name=self.names[0], concept=you), dict(decks.get(bot, {}), name=self.names[1], concept=bot)]
+        self.train = training() if b.get("tutorial") else None; self.coach = None
+        if self.train:
+            cc = Coach(self.train, self.cards); missing = [x for side in ("you", "bot") for part in ("draw", "main") for x in self.train[side].get(part, []) if x not in cc.byid]
+            if missing: raise ValueError("Basic Training names cards that are not in the card file: " + ", ".join(sorted(set(missing))))
+            for i, side in enumerate(("you", "bot")): self.specs[i]["ie"] = cc.deck(self.train[side].get("draw", [])); self.specs[i]["deck"] = cc.deck(self.train[side].get("main", []))
+            self.info.update(tutorial=dict(name=self.train.get("name", "Basic Training"), version=self.train.get("version", ""), steps=len(self.train.get("steps", [])), end=json.loads(cc.fill(json.dumps(self.train.get("end", {})))), moments=cc.moments()), mode="Basic Training")
+        self.answers = []; self.la = []; self.frames = []; self.nframe = 0; self.npend = 0
+        self.g = None; self.pending = None; self.over = None; self.error = None; self.snapshot = None; self.qinfo = []
+        self.run()
+
+    @staticmethod
+    def tutorial_setup(b):
+        t = training()
+        if not t: raise ValueError("Basic Training is not on this page (basic_training.json is missing).")
+        g = t.get("game", {})
+        return dict(build=b.get("build") or "merged", you=t["you"]["concept"], bot=t["bot"]["concept"], seed=g.get("seed", 1), terrain=g.get("terrain", "OPEN PLAIN"), first=g.get("first", "you"), tutorial=1,
+                    rules=g.get("rules", {}))
+
+    def run(self, emit=True):
+        """Play from the start with the recorded answers; stop at the next question or at the end of the game."""
+        sess = self; replay = self.answers; st = dict(used=0, la=0)
+        self.qinfo = []; self.pending = None; self.over = None
+        E.Unit.N[0] = 0  # the same card gets the same id every time the game is played again
+        g = self.g = E.Game(self.specs[0], self.specs[1], self.cards, terrain=self.terrain, seed=self.seed, first=self.first, rules=self.rules, log=True)
+        show_piles(g)
+        co = self.coach = Coach(self.train, self.cards) if self.train else None
+        if co: stack(g, co); coach_game(g, co); coach_view(g, co)
+
+        def chooser(obj, p, kind, prompt, labels):
+            les = co.person(g, kind, labels, list(getattr(obj, "meta", []) or [])) if co else None
+            if les and les["auto"] is not None: return les["auto"]   # a step the lesson answers for you
+            sess.qinfo.append(getattr(obj, "info", 0))
+            if st["used"] < len(replay):
+                a = replay[st["used"]]; st["used"] += 1
+                return a if a < len(labels) else len(labels) - 1
+            sess.snapshot = dict(stage="game", board=g.view(0)); sess.npend += 1
+            sess.pending = dict(kind=kind, prompt=prompt, options=list(labels), meta=list(getattr(obj, "meta", []) or []), n=float(sess.npend))
+            if les: sess.pending["coach"] = dict(les["coach"], allow=les["allow"])
+            rv = list(getattr(obj, "opt_vals", []) or [])
+            if len(rv) == len(labels): sess.pending["rate"] = [round(float(v), 2) for v in rv]   # the bot's rating of each option (Hint)
+            if kind == "action": sess.pending["notes"] = why_not(g, p, labels)
+            if kind == "maneuver": sess.pending["notes"] = move_notes(g, p)
+            if kind in ("action", "deploy"): sess.pending["hand_notes"] = why_hand(g, p, kind, labels)
+            raise Pause()
+
+        def event(text, fx):  # one frame for each new thing that happens
+            if not emit or st["used"] < len(replay) or getattr(g, "_la", False): return
+            sess.nframe += 1; fr = dict(n=sess.nframe, text=text, fx=fx, view=g.view(0))
+            if st.get("why"): fr["why"] = st.pop("why")   # the bot decision that led to this event
+            sess.frames.append(fr); del sess.frames[:-(6000 if sess.spectate else 500)]
+
+        real = g.look_ahead
+        def look_ahead(p, m, base=0.0):  # the bot's look-ahead is the slow part: remember each result, with the card counter it left behind
+            i = st["la"]; st["la"] += 1
+            if i < len(sess.la): E.Unit.N[0] = sess.la[i][2]; return sess.la[i][1]
+            v = real(p, m, base); del sess.la[i:]; sess.la.append((st["used"], v, E.Unit.N[0])); return v
+
+        def decided(p, kind, prompt, opts, ch):  # what the bot chose and how it rated each option (needs on_decide in the engine; older engines just never call it)
+            if st["used"] < len(replay) or len(opts) < 2: return
+            rated = sorted(((round(float(o[0]), 2), str(o[1])) for o in opts), key=lambda x: -x[0])
+            st["why"] = dict(who=p.name, kind=kind, pick=str(ch[1]), score=round(float(ch[0]), 2), options=[dict(score=v, label=l) for v, l in rated[:8]], count=len(opts))
+        g.on_event = event; g.on_decide = decided
+        if not self.spectate: g.human = chooser; g.human_pid = 0; g.look_ahead = look_ahead
+        try:
+            w = g.play()
+            self.over = dict(winner=self.names[w] if w in (0, 1) else "Nobody (a draw)", how=g.how, round=g.round, you_hf=g.P[0].hf, bot_hf=g.P[1].hf)
+            self.snapshot = dict(stage="game", board=g.view(0))
+        except Pause: pass
+        except Exception as e:
+            self.error = "%s: %s\n%s" % (type(e).__name__, e, traceback.format_exc()[-1500:])
+
+    def can_undo(self):
+        """You may take back your last choice only if nothing new has been revealed since you made it."""
+        if self.pending is None or not self.answers or len(self.qinfo) < 2 or self.train: return False   # Basic Training: no undo (the lesson moves on)
+        return self.qinfo[-1] == self.qinfo[-2]
+
+    def choose(self, i, n=None):
+        p = self.pending
+        if p is None or not (0 <= int(i) < len(p["options"])) or (n is not None and abs(float(n) - p["n"]) > 1e-6): return
+        self.answers.append(int(i)); self.run()
+
+    def undo(self):
+        if not self.can_undo(): return
+        self.answers.pop(); keep = len(self.answers)
+        self.la = [x for x in self.la if x[0] <= keep]
+        self.run(emit=False)
+
+    def state(self, since=0):
+        fr = [f for f in self.frames if f["n"] > since][:300]
+        out = dict(info=self.info, view=self.snapshot, pending=self.pending, over=self.over, error=self.error, built=None, can_undo=self.can_undo(), frames=fr, last=self.nframe, busy=False)
+        if self.coach: out["coach"] = dict(step=self.coach.i, of=len(self.coach.steps), drift=list(self.coach.drift), botdrift=list(self.coach.botdrift))
+        return out
+
+    def replay(self):
+        """Every event of this game from the start, as the table shows them, for a saved replay: frames with the board as the
+        player saw it (hidden enemy cards stay hidden). Undone choices are not in it. Stops where the game stands now."""
+        if self.spectate and self.frames and self.frames[0]["n"] == 1 and len(self.frames) == self.nframe:
+            frames = [dict(f) for f in self.frames]
+        else:
+            frames = []; answers = list(self.answers); st = dict(used=0, la=0)
+            E.Unit.N[0] = 0
+            g = E.Game(self.specs[0], self.specs[1], self.cards, terrain=self.terrain, seed=self.seed, first=self.first, rules=self.rules, log=True)
+            show_piles(g); sess = self
+            co = Coach(self.train, self.cards) if self.train else None
+            if co: stack(g, co); coach_game(g, co); coach_view(g, co)
+            def chooser(obj, p, kind, prompt, labels):
+                les = co.person(g, kind, labels, list(getattr(obj, "meta", []) or [])) if co else None
+                if les and les["auto"] is not None: return les["auto"]
+                if st["used"] >= len(answers): raise Pause()
+                a = answers[st["used"]]; st["used"] += 1
+                return a if a < len(labels) else len(labels) - 1
+            def event(text, fx):
+                if getattr(g, "_la", False): return
+                fr = dict(n=len(frames) + 1, text=text, fx=fx, view=g.view(0))
+                if st.get("why"): fr["why"] = st.pop("why")
+                frames.append(fr)
+            real = g.look_ahead
+            def look_ahead(p, m, base=0.0):
+                i = st["la"]; st["la"] += 1
+                if i < len(sess.la): E.Unit.N[0] = sess.la[i][2]; return sess.la[i][1]
+                return real(p, m, base)
+            def decided(p, kind, prompt, opts, ch):
+                if len(opts) < 2: return
+                rated = sorted(((round(float(o[0]), 2), str(o[1])) for o in opts), key=lambda x: -x[0])
+                st["why"] = dict(who=p.name, kind=kind, pick=str(ch[1]), score=round(float(ch[0]), 2), options=[dict(score=v, label=l) for v, l in rated[:8]], count=len(opts))
+            g.on_event = event; g.on_decide = decided
+            if not self.spectate: g.human = chooser; g.human_pid = 0; g.look_ahead = look_ahead
+            try: g.play()
+            except Pause: pass
+        return dict(version=VERSION, info=self.info, over=self.over, frames=frames, cards=self.card_file, decks=self.build["decks"])
+
+    def replay_packed(self):
+        """A saved replay: what it is (for its name and the list) and the game itself, gzip-compressed and base64-encoded.
+        The card faces travel with it, so it plays the same after the cards change."""
+        import gzip, base64
+        rp = self.replay(); fr = rp["frames"]
+        body = dict(info=rp["info"], over=rp["over"], frames=fr, faces=card_faces(self.cards), meta=card_meta(self.cards), bases=base_meta())
+        z = base64.b64encode(gzip.compress(json.dumps(body, separators=(",", ":")).encode("utf-8"), 6)).decode("ascii")
+        ov = rp["over"] or {}
+        meta = dict(you=self.info["you"], bot=self.info["bot"], names=self.names, spectate=self.spectate, terrain=self.terrain, seed=self.seed, cards=self.card_file, decks=self.build["decks"],
+                    winner=ov.get("winner", ""), how=ov.get("how", ""), finished=bool(rp["over"]), rounds=max([f["view"].get("round", 0) for f in fr] or [0]), events=len(fr), engine=VERSION)
+        return dict(kind="ss-replay", version=1, meta=meta, z=z)
+
+    def record(self):
+        """Everything needed to play this exact game again: for saved game records later."""
+        return dict(version=VERSION, build=self.build["key"], build_label=self.build["label"], cards=self.card_file, decks=self.build["decks"], spectate=self.spectate, you=self.info["you"], bot=self.info["bot"], terrain=self.terrain, seed=self.seed, first=self.first, rules=self.rules, answers=list(self.answers), over=self.over, tutorial=bool(self.train))
+
+
+PLAY = {"game": None}
+
+
+def setup():
+    g = PLAY["game"]; bl = []
+    for b in builds():
+        _, cards, decks = build_data(b["key"])
+        bl.append(dict(b, concepts=[dict(name=k, box=deck_box(decks, k), text=v["text"]) for k, v in E.CONCEPTS.items() if k in decks], meta=card_meta(cards), faces=card_faces(cards), glossary=glossary(), decklists={k: dict(ie=sorted(set(v["ie"])), deck=sorted(set(v["deck"]))) for k, v in decks.items()}))
+    d0 = bl[0]
+    return dict(game=g.state() if g else None, builds=bl, training=training_summary(), concepts=d0["concepts"], terrain=[dict(name=k, box=v["box"], text=v["text"]) for k, v in E.TERRAIN.items()], rules=E.RULES,
+                cards=d0["cards"], decks=d0["decks"], meta=d0["meta"], bases=base_meta(), faces=d0["faces"], version=VERSION)
+
+
+def training_summary():
+    """Basic Training for the start screen and the Field Manual: its name and every lesson page, with card names from the card file."""
+    t = training()
+    if not t: return None
+    try:
+        co = Coach(t, build_data("merged")[1]); out = []
+        txt = lambda x: co.fill(x.get("t") if isinstance(x, dict) else x)
+        for x in co.briefing(): out.append(dict(lesson=x["lesson"], title=x.get("h", ""), pages=[x["t"]]))   # 0.16: the briefing first
+        for st in t.get("steps", []):
+            if st.get("pages"): out.append(dict(lesson=co.fill(st.get("lesson")), title=co.fill(st.get("title")), pages=[txt(x) for x in st["pages"]]))
+        for m in t.get("moments", []): out.append(dict(lesson=co.fill(m.get("lesson") or "Assessment"), title=co.fill(m.get("title")), pages=[txt(x) for x in m.get("pages", [])]))
+        order = [co.fill((t.get("briefing") or {}).get("lesson") or "Briefing"), "Command", "Operations", "Sustainment", "Assessment"]
+        out.sort(key=lambda x: order.index(x["lesson"]) if x["lesson"] in order else len(order))   # 0.16: the Field Manual reads by phase
+        end = t.get("end", {}).get("win", {})
+        return dict(name=t.get("name", "Basic Training"), version=t.get("version", ""), steps=len(t.get("steps", [])), minutes=t.get("minutes", "10 to 15"), lessons=out,
+                    win=dict(title=co.fill(end.get("title")), pages=[co.fill(x) for x in end.get("pages", [])]))
+    except Exception: return None
+
+
+def card_meta(cards=None):
+    """Printed values the game view does not carry (for drawing the card face): Investment Cost."""
+    try: return {n: dict(inv=c.inv, req=list(c.req or []), isr=c.isr) for n, c in (cards or E.load_cards()[0]).items()}
+    except Exception: return {}
+
+
+def card_faces(cards=None):
+    """Every card's printed face, by name, so the page can show a card that is not in your hand (an Effect the bot plays, a card resolving at H-Hour)."""
+    out = {}
+    try:
+        for n, c in (cards or E.load_cards()[0]).items():
+            out[n] = dict(name=c.name, kind=c.kind(), cls=c.cls, gen=c.gen, cost=c.cost_text(), id=c.id, cap=c.cap, lines=c.lines(), costn=c.cost, timer=c.timer, sub=c.sub,
+                          conc=c.conc, surv=c.surv, dur=c.dur, atkn=c.atk, range=c.range, hf=c.hf, ready=c.ready, tags=" ".join(sorted(c.tags)),
+                          upfrom=getattr(c, "upfrom", "") or "")
+    except Exception: pass
+    return out
+
+
+def base_meta():
+    """What each kind of Base gives access to (for PULSE cards)."""
+    try: return {k: list(v.get("access", [])) for k, v in E.BASE_TYPES.items()}
+    except Exception: return {}
+
+
+def handle(path, body="{}"):
+    """One request from the page, answered as JSON text. Paths match the Workbench's /api/merged/play routes."""
+    try:
+        b = json.loads(body or "{}") or {}; g = PLAY["game"]; path = path.replace("/api/merged", "")
+        if path == "/play": out = setup()
+        elif path == "/play/start": PLAY["game"] = Session(b); out = {"ok": True}
+        elif path == "/play/state": out = {"game": g.state(int(b.get("since") or 0)) if g else None}
+        elif path == "/play/choose":
+            if g: g.choose(b.get("i"), b.get("n"))
+            out = {"ok": True}
+        elif path == "/play/undo":
+            if g: g.undo()
+            out = {"ok": True}
+        elif path == "/play/quit": PLAY["game"] = None; out = {"ok": True}
+        elif path == "/play/record": out = g.record() if g else {}
+        elif path == "/play/replay": out = g.replay_packed() if g else {}
+        else: out = {"error": "Unknown request."}
+    except Exception as e:
+        out = {"error": "%s: %s\n%s" % (type(e).__name__, e, traceback.format_exc()[-1500:])}
+    return json.dumps(out)
