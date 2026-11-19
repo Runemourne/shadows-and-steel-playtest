@@ -1,0 +1,27 @@
+{
+ "files": [
+  "SS_Merged_Cards_v0.17.1.csv",
+  "SS_Merged_Decks_v0.17.1.csv",
+  "basic_training.json",
+  "browser_play.py",
+  "merged_engine.py"
+ ],
+ "cards": "SS_Merged_Cards_v0.17.1.csv",
+ "decks": "SS_Merged_Decks_v0.17.1.csv",
+ "builds": [
+  {
+   "key": "merged",
+   "cards": "SS_Merged_Cards_v0.17.1.csv",
+   "decks": "SS_Merged_Decks_v0.17.1.csv"
+  }
+ ],
+ "built": "2026-11-18 13:30",
+ "engine": "03. Beta 3.5 (Current Development)/L. Merged Baseline (3.5 + Gemini)/merged_engine.py",
+ "sha256": {
+  "SS_Merged_Cards_v0.17.1.csv": "4be2faf69b520648588dcdba1f2868f471b10dd07e72ee4db2b4bd7106a47a7c",
+  "SS_Merged_Decks_v0.17.1.csv": "14cf2673123ecae909af1dc10fd67b8e33db2be4515fec5eaa55f2e054431a1b",
+  "basic_training.json": "438cbf61917d71923de2204d652fa977606de896c508c90fd2f6b9fc1ac67c07",
+  "browser_play.py": "b2669e5fc0b25a38f4a55667e498d3b66b5e499f046f160c9baa19326c22d90a",
+  "merged_engine.py": "1dd8150709762aed1fcbaea884e09ada41b806c7d078f7690b349441e83adc2f"
+ }
+}
