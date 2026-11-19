@@ -515,13 +515,14 @@ function drawerCue() { var h = $("hand"), st = h.querySelector(".strip"); if (!s
 function drawerAuto() {
   var h = $("hand"); if (!h) return; var hb = h.querySelector(".hhandle"), hs = (G.view && G.view.you.hand) || [], n = hs.filter(function (c) { return !c.held; }).length;
   var live = liveDecision(), M = live ? maps() : null, ready = M ? Object.keys(M.card).length : 0, p = G.pend;
-  var want = !!(live && !(G.sel && O[G.sel]) && (ready || (p && isMulti(p) && p.kind === "discard")));
+  var ownActs = !!(M && Object.keys(M.src).some(function (uid) { return O[uid] && O[uid].side === "own"; }));   // v0.21 (checkers): your own table cards can act: the drawer stays tucked so it never hides them; the handle says the hand can play too
+  var want = !!(live && !(G.sel && O[G.sel]) && !ownActs && (ready || (p && isMulti(p) && p.kind === "discard")));
   var sp = spotNow(), list = !sp ? [] : Array.isArray(sp) ? sp : [sp];
   if (list.indexOf("hand") >= 0) want = true; else if (list.some(function (x) { return /front|rear|bases|route|mtrack/.test(x); })) want = false;
   if (G.drawerUser && p && G.drawerUser.n === p.n) want = G.drawerUser.open;
   if (drag && drag.on) want = false;
   var was = h.classList.contains("open"); h.classList.toggle("open", want);
-  if (hb) { hb.setAttribute("aria-expanded", want ? "true" : "false"); hb.innerHTML = "<span>HAND " + n + (live && ready ? " · " + ready + " READY" : "") + '</span><i aria-hidden="true">' + (want ? "▼" : "▲") + "</i>"; hb.setAttribute("aria-label", "Hand, " + n + " card" + (n === 1 ? "" : "s") + (ready ? ", " + ready + " ready" : "") + (want ? ". Tuck it" : ". Open it")); }
+  if (hb) { hb.setAttribute("aria-expanded", want ? "true" : "false"); hb.innerHTML = "<span>HAND " + n + (live && ready ? " · " + ready + (want ? " READY" : " CAN PLAY") : "") + '</span><i aria-hidden="true">' + (want ? "▼" : "▲") + "</i>"; hb.classList.toggle("cue", !want && !!(live && ready)); hb.setAttribute("aria-label", "Hand, " + n + " card" + (n === 1 ? "" : "s") + (ready ? ", " + ready + " ready" : "") + (want ? ". Tuck it" : ". Open it")); }
   var st2 = h.querySelector(".strip"); if (st2 && st2.clientWidth && st2.dataset.fw !== String(st2.clientWidth)) { st2.dataset.fw = String(st2.clientWidth); drawerFit(st2); } if (st2) placeTabs(st2);   // the strip's width is known only once it is laid out
   if (was !== want && isPh()) { try { spotlight(); } catch (e) { } }
 }
@@ -642,7 +643,7 @@ function feed(text) {
 function banner(big, small) { if (G.skip || G.dirQuiet) return; var b = $("banner"); b.innerHTML = esc(big) + (small ? "<small>" + esc(small) + "</small>" : ""); b.classList.remove("on"); void b.offsetWidth; b.classList.add("on"); }
 function glossFor(u) {   // which keywords and game terms appear on this card, with their meanings (from browser_play.glossary)
   var GL = G.gloss || [], txt = [].concat(u.lines || [], [u.atk || "", u.range || "", u.sub || "", u.kind || ""]).join("  "), out = [], seen = {};
-  GL.forEach(function (g) { if (out.length >= 8 || seen[g[0]]) return; try { if (new RegExp(g[1]).test(txt)) { seen[g[0]] = 1; out.push(g); } } catch (e) { } });
+  GL.forEach(function (g) { if (seen[g[0]]) return; try { if (new RegExp(g[1]).test(txt)) { seen[g[0]] = 1; out.push(g); } } catch (e) { } });
   return out.sort(function (a, b) { return (a[3] === "keyword" ? 0 : 1) - (b[3] === "keyword" ? 0 : 1); });
 }
 /* ================= v0.21 (WP4): the Inspector (Prototype Design Spec 1.3) =================
@@ -686,7 +687,7 @@ function inspActions(act, u, o) {
   if (!act || G.replay || (G.info && G.info.spectate) || !G.view) return "";
   var mine = act.card ? ((G.view.you.hand || []).some(function (c) { return c.id === act.card; })) : !!(O[act.uid] && O[act.uid].side === "own");
   var dis = function (label, why) { return '<button type="button" class="za0" disabled aria-disabled="true"><span>' + esc(label) + '</span><small>' + esc(why) + "</small></button>"; };
-  var moveName = function () { var f = (G.faces || {})[u.name] || u; return act.card ? (isCap(f) ? "Deploy" : f.sub === "Reaction" ? "Play as a Reaction" : "Play on the Mission Track") : "Act"; };
+  var moveName = function () { var f = (G.faces || {})[u.name] || u; return act.card ? (isCap(f) ? "Deploy" : f.sub === "Reaction" ? "Play as a Reaction" : "Play to Mission Track") : "Act"; };
   if (!liveDecision()) return mine ? dis(moveName(), G.over ? "The game is over." : "Not now: it is not your decision.") : "";
   var pend = G.pend, M = maps(), opts = act.card ? (M.card[act.card] || []) : (M.src[act.uid] || []), h = "";
   if (isMulti(pend)) return "";   // the PICK button does it
@@ -1088,9 +1089,12 @@ function dragLift(d) {   // past the slop: the card lifts, the places that take 
 addEventListener("pointermove", function (e) {
   if (!drag || (drag.id != null && e.pointerId !== drag.id)) return;
   if (e.pointerType !== "touch" && !e.buttons) return dragCancel();   // v0.20.2: the mouse button was let go outside the window: nothing is played
+  if (drag.dead) return;
   if (drag.hs) { var st0 = $("hand").querySelector(".strip"); if (st0) st0.scrollLeft = drag.hs.x0 - (e.clientX - drag.x); e.preventDefault(); return; }   // v0.21 (WP9): the open drawer scrolls sideways under the finger
   if (!drag.on) { if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) <= SSInput.slop(e.pointerType)) return; if (multiT) return dragCancel();
-    var st1 = drag.kind === "card" && isPh() && $("hand").querySelector(".strip"); if (st1 && st1.scrollWidth - st1.clientWidth > 2 && SSInput.axis(drag, e) === "x") { drag.hs = { x0: st1.scrollLeft }; return; }   // mostly sideways in the drawer: scroll it; mostly upward: lift the card (spec 1.3, direction)
+    var st1 = drag.kind === "card" && isPh() && $("hand").querySelector(".strip");
+    if (st1) { var ddx = e.clientX - drag.x, ddy = e.clientY - drag.y;   // v0.21 (checkers): from the phone drawer a card lifts only when the move is more upward than sideways (within 45 degrees of straight up) at the moment it leaves the slop
+      if (!(-ddy > Math.abs(ddx))) { if (st1.scrollWidth - st1.clientWidth > 2 && Math.abs(ddx) >= Math.abs(ddy)) { drag.hs = { x0: st1.scrollLeft }; return; } drag.dead = true; return; } }   // sideways scrolls the strip if it can; otherwise (or downward) the press does nothing at all
     dragLift(drag); drawerAuto(); }
   e.preventDefault();
   if (drag.kind !== "marker") { ghostAt(e.clientX, e.clientY, e.pointerType); dragTip(drag, e.clientX, e.clientY); }
@@ -1244,7 +1248,7 @@ var TIPS = [
   ["action", function (p) { return p.kind === "action"; }, "Operations: you and the enemy take turns, one action each. Tap a glowing card to act. Two passes in a row end the phase."],
   ["contact", function (p, v) { return v && v.contact && (p.kind === "action" || p.kind === "maneuver"); }, "In Contact: Close attacks can reach, and at Assessment the higher Frontline Strength wins the contest. The loser falls back and loses 1 Homefront."],
   ["operator", function (p) { return p.kind === "action" && p.options.some(function (o) { return /to infiltrate/.test(o); }); }, "Operators reach the Mission Track one way: from your Frontline, in Operations, by their INFILTRATE line (1 ISR). They act at H-Hour, then return to your Rear Area."],
-  ["effect", function (p) { return p.kind === "action" && (p.meta || []).some(function (m) { return m && m.t === "effect"; }); }, "Effect cards all go to the Mission Track. An Order lands at H-Hour and happens right away; a Mission waits on the track and acts when it reaches H-Hour. Drag a card onto the Mission Track, or tap it and choose Play on the Mission Track."],
+  ["effect", function (p) { return p.kind === "action" && (p.meta || []).some(function (m) { return m && m.t === "effect"; }); }, "Effect cards all go to the Mission Track. An Order lands at H-Hour and happens right away; a Mission waits on the track and acts when it reaches H-Hour. Drag a card onto the Mission Track, or tap it and choose Play to Mission Track."],
   ["etrack", function (p, v) { return v && v.bot.track.length > 0; }, "The enemy has a card on its Mission Track. It acts at H-Hour; tap it on the track to read it."],
   ["reaction", function (p) { return p.kind === "reaction"; }, "A Reaction answers the enemy's move. Using it exhausts the card, or spends the Reaction card from your hand: drag that card onto the Mission Track, where it happens at once, or choose it below."],
   ["ready", function (p) { return p.kind === "ready_select"; }, "Sustainment: pay each card's Ready number in Supply to ready it for next round. Aircraft you do not ready return to base."],
