@@ -472,7 +472,7 @@ function hand() {
   key += "|" + (G.multi ? JSON.stringify(G.multi.picked) : "") + "|" + W + "x" + H + "|" + (G.pend && isMulti(G.pend) ? G.pend.n : ""); if (key === handKey) { drawerAuto(); return; } handKey = key; var hand0 = $("hand"), keepX = hand0.querySelector(".strip") ? hand0.querySelector(".strip").scrollLeft : 0; hand0.innerHTML = ""; var el = document.createElement("div"); el.className = "strip"; hand0.appendChild(el); var hi0 = 0;
   hs.forEach(function (c, hix) { if (c.held) { hi0++; return; } var k = c.id + c.name + (PREF.glance ? "|g" : ""); if (!handCv[k]) handCv[k] = drawCard(c, 1, { hand: true, glance: PREF.glance }).toDataURL("image/jpeg", .85); var im = new Image(); im.src = handCv[k]; im.alt = c.name; im.dataset.card = c.id;
     var hi = hi0++; if (M.card[c.id] && !G.playing) im.className = "can"; if (G.sel === c.id) im.className = "sel"; if (G.multi && G.multi.picked.some(function (x) { return x.id === c.id && x.ix === hi; })) im.className = "sel";
-    im.dataset.ix = hi; im.draggable = false; im.setAttribute("role", "button"); im.setAttribute("aria-label", c.name + (M.card[c.id] && !G.playing ? ", can be played" : "") + ". Tap to read it"); im.addEventListener("pointerdown", function (e) { peekHide(); handDown(e, c, hi, im); }); im.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse" && !e.buttons) handPeek(im, c); }); im.addEventListener("pointerleave", peekHide); im.oncontextmenu = function (e) { e.preventDefault(); if (rightCancel()) return; readCard(c, hi); };   /* v0.20.2: right-click cancels a selection, otherwise reads the card. v0.21: a tap is read on the pointer's up (input section) */ el.appendChild(im); });
+    im.dataset.ix = hi; im.draggable = false; im.tabIndex = 0; im.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tapHand(c, hi); } }); im.setAttribute("role", "button"); im.setAttribute("aria-label", c.name + (M.card[c.id] && !G.playing ? ", can be played" : "") + ". Tap to read it"); im.addEventListener("pointerdown", function (e) { peekHide(); handDown(e, c, hi, im); }); im.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse" && !e.buttons) handPeek(im, c); }); im.addEventListener("pointerleave", peekHide); im.oncontextmenu = function (e) { e.preventDefault(); if (rightCancel()) return; readCard(c, hi); };   /* v0.20.2: right-click cancels a selection, otherwise reads the card. v0.21: a tap is read on the pointer's up (input section) */ el.appendChild(im); });
   hand0.insertAdjacentHTML("beforeend", '<button type="button" class="hnav l" aria-label="Scroll the hand left">‹</button><button type="button" class="hnav r" aria-label="Scroll the hand right">›</button><button type="button" class="hhandle" aria-expanded="false"></button>');
   drawerFit(el); el.scrollLeft = keepX; drawerAuto();
   if (G.pend && !G.playing && isMulti(G.pend)) pickHand(el, M);
@@ -669,10 +669,11 @@ function inspActions(act, u, o) {
     var co = pend.coach, why = co && !coachReady(pend) ? "Read the coach's note first (Next), then do what it asks." : co && co.allow ? "Basic Training asks for another move now: " + (co.do || "see the coach.") : act.card ? ((pend.hand_notes || {})[u.name] || "This card has no move at this step (" + (G.view.phase || "") + ").") : (reasonFor(u.name) || "This card has no move at this step (" + (G.view.phase || "") + ").");
     return dis(moveName(), why);
   }
-  var groups = {};
+  var groups = {}, bluff = function (i) { return /as a decoy/.test(pend.options[i]); }, onlyBluff = opts.every(bluff);
+  if (onlyBluff && mine) { var f0 = (G.faces || {})[u.name] || u; h += dis(moveName(), isCap(f0) ? "Not now: this card cannot be deployed at this step." : "Not now: " + (f0.sub === "Order" ? "Orders" : f0.sub === "Reaction" ? "Reactions" : "Effects") + (f0.sub === "Reaction" ? " are played when their trigger happens" : " are played in Operations, onto the Mission Track") + "."); }   // v0.21: say first why the real play is not available; a bluff is never the primary button
   opts.forEach(function (i) { var m = pend.meta[i] || {};
     if (m.dst) { var g = groups[m.t] = groups[m.t] || { t: m.t, dsts: {}, n: 0 }; if (!g.dsts[m.dst]) { g.dsts[m.dst] = 1; g.n++; } if (!g.html) { g.html = 1; h += "@@" + m.t + "@@"; } return; }
-    var a = actHead(i); h += '<button type="button" data-i="' + i + '" class="zab"><span>' + esc(a.h) + "</span>" + (a.s ? "<small>" + esc(a.s) + "</small>" : "") + "</button>"; });
+    var a = actHead(i); h += '<button type="button" data-i="' + i + '" class="zab' + (bluff(i) ? " zsec" : "") + '"><span>' + esc(a.h) + "</span>" + (a.s ? "<small>" + esc(a.s) + "</small>" : "") + "</button>"; });
   Object.keys(groups).forEach(function (t) { var g = groups[t], lab = t === "attack" ? "Attack…" : t === "up" ? "Upgrade…" : "Choose a target…", sub = t === "attack" ? "Choose the target: " + g.n + " in reach" : t === "up" ? "Choose the card it replaces: " + g.n + (g.n === 1 ? " card" : " cards") : g.n + " target" + (g.n === 1 ? "" : "s");
     h = h.replace("@@" + t + "@@", '<button type="button" data-tg="' + esc(t) + '" data-id="' + esc(act.card || act.uid) + '" class="zab tg"><span>' + lab + "</span><small>" + esc(sub) + "</small></button>"); });
   return h;
@@ -880,6 +881,7 @@ function targetAt(x, y, dsts) {
   var best = null, bd = 1e9; Object.keys(dsts).forEach(function (uid) { var q = O[uid]; if (!q || !q.alive) return; var r = objRect(q); if (!SSInput.inRect(SSInput.grow(r), x, y)) return; var d = Math.hypot((r.l + r.r) / 2 - x, (r.t + r.b) / 2 - y); if (d < bd) { bd = d; best = q; } });
   return best || o;
 }
+function nearObj(x, y) { var o = objAt(x, y); if (o) return o; var best = null, bd = 1e9; Object.keys(O).forEach(function (uid) { var q = O[uid]; if (!q.alive) return; var r = objRect(q); if (!SSInput.inRect(SSInput.grow(r), x, y)) return; var d = Math.hypot((r.l + r.r) / 2 - x, (r.t + r.b) / 2 - y); if (d < bd) { bd = d; best = q; } }); return best; }
 function overTrack(x, y) { var mt = $("mtrack"); if (!mt || !mt.offsetWidth) return false; var r = mt.getBoundingClientRect(); return SSInput.inRect(SSInput.grow({ l: r.left, r: r.right, t: r.top, b: r.bottom }), x, y); }
 $("gl").addEventListener("pointerdown", function (e) { $("menu").hidden = true; if (!okPointer(e)) { press = null; return; } press = SSInput.press(e, { kind: "table", o: objAt(e.clientX, e.clientY) }); });
 /* v0.19.1: with a mouse, pointing at a card on the table shows the whole printed card beside the table (RD-153 (2)) */
@@ -916,7 +918,7 @@ addEventListener("pointerup", function (e) {
   if (p.moved || multiT || p.dead || (drag && drag.on)) return;
   ghostClick = { t: Date.now(), x: e.clientX, y: e.clientY };
   if (p.kind === "hand") return tapHand(p.c, p.ix);
-  if (p.kind === "table") { var o = p.o && p.o.alive ? p.o : null; return tapObj(o); }
+  if (p.kind === "table") { var o = p.o && p.o.alive ? p.o : nearObj(e.clientX, e.clientY); return tapObj(o); }   // v0.21 (checkers): a card that was still moving when pressed is found where the finger lifts, or within 12 px of it
 });
 /* v0.17.1: pointing at an option button draws the aim line from the card that acts to its target */
 $("prompt").addEventListener("mouseover", function (e) { var b = e.target.closest && e.target.closest("button[data-i]"); var m = b && G.pend && G.pend.meta && G.pend.meta[+b.dataset.i]; G.btnAim = m && m.src && m.dst ? { a: m.src, b: m.dst } : null; });
@@ -1028,7 +1030,7 @@ function dragTip(d, x, y) { var g = $("dragGhost"), tip = g.querySelector(".dtip
   if (!pend) t = "";
   else if (d.kind === "card" && onTrack && !d.canTrack && isCap((G.faces || {})[d.c.name] || d.c)) t = "Only Effect cards and Operators go on the Mission Track";
   else if (d.kind === "card" && !mine.length) t = ((pend.hand_notes || {})[d.c.name] || "This card cannot be played right now");
-  else if (d.kind === "card" && (onHand || dropOff(x, y, d))) t = "Let go: back to your hand";
+  else if (d.kind === "card" && dropOff(x, y, d)) t = "Let go: back to your hand";
   else if (d.kind === "unit" && dropOff(x, y, d)) t = "Let go: cancel";
   else if (onTrack) { ok = !!d.canTrack; t = ok ? (d.kind === "card" ? trackHint(d.c) : "Let go: infiltrate the Mission Track") : d.kind === "card" ? "Only Effect cards and Operators go on the Mission Track" : "Only Operators infiltrate the Mission Track"; }
   else if (o && M.dsts[o.uid] && (d.kind === "unit" || mine.some(function (i) { return M.dsts[o.uid].indexOf(i) >= 0; }))) { var dd = M.dsts[o.uid]; ok = true; t = dd.length === 1 ? "Let go: " + shortOpt(pend.options[dd[0]]) + (o.u && o.u.name && shortOpt(pend.options[dd[0]]).indexOf(o.u.name) < 0 ? " → " + o.u.name : "") : "Let go: choose how, on " + (o.u && o.u.name || "this card"); }
@@ -1044,6 +1046,7 @@ function dropOff(x, y, d) {
   if (overTrack(x, y)) return "";
   var hit = function (el) { if (!el || !el.offsetWidth) return false; var r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; };
   var band = isPh() && (function () { var r = $("hand").getBoundingClientRect(); return y >= r.top - 60 && y <= r.bottom && x >= r.left - 12 && x <= r.right + 12; })();   // the drawer's "back to your hand" band (58 px over the handle), measured from the handle: the hidden strip's own box must not count
+  if (band && d && d.kind !== "marker") { var Mb = maps(), ob = targetAt(x, y, Mb.dsts), mineB = d.kind === "card" ? (Mb.card[d.c.id] || []) : (Mb.src[d.uid] || []); if (ob && Mb.dsts[ob.uid] && Mb.dsts[ob.uid].some(function (i) { return mineB.indexOf(i) >= 0; })) band = false; }   // a legal target under the band wins: the band never hides a card you can drop on
   if (band || hit($("bot")) || hit($("hand")) || hit($("prompt")) || hit($("me"))) return "dock";   // v0.21: the whole dock (the hand tucks away while a card is lifted, so its place still counts as the hand)
   if (FR && (y > FR.B + 6 || y < FR.T - 6)) return "dock";
   return "";
@@ -1085,7 +1088,7 @@ addEventListener("pointerup", function (e) {
   if (d.kind === "card") {
     var mine = M.card[d.c.id] || [], over = document.elementFromPoint(x, y), onTrack = overTrack(x, y), onHand = !!(over && over.closest && over.closest("#hand,#bot"));
     var back = function () { G.sel = null; G.selT = null; handKey = ""; return render(); };
-    if (!mine.length || onHand) return back();   // v0.21: a card that cannot be played goes back (the line under it said why); a drag never opens the Inspector
+    if (!mine.length) return back();   // (letting go on the hand or its band was handled by dropOff above)   // v0.21: a card that cannot be played goes back (the line under it said why); a drag never opens the Inspector
     if (onTrack) { var tr = trackOpts(mine); if (tr.length === 1) { $("dragGhost").style.display = "block"; return landOnTrack(tr[0], d); } return back(); }   // only an Effect (or a Reaction, in a reaction prompt) goes on the track
     var o = targetAt(x, y, M.dsts);
     if (o && M.dsts[o.uid]) { var dd = M.dsts[o.uid].filter(function (i) { return mine.indexOf(i) >= 0; }); if (dd.length) { if (dd.length === 1 && (pend.meta[dd[0]] || {}).t !== "attack") return choose(dd[0]); return preview(dd); } }   // onto a card: upgrade it, or aim at it
