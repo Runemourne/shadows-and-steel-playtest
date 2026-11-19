@@ -337,7 +337,8 @@ function topEdge(feed) {   // below the top bar, below the menu buttons where th
 }
 function measureFrame() {   // the safe frame, in screen pixels
   var tb = $("top").offsetHeight || 0, T = topEdge(true), B = Math.min(H, $("bot").getBoundingClientRect().top), L = 0, R = W;
-  if (B - T < MIN_TABLE * H) T = Math.min(T, Math.max(topEdge(false), B - MIN_TABLE * H));   // the feed's line gives way when the table would get too small (large text on a phone)
+  if (isPh()) { var hr0 = $("hand").getBoundingClientRect(), cap0 = +$("prompt").dataset.cap, gap0 = parseFloat(getComputedStyle($("bot")).rowGap) || 6; if (cap0 && hr0.height) B = Math.min(H, Math.round(hr0.top - gap0 - cap0)); }   /* v0.21: on a phone the table's foot is where the panel's top is with the hand tucked, whatever the drawer and panel are doing, so the table never moves for them */
+  if (B - T < MIN_TABLE * H && !isPh()) T = Math.min(T, Math.max(topEdge(false), B - MIN_TABLE * H));   /* v0.21 (lead's phone notes): on a phone the event line keeps its own strip, so it never lies over the enemy's cards */   // the feed's line gives way when the table would get too small (large text on a phone)
   var mt = $("mtrack"), em = mt.querySelector("em"), rt = $("route"), cs = rt.querySelector(".ctst");
   if (mt.offsetWidth) L = Math.max(mt.getBoundingClientRect().right, em ? em.getBoundingClientRect().right : 0) + 4;
   if (rt.offsetWidth) R = Math.min(rt.getBoundingClientRect().left, cs ? cs.getBoundingClientRect().left : W) - 4;
@@ -349,14 +350,21 @@ function measureFrame() {   // the safe frame, in screen pixels
 function elev() { return (LAND ? (window.__ELL || (H <= 520 ? 56 : 60)) : W < 600 ? (window.__EL || 42) : (window.__ELD || 66)) * Math.PI / 180; }   // v0.21: a phone held upright looks along the table at a lower angle, so the rows (not the empty ground) fill its height and cards read larger
 function camPut(el, d, ox, oy) { camBase.set(0, Math.sin(el) * d, Math.cos(el) * d); camera.position.copy(camBase); camera.lookAt(camTarget); camera.setViewOffset(W, H, ox, oy, W, H); camera.updateMatrixWorld(); scene.fog.near = d + 4; scene.fog.far = d + 20; CAM = { el: el, d: d, ox: ox, oy: oy }; }
 function boxAt(bx, bz) { var b = { l: 1e9, r: -1e9, t: 1e9, b: -1e9 }; [[-bx, -bz], [bx, -bz], [-bx, bz], [bx, bz]].forEach(function (p) { _v.set(p[0], .4, p[1]).project(camera); var x = (_v.x + 1) / 2 * W, y = (1 - _v.y) / 2 * H; b.l = Math.min(b.l, x); b.r = Math.max(b.r, x); b.t = Math.min(b.t, y); b.b = Math.max(b.b, y); }); return b; }
+function unitW(z) { _v.set(-.5, .42, z).project(camera); var x0 = _v.x; _v.set(.5, .42, z).project(camera); return Math.abs(_v.x - x0) / 2 * W; }   // how wide one world unit looks at depth z (the card rows), for the current camera
 function distFor(el, bx, bz, fw, fh) { var lo = 8, hi = 400; for (var i = 0; i < 26; i++) { var d = (lo + hi) / 2; camPut(el, d, 0, 0); var b = boxAt(bx, bz); if (b.r - b.l <= fw && b.b - b.t <= fh) hi = d; else lo = d; } return hi; }
 function fit(soft) {   // soft: ease to the new fit (a panel grew or shrank); otherwise jump (game start, resize, rotation, Settings)
   var vw = innerWidth, vh = innerHeight, resized = vw !== W || vh !== H || !FIT, was = CAM && { el: CAM.el, d: CAM.d, ox: CAM.ox, oy: CAM.oy };   // where the camera is now (the search below moves it)
   uiScale(); W = vw; H = vh; LAND = W > H * 1.05; document.documentElement.classList.toggle("ph", W < 600); document.documentElement.classList.toggle("desk", W >= 900 && H >= 521); /* v0.21 (WP9, WP10): phone upright: the hand is a drawer; desktop: the commitment column */ var meEl = $("me"), meIn = W < 600 ? $("top") : $("bot"); if (meEl && meEl.parentNode !== meIn) { meIn.appendChild(meEl); SQ.key = ""; }   /* v0.21 (Council M2b, spec 3.1): on a phone held upright your status row joins the top band, under the enemy's, and the hand sits at the bottom edge */ if (resized) { renderer.setSize(W, H, false); camera.aspect = W / H; } camTarget.set(0, 0, 0);
   capDock(); var f = measureFrame(); placeTrack(f.tb, H - f.B); f = measureFrame();   // the Mission Track's height follows the frame; the frame's left edge follows the Mission Track
-  var el = elev(), pad = 4, bz = 6.5, fw = Math.max(20, f.R - f.L - 2 * pad), fh = Math.max(20, f.B - f.T), dn = distFor(el, bxOf(6.2), bz, fw, fh), rw = 11.5;
-  if (distFor(el, bxOf(11.5), bz, fw, fh) > dn * 1.002) { var a = 6.2, b = 11.5; for (var i = 0; i < 12; i++) { var m = (a + b) / 2; if (distFor(el, bxOf(m), bz, fw, fh) <= dn * 1.002) a = m; else b = m; } rw = Math.floor(a * 10) / 10; }   // rows as wide as the frame takes without making the board smaller
-  var bx = bxOf(rw), d = distFor(el, bx, bz, fw, fh); camPut(el, d, 0, 0); var bb = boxAt(bx, bz), hw = (bb.r - bb.l) / 2, cx = W / 2;
+  var pad = 4, bz = 6.5, fw = Math.max(20, f.R - f.L - 2 * pad), fh = Math.max(20, f.B - f.T);
+  var solve = function (el) { var dn = distFor(el, bxOf(6.2), bz, fw, fh), rw = 11.5;
+    if (distFor(el, bxOf(11.5), bz, fw, fh) > dn * 1.002) { var a = 6.2, b = 11.5; for (var i = 0; i < 12; i++) { var m = (a + b) / 2; if (distFor(el, bxOf(m), bz, fw, fh) <= dn * 1.002) a = m; else b = m; } rw = Math.floor(a * 10) / 10; }   // rows as wide as the frame takes without making the board smaller
+    var d = distFor(el, bxOf(rw), bz, fw, fh); camPut(el, d, 0, 0); return { el: el, rw: rw, d: d, w: Math.min(unitW(-4.12), unitW(4.12)) }; };
+  /* v0.21 (lead's phone notes 3): readability first. Of the angles from nearly straight down to 42 degrees, the camera takes the most top-down one
+     whose smallest card (the far rear row) is within 3% of the largest that any angle allows: both sides' cards as equal and as large as the
+     space allows, and only as much tilt as buys legibility. The same rule on phones held sideways and on desktops. */
+  var pick = null; if (window.__EL) pick = solve(elev()); else { var tries = [80, 74, 68, 62, 56, 50, 46, 42].map(function (e) { return solve(e * Math.PI / 180); }), best = Math.max.apply(0, tries.map(function (t) { return t.w; })); pick = tries.filter(function (t) { return t.w >= best * .97; })[0]; }
+  var el = pick.el, rw = pick.rw, bx = bxOf(rw), d = pick.d; camPut(el, d, 0, 0); var bb = boxAt(bx, bz), hw = (bb.r - bb.l) / 2, cx = W / 2;
   if (cx - hw < f.L + pad) cx = f.L + pad + hw; if (cx + hw > f.R - pad) cx = f.R - pad - hw;   // centred on the screen unless that puts it under a rail
   var to = { el: el, d: d, ox: (bb.l + bb.r) / 2 - cx, oy: (bb.t + bb.b) / 2 - (f.T + f.B) / 2 }, from = was && was.el === el ? was : null;
   RW = rw; camPut(el, to.d, to.ox, to.oy); FR = f; LF = f; FIT = { frame: f, content: boxAt(Math.max(rw / 2, 2.45), 6.3) };   // content: the cards and Bases, without the board's margin
@@ -419,17 +427,17 @@ function stat(p, own) {
     '<span class="hf' + (hit ? " hit" : "") + '"><span class="l">Homefront</span><span class="s">HF</span><b>' + p.hf + '</b><i><u style="width:' + Math.max(0, Math.min(100, p.hf * 5)) + '%"></u></i></span>' +
     "<span class='c-isr'>ISR<b>" + p.isr + "</b>" + (own ? '<span class="pips x">' + pips + "</span>" : "") + "</span><span class='c-sup'><span class='l'>Supply</span><span class='s'>Sup</span><b>" + p.sup + "</b></span>" +
     (own ? "<span class='x'>Lift<b>" + p.lift + "</b></span><span class='x'>Span<b>" + p.span + "</b></span>" : "<span class='x'>Hand<b>" + p.hand_count + "</b></span>") +
-    "<span class='x'><span class='l'>Strength</span><span class='s'>Str</span><b>" + p.strength + '</b></span><button type="button" class="sbtn" aria-label="All the numbers and piles">More</button>' + (p.piles ? '<button class="piles x" id="' + (own ? "hudPiles" : "hudPilesFoe") + '" title="' + (own ? "Your" : "The enemy's") + ' discard pile, Ash Heap and decks"><span class="l">Deck<b>' + (p.ie + p.deck) + "</b> Discard<b>" + p.discard + "</b> Ash Heap<b>" + p.ash + '</b></span><span class="s">Discard<b>' + p.discard + "</b> Ash<b>" + p.ash + "</b></span></button>" : "<span class=\"l\">Deck<b>" + (p.ie + p.deck) + "</b></span>");
+    "<span class='x'><span class='l'>Strength</span><span class='s'>Str</span><b>" + p.strength + '</b></span><button type="button" class="sbtn" aria-expanded="false" aria-label="All the numbers and piles, both sides">More</button>' + (p.piles ? '<button class="piles x" id="' + (own ? "hudPiles" : "hudPilesFoe") + '" title="' + (own ? "Your" : "The enemy's") + ' discard pile, Ash Heap and decks"><span class="l">Deck<b>' + (p.ie + p.deck) + "</b> Discard<b>" + p.discard + "</b> Ash Heap<b>" + p.ash + '</b></span><span class="s">Discard<b>' + p.discard + "</b> Ash<b>" + p.ash + "</b></span></button>" : "<span class=\"l\">Deck<b>" + (p.ie + p.deck) + "</b></span>");
 }
 function pileThumbs(names, counts) {
   if (!names.length) return '<p class="pe">Empty.</p>'; var F = G.faces || {};
   return '<div class="pt">' + names.map(function (n) { var f = F[n]; if (!f) return '<span class="pn">' + esc(n) + "</span>"; var k = "pile:" + n; if (!handCv[k]) try { handCv[k] = drawCard(f, 1, { hand: true }).toDataURL("image/jpeg", .85); } catch (e) { return '<span class="pn">' + esc(n) + "</span>"; }
-    return '<button data-pc="' + esc(n) + '" title="' + esc(n) + '"><img src="' + handCv[k] + '" alt="' + esc(n) + '">' + (counts && counts[n] > 1 ? "<i>×" + counts[n] + "</i>" : "") + "</button>"; }).join("") + "</div>"; }
+    return '<button data-pc="' + esc(n) + '" title="' + esc(n) + '"><img draggable="false" src="' + handCv[k] + '" alt="' + esc(n) + '">' + (counts && counts[n] > 1 ? "<i>×" + counts[n] + "</i>" : "") + "</button>"; }).join("") + "</div>"; }
 function tally(list) { var c = {}, order = []; (list || []).forEach(function (n) { if (!c[n]) { c[n] = 0; order.push(n); } c[n]++; }); return { c: c, order: order }; }
 function showPiles(side) { SFX.open();
   var v = G.view; if (!v) return; side = side === "bot" ? "bot" : "you"; var p = v[side], pl = p.piles || {}, el = $("piles"), mine = side === "you", sp = G.info && G.info.spectate, nm = (G.info && G.info.names) || ["You", "The bot"];
   var lab = function (k) { return sp ? nm[k === "you" ? 0 : 1] : k === "you" ? "Yours" : "The enemy's"; }, ie = tally(pl.ie), mf = tally(pl.mf);
-  el.innerHTML = '<div class="pb"><button class="ghost" id="pilesX">Close</button><h3 class="t">Discard piles and Ash Heaps</h3><p class="pd">Round ' + v.round + ". Both players' piles are face up. Tap a card to read it.</p>" +
+  el.innerHTML = '<div class="pb"><div class="shead"><button class="ghost" id="pilesX">Close</button></div><h3 class="t">Discard piles and Ash Heaps</h3><p class="pd">Round ' + v.round + ". Both players' piles are face up. Tap a card to read it.</p>" +
     '<div class="psw" role="tablist">' + ["you", "bot"].map(function (k) { return '<button role="tab" aria-selected="' + (k === side) + '" class="' + (k === side ? "on" : "") + '" data-side="' + k + '">' + esc(lab(k)) + "</button>"; }).join("") + "</div>" +
     "<h4>Discard pile <b>" + p.discard + "</b></h4><p class=\"pd\">Played and discarded cards, newest first. When the Main Force runs out, this pile is shuffled to make a new one.</p>" + pileThumbs(pl.discard || []) +
     "<h4>Ash Heap <b>" + p.ash + "</b></h4><p class=\"pd\">Destroyed and expended cards, newest first. They never return.</p>" + pileThumbs(pl.ash || []) +
@@ -439,10 +447,11 @@ function showPiles(side) { SFX.open();
   el.style.display = "block"; el.scrollTop = 0; }
 /* v0.21 (WP9): on a phone the status bars show Homefront, ISR and Supply; "More" opens this sheet with every number and both sides' piles */
 function showStatus() { var v = G.view; if (!v) return; SFX.open(); var el = $("piles"), clean = function (h) { return h.replace(/ id="hudPiles(Foe)?"/g, function (m, f) { return ' data-pside="' + (f ? "bot" : "you") + '"'; }); };
-  el.innerHTML = '<div class="pb"><button class="ghost" id="pilesX">Close</button><h3 class="t">Status</h3><p class="pd">Round ' + v.round + " of " + v.last + " · " + esc(v.phase) + ".</p><h4>" + ((G.info && G.info.spectate) ? "North" : "The enemy") + '</h4><div class="stat full">' + clean(stat(v.bot, 0)) + "</div><h4>" + ((G.info && G.info.spectate) ? "South" : "You") + '</h4><div class="stat full">' + clean(stat(v.you, 1)) + "</div></div>";
+  el.innerHTML = '<div class="pb"><div class="shead"><button class="ghost" id="pilesX">Close</button></div><h3 class="t">Status</h3><p class="pd">Round ' + v.round + " of " + v.last + " · " + esc(v.phase) + ".</p><h4>" + ((G.info && G.info.spectate) ? "North" : "The enemy") + '</h4><div class="stat full">' + clean(stat(v.bot, 0)) + "</div><h4>" + ((G.info && G.info.spectate) ? "South" : "You") + '</h4><div class="stat full mine">' + clean(stat(v.you, 1)) + "</div></div>";
   el.style.display = "block"; el.scrollTop = 0; }
-document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest(".sbtn") && !e.target.closest("#piles")) showStatus(); });
-$("piles").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; if (b.id === "pilesX") { $("piles").style.display = "none"; return; } if (b.dataset.pside) return showPiles(b.dataset.pside); if (b.classList.contains("sbtn")) return; if (b.dataset.side) return showPiles(b.dataset.side); var n = b.dataset.pc, f = n && (G.faces || {})[n]; if (f) zoom(f, { hand: true }); });
+document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest(".sbtn") && !e.target.closest("#piles")) { showStatus(); Array.prototype.forEach.call(document.querySelectorAll(".sbtn"), function (b) { if (!b.closest("#piles")) b.setAttribute("aria-expanded", "true"); }); } });
+function statusClosed() { Array.prototype.forEach.call(document.querySelectorAll(".sbtn"), function (b) { b.setAttribute("aria-expanded", "false"); }); }
+$("piles").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; if (b.id === "pilesX") { $("piles").style.display = "none"; statusClosed(); return; } if (b.dataset.pside) return showPiles(b.dataset.pside); if (b.classList.contains("sbtn")) return; if (b.dataset.side) return showPiles(b.dataset.side); var n = b.dataset.pc, f = n && (G.faces || {})[n]; if (f) zoom(f, { hand: true }); });
 document.addEventListener("click", function (e) { if (!e.target.closest) return; if (e.target.closest("#hudPiles")) showPiles("you"); else if (e.target.closest("#hudPilesFoe")) showPiles("bot"); });
 function trackCol(p, own) { var order = own ? [0, 1, 2, 3] : [3, 2, 1, 0], h = ""; order.forEach(function (n) { var cs = p.track.map(function (t, i) { return { t: t, i: i }; }).filter(function (x) { return n === 0 ? x.t.space <= 0 : n === 3 ? x.t.space >= 3 : x.t.space === n; });
     h += '<div class="ms' + (n === 0 ? " hh" : "") + '"><i>' + (n === 0 ? "H" : n) + "</i>" + cs.map(function (x) { var tp = TPL[x.t.cls] || TPL.JOINT; return '<span data-tr="' + x.i + '" data-own="' + own + '" style="border-color:' + tp[0] + ";background-image:url(" + (ART[x.t.id] || "") + ')"><b>' + esc(x.t.name) + "</b></span>"; }).join("") + "</div>"; }); return h; }
@@ -514,22 +523,30 @@ function drawerFit(strip) {   // cards side by side while they fit, then overlap
   strip.classList.toggle("fits", need <= avail); drawerCue();
 }
 function drawerCue() { var h = $("hand"), st = h.querySelector(".strip"); if (!st) return; var more = st.scrollWidth - st.clientWidth; h.classList.toggle("cl", more > 2 && st.scrollLeft > 2); h.classList.toggle("cr", more > 2 && st.scrollLeft < more - 2); }
+/* v0.21 (coordinator's check of 734ff41): with the hand open, the panel rides up exactly far enough that its foot sits 6 px above the
+   highest hand card or READY tab, measured from the laid-out strip, so no part of it ever covers a card's cost, name or picture */
+function panelClear() { var h = $("hand"), st = h && h.querySelector(".strip"), bot = $("bot"); if (!st || !isPh()) return;
+  var hr = h.getBoundingClientRect(), gap = parseFloat(getComputedStyle(bot).rowGap) || 6, top = Infinity;
+  Array.prototype.forEach.call(st.querySelectorAll("img, .rdy"), function (e) { top = Math.min(top, e.offsetTop); }); if (top === Infinity) top = 12;
+  var op = st.offsetParent || bot, stTop = op.getBoundingClientRect().top + op.clientTop + st.offsetTop, cardTop = stTop + top,   /* layout positions (offsetTop), so a strip still sliding in is measured where it will land */ shift = Math.max(0, Math.ceil(hr.top - gap - (cardTop - 6)));
+  bot.style.setProperty("--stripH", shift + "px"); }
+addEventListener("resize", function () { try { panelClear(); } catch (e) { } });
 function drawerAuto() {
   var h = $("hand"); if (!h) return; var hb = h.querySelector(".hhandle"), hs = (G.view && G.view.you.hand) || [], n = hs.filter(function (c) { return !c.held; }).length;
   var live = liveDecision(), M = live ? maps() : null, ready = M ? Object.keys(M.card).length : 0, p = G.pend;
   var ownActs = !!(M && Object.keys(M.src).some(function (uid) { return O[uid] && O[uid].side === "own"; }));   // v0.21 (checkers): your own table cards can act: the drawer stays tucked so it never hides them; the handle says the hand can play too
-  var want = !!(live && !(G.sel && O[G.sel]) && !ownActs && (ready || (p && isMulti(p) && p.kind === "discard")));
+  var want = !!(live && !(G.sel && (O[G.sel] || Object.keys(maps().dsts).length)) && !ownActs && (ready || (p && isMulti(p) && p.kind === "discard")));
   var sp = spotNow(), list = !sp ? [] : Array.isArray(sp) ? sp : [sp];
   if (list.indexOf("hand") >= 0) want = true; else if (list.some(function (x) { return /front|rear|bases|route|mtrack/.test(x); })) want = false;
   if (G.drawerUser && p && G.drawerUser.n === p.n) want = G.drawerUser.open;
   if (drag && drag.on) want = false;
   var was = h.classList.contains("open"); h.classList.toggle("open", want);
-  var pk = ""; if (hb && !want && isPh()) { var ims = h.querySelectorAll(".strip img[data-card]"), k7 = Math.min(7, ims.length); for (var q = 0; q < k7; q++) pk += '<img src="' + ims[q].src + '" alt="" class="' + (ims[q].classList.contains("can") ? "r" : ims[q].classList.contains("cant") ? "d" : "") + '">'; pk = pk ? '<span class="pk" aria-hidden="true">' + pk + "</span>" : ""; }   // v0.21 (Council M2b, spec 2.2): tucked, the top of each card peeks out of the handle (cost and Class colour), so you see what you hold
+  var pk = ""; if (hb && !want && isPh()) { var ims = h.querySelectorAll(".strip img[data-card]"), k7 = Math.min(7, ims.length); for (var q = 0; q < k7; q++) pk += '<img draggable="false" src="' + ims[q].src + '" alt="" class="' + (ims[q].classList.contains("can") ? "r" : ims[q].classList.contains("cant") ? "d" : "") + '">'; pk = pk ? '<span class="pk" aria-hidden="true">' + pk + "</span>" : ""; }   // v0.21 (Council M2b, spec 2.2): tucked, the top of each card peeks out of the handle (cost and Class colour), so you see what you hold
   if (hb) { hb.setAttribute("aria-expanded", want ? "true" : "false"); hb.innerHTML = "<span>HAND " + n + (live && ready ? " · " + ready + (want ? " READY" : " CAN PLAY") : "") + "</span>" + pk + '<i aria-hidden="true">' + (want ? "▼" : "▲") + "</i>"; hb.classList.toggle("cue", !want && !!(live && ready)); var pkEl = hb.querySelector(".pk"); if (pkEl) { var pims = pkEl.querySelectorAll("img"), lim = pkEl.getBoundingClientRect().right + .5, shown = 0; Array.prototype.forEach.call(pims, function (im) { if (im.getBoundingClientRect().right > lim) im.remove(); else shown++; }); if (n > shown) { var more = document.createElement("b"); more.textContent = "+" + (n - shown); pkEl.appendChild(more); while (shown && more.getBoundingClientRect().right > lim) { pkEl.removeChild(more.previousSibling); shown--; more.textContent = "+" + (n - shown); } } if (!shown) pkEl.remove(); }   // only whole card tops: the rest are counted
     hb.setAttribute("aria-label", "Hand, " + n + " card" + (n === 1 ? "" : "s") + (ready ? ", " + ready + " ready" : "") + (want ? ". Tuck it" : ". Open it")); }
-  var st0 = h.querySelector(".strip"); if (st0 && isPh()) $("bot").style.setProperty("--stripH", (st0.offsetHeight || 162) + "px");   // the panel rides up by the open strip's height, so the strip sits between it and the handle
+  panelClear();
   var st2 = h.querySelector(".strip"); if (st2 && st2.clientWidth && st2.dataset.fw !== String(st2.clientWidth)) { st2.dataset.fw = String(st2.clientWidth); drawerFit(st2); } if (st2) placeTabs(st2);   // the strip's width is known only once it is laid out
-  if (was !== want && isPh()) { try { spotlight(); } catch (e) { } }
+  if (was !== want && isPh()) { try { spotlight(); } catch (e) { } requestAnimationFrame(function () { var pb = $("prompt").querySelector(".pbody"); if (pb) { pb.dataset.mh = ""; pb.scrollTop = 0; if (!want) unslice(pb, $("prompt").classList.contains("more") ? 0 : 28); } promptCue(); }); }   /* the panel's text window changes with the drawer: the More cue follows it */
 }
 $("hand").addEventListener("click", function (e) {
   var b = e.target.closest && e.target.closest("button"); if (!b) return;
@@ -544,7 +561,7 @@ function pickBtn(on, label) { var b = document.createElement("button"); b.type =
 function pickHand(el, M) {
   Array.prototype.forEach.call(el.querySelectorAll("img[data-card]"), function (im) { var id = im.dataset.card, ix = +im.dataset.ix; if (!M.card[id]) return;
     var on = !!(G.multi && G.multi.kind === G.pend.kind && G.multi.picked.some(function (x) { return x.id === id && x.ix === ix; })), b = pickBtn(on, (on ? "Unpick " : "Pick ") + im.alt);
-    b.style.left = Math.round(im.offsetLeft + im.offsetWidth - 40) + "px"; b.style.top = Math.round(im.offsetTop) + "px"; b.dataset.card = id; b.dataset.ix = ix; el.appendChild(b); });
+    b.style.left = Math.round(im.offsetLeft + im.offsetWidth - 40) + "px"; b.style.top = Math.round(im.offsetTop + (isPh() ? im.offsetHeight * .3 : 0)) + "px"; b.dataset.card = id; b.dataset.ix = ix; el.appendChild(b); });   /* on a phone the box sits on the picture, below the cost and name line, so the card stays readable */
 }
 $("hand").addEventListener("click", function (e) { var b = e.target.closest && e.target.closest("button.pick"); if (!b || !liveDecision() || !isMulti(G.pend)) return; e.stopPropagation(); multiToggle(b.dataset.card, +b.dataset.ix); });
 function pickTable() {   // the same PICK boxes on table cards, placed on each card's top right corner
@@ -556,7 +573,8 @@ function pickTable() {   // the same PICK boxes on table cards, placed on each c
   ids.forEach(function (uid) { var o = O[uid]; if (!o || !o.alive) return; var r = objRect(o), on = picked.some(function (x) { return x.id === uid; }), b = pickBtn(on, (on ? "Unpick " : "Pick ") + ((o.u && o.u.name) || "this card"));
     b.style.left = Math.round(Math.min(W - 44, r.r - 30)) + "px"; b.style.top = Math.round(Math.max(0, r.t - 14)) + "px"; b.dataset.uid = uid; el.appendChild(b); });
 }
-function btn(i, label, cls) { var w = optWhere(i); return '<button data-i="' + i + '" class="' + (cls || (label.length + w.length > 26 ? "opt" : "ghost")) + '">' + esc(label) + (w ? '<small class="which">' + esc(w) + "</small>" : "") + "</button>"; }
+function mvShort(l) { return /^Move .* up to the Frontline/.test(l) ? "Move to Frontline" : /^Move .* back to the Rear Area/.test(l) ? "Move to Rear Area" : l; }   /* v0.21 (checkers): the lesson's words for the two row moves, everywhere a button names them */
+function btn(i, label, cls) { label = mvShort(String(label)); var w = optWhere(i); return '<button data-i="' + i + '" class="' + (cls || (label.length + w.length > 26 ? "opt" : "ghost")) + '">' + esc(label) + (w ? '<small class="which">' + esc(w) + "</small>" : "") + "</button>"; }
 /* v0.17.1: when a side has two or more of the same card, say which one an option means (row, place from the left, damage) */
 function copyWhere(uid) {
   var o = O[uid]; if (!o || !o.alive || o.type === "base" || !o.u || !o.u.name || !G.view) return "";
@@ -588,6 +606,7 @@ function prompt() {
         (tg ? '<p class="h">Tap a ringed card' + (direct.length ? ", or choose below" : "") + ". Tap empty ground, press Esc or Cancel to stop.</p>" : "") + direct.map(function (i) { return btn(i, pend.options[i], "opt"); }).join("") +
         '<div class="btns"><button class="ghost" id="pView">Read the card</button><button class="ghost" id="pCancel">Cancel</button></div>';
     } else {
+      if (pend.kind === "ready_select" || pend.kind === "ready") { var rl0 = readyList(pend, M); if (rl0) { var ix0 = h.indexOf('<p class="instr">'), e0 = ix0 >= 0 ? h.indexOf("</p>", ix0) : -1; h = e0 >= 0 ? h.slice(0, e0 + 4) + rl0 + h.slice(e0 + 4) : h + rl0; } }   /* v0.21 (checkers F): Basic Training's ready steps show the scripted card's button, as lesson v0.3.6 says */
       if (n) h += '<p class="h tip">' + (pend.kind === "target" ? "Tap a glowing card to choose it." : pend.kind === "reaction" ? "Choose below, or drag a glowing Reaction card onto the Mission Track." : "Glowing cards can act. Tap one to read it and choose, or drag it.") + "</p>";
       h += hintBox(pend);
       if (pend.kind === "reaction") { var all = M.free.slice(); Object.keys(M.card).concat(Object.keys(M.src)).forEach(function (k) { (M.card[k] || M.src[k] || []).forEach(function (i) { if (all.indexOf(i) < 0) all.push(i); }); }); all.sort(function (a, b) { return a - b; }); M.free = all; }   // v0.21: in a reaction prompt every answer has its own button too
@@ -613,7 +632,8 @@ function setPrompt(el, h, top) {
   body = el.querySelector(".pbody"); while (t.firstChild) body.appendChild(t.firstChild);
   if (foot.firstChild) el.appendChild(foot);
   if (foot.classList.contains("cmp")) { var ck = body.querySelector(".coach .ck"); if (ck) { var fk = document.createElement("span"); fk.className = "fk"; fk.textContent = ck.textContent; ck.remove(); foot.appendChild(fk); } foot.appendChild(el.querySelector(".pmore")); }   /* the kicker ("BRIEFING · 3 OF 13") rides in the control row, so the text gets its line */
-  body.scrollTop = keep; body.addEventListener("scroll", promptCue, { passive: true }); promptCue(); requestAnimationFrame(function () { if (!keep) { var pb2 = el.querySelector(".pbody"); unslice(pb2, $("prompt").classList.contains("more") || $("prompt").querySelector(".pfoot .pmore") ? 0 : 28); if (pb2) pb2.scrollTop = 0; } promptCue(); });
+  body.scrollTop = keep; G.pbUser = !!keep; body.addEventListener("pointerdown", function () { G.pbUser = true; }); body.addEventListener("wheel", function () { G.pbUser = true; }, { passive: true }); body.addEventListener("keydown", function () { G.pbUser = true; });
+  body.addEventListener("scroll", function () { if (!G.pbUser && body.scrollTop && isPh() && $("hand").classList.contains("open")) body.scrollTop = 0; promptCue(); }, { passive: true });   /* with the hand open the instruction always starts at its first line; only the player scrolls it */ promptCue(); requestAnimationFrame(function () { if (!keep) { var pb2 = el.querySelector(".pbody"); unslice(pb2, $("prompt").classList.contains("more") || $("prompt").querySelector(".pfoot .pmore") ? 0 : 28); if (pb2) pb2.scrollTop = 0; } promptCue(); });
 }
 /* v0.21 (craft notes): no sliced lines. A scrolling box that has more than it shows is trimmed so its last visible line of text (or row, chip
    or button) is whole; the "More" pill sits in the space below it. Measured when the box is drawn, at its top. */
@@ -632,7 +652,7 @@ function promptCue() {   // "More ▼" while the panel's body has text below wha
   var was = el.classList.contains("more"), now = b.scrollHeight - b.clientHeight - b.scrollTop > 6 || (was && b.scrollTop > 0); el.classList.toggle("more", now);
   if (now && !was && !b.scrollTop) requestAnimationFrame(function () { b.dataset.mh = ""; unslice(b, 0); });   // the More pill took a row: trim again so no line is sliced
 }
-function render() { hud(); hand(); prompt(); requestFit(); try { spotlight(); } catch (e) { } try { inspRefresh(); } catch (e) { } }   // v0.20.1: the bars may have changed size: refit on the next frame if the safe frame moved
+function render() { document.documentElement.classList.toggle("tut", !!(G.info && G.info.tutorial)); hud(); hand(); prompt(); requestFit(); try { spotlight(); } catch (e) { } try { inspRefresh(); } catch (e) { } }   // v0.20.1: the bars may have changed size: refit on the next frame if the safe frame moved
 /* what caused a loss: the last attack, played or fired card, ability or H-Hour before it (consequence lines are not causes) */
 function isCause(text, fx) { if (/takes \d+ damage|is destroyed|loses? \d+ Homefront|is suppressed|covers the target|intercepts|reloads|^--- /.test(text)) return false; return (fx && fx.kind === "attack") || /^H-Hour|\b(attacks|plays|fires|uses|puts|resolves|ends|completes)\b|spills onto/.test(text); }
 function hitsBox() { if (!G.hits || !G.hits.length) return ""; return '<div class="hits"><b>Since your last move:</b>' + G.hits.slice(-3).map(function (x) { return '<div class="hit1">' + (x.cause ? '<span class="cz">' + esc(x.cause.replace(/^H-Hour: (The |Your )?/, function (m, w) { return "At H-Hour, " + (w ? w.toLowerCase() : ""); })) + "</span>" : "") + '<span class="out">' + esc(x.lines.join(" ")) + "</span></div>"; }).join("") + "</div>"; }
@@ -945,16 +965,18 @@ $("gl").addEventListener("pointermove", function (e) { if (e.pointerType === "mo
 /* the press: one pointer at a time. Moving past the slop makes it a drag (or nothing); letting go inside the slop is a tap, on the up event */
 addEventListener("pointermove", function (e) { if (press && e.pointerId === press.id) SSInput.moved(press, e); }, true);
 addEventListener("pointercancel", function (e) { if (press && e.pointerId === press.id) press = null; }, true);
-/* v0.21 (lead's phone notes 6): robust by construction, not by timing. A button in the reader (Inspector) or the attack preview, or the reader's
+/* v0.21 (lead's phone notes 6): robust by construction, not by timing. A button in the reader (Inspector), the attack preview or the panel, or the reader's
    dimmed backdrop, accepts a pointer activation only when the press itself began on that same control after the sheet opened. A phone's late
    click from the tap that opened the sheet (iOS sends one about 300 ms after the finger lifts, where the finger was) can then press nothing.
    Keyboard activation (Enter or Space, a click with no pointer) is unaffected. */
 function ctlKey(el) { if (!el) return ""; if (el.id === "zScrim") return "zScrim"; var b = el.closest && el.closest("button"); return b ? (b.id || "") + "|" + (b.dataset.i || "") + "|" + (b.dataset.tg || "") + "|" + (b.dataset.sup || "") + "|" + b.textContent.slice(0, 24) : ""; }
 var lastDown = { key: "", t: 0 };
-addEventListener("pointerdown", function (e) { lastDown = { key: ctlKey(e.target.closest ? (e.target.closest("button") || (e.target.id === "zScrim" ? e.target : null)) : null), t: Date.now() }; }, true);
-addEventListener("click", function (e) { if (e.detail === 0 || !e.target.closest) return; var c = e.target.closest("#zoom button, #preview button, #preview input, #zScrim"); if (!c) return;
-  var opened = c.closest("#zoom") ? (G.zoomAt || 0) : (G.pvAt || 0), ok = lastDown.t >= opened && lastDown.key === ctlKey(c.tagName === "INPUT" ? c.closest("label") || c : c);
+addEventListener("pointerdown", function (e) { lastDown = { key: ctlKey(e.target.closest ? (e.target.closest("button") || (e.target.id === "zScrim" ? e.target : null)) : null), t: Date.now(), x: e.clientX, y: e.clientY }; }, true);
+addEventListener("click", function (e) { if (e.detail === 0 || !e.target.closest) return; var c = e.target.closest("#zoom button, #preview button, #preview input, #zScrim, #prompt button"); if (!c) return;
+  var opened = c.closest("#zoom") ? (G.zoomAt || 0) : c.closest("#preview") ? (G.pvAt || 0) : 0, ok = lastDown.t >= opened && lastDown.key === ctlKey(c.tagName === "INPUT" ? c.closest("label") || c : c);
   if (c.tagName === "INPUT") ok = lastDown.t >= opened;   // a tick box: the press began inside the preview after it opened
+  if (ok && c.tagName === "BUTTON" && lastDown.x != null) { var br = c.getBoundingClientRect(); if (lastDown.x < br.left - 1 || lastDown.x > br.right + 1 || lastDown.y < br.top - 1 || lastDown.y > br.bottom + 1) ok = false; }   /* v0.21 (tip fault on 791fe46): a phone moves a touch that lands near a button onto it ("touch adjustment"); the press counts only where the finger really came down, inside the button */
+  if (ok && c.tagName !== "INPUT") lastDown.key = "";   // one press, one activation: a second (late) click from the same press is refused
   if (!ok) { e.stopPropagation(); e.preventDefault(); if (window.SS_REC) window.SS_REC("blocked late click on " + ctlKey(c)); } }, true);
 document.addEventListener("contextmenu", function (e) { if (e.target && (e.target.tagName === "IMG" || e.target.tagName === "CANVAS")) e.preventDefault(); });   /* v0.21 (lead's phone notes 5): a long press on a card picture never opens the browser's image menu; it is a tap (it opens the reader) */
 document.addEventListener("dragstart", function (e) { if (e.target && e.target.tagName === "IMG") e.preventDefault(); });
@@ -973,6 +995,7 @@ $("prompt").addEventListener("mouseleave", function () { G.btnAim = null; });
 $("prompt").addEventListener("click", function (e) { var t = e.target.closest && e.target.closest(".ftip"); if (t && !e.target.closest("button")) { t.classList.toggle("open"); requestAnimationFrame(function () { unslice($("prompt").querySelector(".pbody"), $("prompt").classList.contains("more") ? 0 : 28); promptCue(); }); } });   // the first-time tip is folded to two lines; a tap unfolds it
 $("prompt").onclick = function (e) {
   var b = e.target.closest("button"); if (!b) return;
+  if (b.classList.contains("pmore")) { G.pbUser = true; }
   if (b.classList.contains("pmore")) { var pb = $("prompt").querySelector(".pbody"); if (pb) pb.scrollBy({ top: Math.max(30, pb.clientHeight * .8), behavior: G.rm ? "auto" : "smooth" }); return; }
   if (b.dataset.i != null) return choose(+b.dataset.i);
   if (b.id === "pCancel") { cancelTargeting(); return render(); }
@@ -1018,6 +1041,7 @@ function multiToggle(id, ix) {
 }
 function multiCost() { var pend = G.pend, t = 0; (G.multi ? G.multi.picked : []).forEach(function (x) { var i = optFor(x.id); var c = i >= 0 && (pend.options[i].match(/^Pay (\d+)/) || [])[1]; if (c) t += +c; }); return t; }
 function multiPrompt(el, h, M) {
+  var rl = readyList(G.pend, M); if (rl) { var ix = h.indexOf('<p class="instr">'), end = ix >= 0 ? h.indexOf("</p>", ix) : -1; h = end >= 0 ? h.slice(0, end + 4) + rl + h.slice(end + 4) : rl + h; }   // the list sits right under the instruction, Ready all first
   var pend = G.pend, cfg = MULTI[pend.kind], k = (G.multi && G.multi.kind === pend.kind) ? G.multi.picked.length : 0, cost = multiCost();
   var names = (G.multi && G.multi.kind === pend.kind ? G.multi.picked : []).map(function (x) { var u = findUnit(x.id); if (u) return u.name; var c = (G.view.you.hand || []).filter(function (c) { return c.id === x.id; })[0]; return c ? c.name : x.id; });
   h += '<p class="h tip">' + (cfg.hint || (pend.kind === "discard" ? "Tick the PICK box on each card you want to discard, then confirm. Tap a card to read it." : "Tick the PICK box on each glowing card you want to ready, then confirm. Tap a card to read it.")) + (cfg.max < 99 ? " Up to " + cfg.max + "." : "") + "</p>" +
@@ -1025,13 +1049,33 @@ function multiPrompt(el, h, M) {
     '<div class="btns"><button class="go" id="mGo">' + (k ? cfg.verb + " " + k + (pend.kind === "discard" ? " and draw" : "") : esc(cfg.done)) + "</button>" + (k ? '<button class="ghost" id="mClr">Clear</button>' : "") + (G.canUndo ? '<button class="ghost" id="pUndo" aria-label="Undo"><span class="ic">↶</span><span class="tx"> Undo</span></button>' : "") + "</div>";
   setPrompt(el, h, false);
 }
+/* v0.21 (lead's phone notes: readying one card at a time is tedious). While you ready cards, the panel lists one button per card that can be
+   readied, with its cost, and "Ready all" when you can afford every one. A list button acts at once (it is a button, so the press must begin on
+   it); a tap on the card itself still only opens the reader. "Ready all" makes the same choices one after another and stops if one is no
+   longer offered. In Basic Training only the lesson's card is listed and "Ready all" is not offered. */
+function readyList(pend, M) {
+  var rep = pend.kind === "ready"; if ((pend.kind !== "ready_select" && !rep) || !G.view) return ""; var allow = pend.coach && pend.coach.allow, sup = G.view.you.sup;
+  /* v0.21 (engine v0.17.2): repair is one list too. "Repair X · 2 Supply (2 of 4 → 3)"; Repair all presses each card once per point of damage */
+  var items = Object.keys(M.src).filter(function (id) { return O[id] && O[id].side === "own"; }).map(function (id) { var i = optFor(id), l = i >= 0 ? pend.options[i] : "", c = +((l.match(/^Pay (\d+)/) || [])[1] || 0), u = findUnit(id) || {}, d = l.match(/\((\d+) of (\d+) Durability left, (\d+) after\)/);
+      return { id: id, i: i, c: c, name: u.name || id, pts: rep ? Math.max(1, (u.dmg || (d ? +d[2] - +d[1] : 1))) : 1, dur: d ? d[1] + " of " + d[2] + " → " + d[3] : "" }; })
+    .filter(function (x) { return x.i >= 0 && (!allow || allow.indexOf(x.i) >= 0); });
+  if (!items.length) return ""; var tot = items.reduce(function (a, x) { return a + x.c * x.pts; }, 0), verb = rep ? "Repair" : "Ready";
+  return '<p class="rsup">You have <b>' + sup + "</b> Supply.</p>" + '<div class="rlist">' + ((items.length > 1 || (rep && items[0].pts > 1)) && tot <= sup && !pend.coach ? '<button class="go" id="mAll" data-rep="' + (rep ? 1 : 0) + '">' + verb + " all · " + tot + " Supply</button>" : "") +
+    items.map(function (x) { return '<button class="' + (pend.coach ? "go" : "ghost") + ' rone" data-i="' + x.i + '" data-uid="' + esc(x.id) + '"' + (x.c > sup ? " disabled" : "") + ' aria-label="' + esc(verb + " " + x.name + ", " + x.c + " Supply" + (x.dur ? ", Durability " + x.dur.replace(" → ", ", ") + " after" : "")) + '">' + verb + " " + esc(x.name) + " · " + x.c + " Supply" + (x.dur ? ' <small>(' + esc(x.dur) + ")</small>" : "") + "</button>"; }).join("") + "</div>"; }
+function readyAll() { var pend = G.pend, M = maps(); if (!pend || (pend.kind !== "ready_select" && pend.kind !== "ready")) return; var ids = [];
+  Object.keys(M.src).forEach(function (id) { if (!(O[id] && O[id].side === "own" && optFor(id) >= 0)) return; var n = pend.kind === "ready" ? Math.max(1, (findUnit(id) || {}).dmg || 1) : 1; for (var k = 0; k < n; k++) ids.push(id); });
+  G.multi = null; G.autoQ = { kind: pend.kind, ids: ids }; autoStep(); }   /* each choice is re-read from the list the engine sends back; a card no longer listed is skipped, then Done (No more repairs) */
+function listHi(uid) { if (G.listHi === uid) return; G.listHi = uid || null; }
+$("prompt").addEventListener("pointerover", function (e) { var b = e.target.closest && e.target.closest("button.rone"); listHi(b ? b.dataset.uid : null); });
+$("prompt").addEventListener("focusin", function (e) { var b = e.target.closest && e.target.closest("button.rone"); listHi(b ? b.dataset.uid : null); });
+$("prompt").addEventListener("focusout", function () { listHi(null); }); $("prompt").addEventListener("pointerleave", function () { listHi(null); });
 function multiGo() { var pend = G.pend; if (!pend) return; var picked = (G.multi && G.multi.kind === pend.kind) ? G.multi.picked.map(function (x) { return x.id; }) : []; G.multi = null; G.autoQ = { kind: pend.kind, ids: picked }; autoStep(); }
 function autoStep() {
   var q = G.autoQ, pend = G.pend; if (!q || !pend || pend.kind !== q.kind) { G.autoQ = null; return; }
   while (q.ids.length) { var i = optFor(q.ids.shift()); if (i >= 0) return choose(i); }
   G.autoQ = null; choose(finalOpt());
 }
-$("prompt").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; if (b.id === "mGo") multiGo(); if (b.id === "mClr") { G.multi = null; handKey = ""; render(); } });
+$("prompt").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; if (b.id === "mAll") return readyAll(); if (b.id === "mGo") multiGo(); if (b.id === "mClr") { G.multi = null; handKey = ""; render(); } });
 
 /* ================= drag and drop: hand to table or Mission Track; your card to a target; the marker along the route ================= */
 var drag = null, dragged = false;
@@ -1070,7 +1114,7 @@ function trackHint(c) {   // what letting go over the Mission Track will do, fro
   return "Let go: to the Mission Track · " + (tm > 0 && f.sub !== "Reaction" ? tm + " round" + (tm === 1 ? "" : "s") + " to H-Hour" : "H-Hour: happens now");
 }
 /* v0.19.4 (his 16 Nov note): while you drag, the places that take the card light up, and a line under the card says what letting go will do */
-function shortOpt(t) { return String(t).split(/ \(|: /)[0]; }
+function shortOpt(t) { return mvShort(String(t).split(/ \(|: /)[0]); }
 /* v0.21 (lead's phone notes 6): your own table cards can be dragged between your Frontline and your Rear Area while you arrange the rows;
    each row lights up as a drop band, and letting go anywhere else (or Esc, a second finger, the dock) moves nothing */
 var ROWZ = { front: 1.72, rear: 4.12 };
@@ -1434,7 +1478,7 @@ function libDraw(full) { var el = $("lib"), F = G.faces || {}, cls = {}, gens = 
     '<div class="row">' + libSeg("cls", [["all", "Every Class"]].concat(Object.keys(cls).sort().map(function (c) { return [c, c]; }))) + "</div>" +
     '<div class="row">' + libSeg("deck", [["all", "Every card"]].concat(Object.keys(G.decklists || {}).sort().map(function (d) { return [d, "In " + d]; }))) + "</div></div><div class=\"grid\" id=\"libGrid\"></div>";
   $("libN").textContent = list.length + " card" + (list.length === 1 ? "" : "s");
-  var gr = $("libGrid"); gr.innerHTML = list.map(function (f) { return '<button data-card="' + esc(f.name) + '"><img alt="' + esc(f.name) + '" data-src="' + esc(f.name) + '">' + esc(f.name) + "</button>"; }).join("");
+  var gr = $("libGrid"); gr.innerHTML = list.map(function (f) { return '<button data-card="' + esc(f.name) + '"><img alt="' + esc(f.name) + '" draggable="false" data-src="' + esc(f.name) + '">' + esc(f.name) + "</button>"; }).join("");
   var imgs = Array.prototype.slice.call(gr.querySelectorAll("img")), k = 0;
   (function step() { var t0 = Date.now(); while (k < imgs.length && Date.now() - t0 < 30) { var im = imgs[k++], n = im.dataset.src; if (!LIB.cv[n]) try { LIB.cv[n] = drawCard(F[n], .8, {}).toDataURL("image/jpeg", .82); } catch (e) { LIB.cv[n] = ""; } im.src = LIB.cv[n]; } if (k < imgs.length && $("lib").style.display === "block") requestAnimationFrame(step); })();
   var q = $("libQ"); if (q && !q.oninput) q.oninput = function () { LIB.q = this.value; clearTimeout(LIB.t); LIB.t = setTimeout(function () { libDraw(false); }, 180); };
@@ -1452,7 +1496,7 @@ function segRow(key, label, sub, opts) { return '<div class="row"><span>' + esc(
 function showSettings() { audioInit(); unlock(); SFX.open && SFX.open(); G.retFocus = document.activeElement;
   var el = $("settings"), d = G.setupData || {}, L = window.SS_LOGOS || [], CR = window.SS_CREDITS || [], MU = window.SS_MUSIC || [];
   var rng = function (id, label, v) { return '<div class="row"><span>' + label + '</span><input type="range" id="' + id + '" min="0" max="100" value="' + Math.round(v * 100) + '"></div>'; };
-  el.innerHTML = '<div class="sb"><button class="ghost" id="setX">Close</button><h3 class="t">Settings</h3><p class="hint">Saved on this device. Changes apply at once.</p>' +
+  el.innerHTML = '<div class="sb"><div class="shead"><button class="ghost" id="setX">Close</button></div><h3 class="t">Settings</h3><p class="hint">Saved on this device. Changes apply at once.</p>' +
     "<h4>Display</h4>" + segRow("text", "Text size", "", [[1, "100%"], [1.25, "125%"], [1.5, "150%"], [1.75, "175%"], [2, "200%"]]) +
     segRow("motion", "Reduced motion", "Stills the screen effects. Follows your device setting unless you choose.", [["auto", "Follow device"], ["on", "On"], ["off", "Off"]]) +
     segRow("shake", "Screen shake", "", [[true, "On"], [false, "Off"]]) +
@@ -1466,11 +1510,7 @@ function showSettings() { audioInit(); unlock(); SFX.open && SFX.open(); G.retFo
     segRow("tips", "Tips", "First-time tips, and the one-line hints in the prompt.", [[true, "On"], [false, "Off"]]) + '<div class="row"><span>First-time tips<small>Show each one again, as in your first game.</small></span><button class="ghost" id="sTipsAgain">Show them again</button></div>' +
     segRow("badges", "Attack badges", "The attack value on cards on the table.", [[true, "On"], [false, "Off"]]) +
     "<h4>Accessibility</h4>" + segRow("captions", "Captions for radio calls", "Shows each radio call as text, also when the voices are off.", [[false, "Off"], [true, "On"]]) +
-    '<h4>About</h4><div class="about">' +   // v0.21 (content pack decision 3): no logos until the College approves them beside the disclaimer
-    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.20" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
-    "<p><b>Sound</b></p><ul>" + CR.map(function (c) { return "<li>" + esc(c.source) + ": " + esc(c.what) + "</li>"; }).join("") + "</ul>" + (MU.length ? "<p>Music: " + esc(MU.join(", ")) + ".</p>" : "") +
-    (SITE ? '<p><button class="ghost" id="sNotice">Read the playtest notice</button></p>' : "") +
-    "<p><b>Card art</b>: made for the project (Art Pass v6.0 and earlier passes); some cards show Beta 3 art until the next Art Pass.</p></div></div>";
+    "</div>";   /* v0.21 (lead's note): Settings holds settings only; the credits, versions and the notice moved to About */
   el.style.display = "block"; el.scrollTop = 0; try { $("setX").focus({ preventScroll: true }); } catch (x) { }
   $("sMute").onchange = function () { G.muted = this.checked; if (master) master.gain.value = G.muted ? 0 : .9; saveSound(); };
   $("sFx").oninput = function () { G.volFx = this.value / 100; if (sfxBus) sfxBus.gain.value = G.volFx; saveSound(); }; $("sFx").onchange = function () { SFX.thud(); };
@@ -1645,7 +1685,7 @@ function gameNow() {   // what Provide Feedback carries about the game: the one 
     return { record: r, notes: g.notes || [], tutorial: !!(r && r.tutorial), spectate: !!g.spectate, you: g.you, bot: g.bot, terrain: g.terrain, finished: g.finished, winner: g.winner, how: g.how, round: g.round, id: "", saved: g.savedAt }; }); }
 function gameLine(g) { if (!g) return "No game played on this device yet.";
   var what = g.tutorial ? "Basic Training" : g.spectate ? "Watched the bot play itself" : "Play the bot"; var res = g.finished ? (/^Nobody/.test(g.winner) ? "a draw" : (g.winner === "You" ? "you won" : g.winner + " won")) + (g.how ? " (" + g.how + ")" : "") + " in round " + g.round : "not finished, round " + (g.round || 1);
-  return what + ": " + (g.you || "") + " against " + (g.bot || "") + " on " + (g.terrain || "") + ", " + res + "."; }
+  var gr = g.rules || (g.record && g.record.rules); return what + ": " + (g.you || "") + " against " + (g.bot || "") + " on " + (g.terrain || "") + ", " + res + "." + (gr && +gr.concepts ? " " + BEN_NOTE : ""); }
 function deviceLine() {   // v0.20.2: the kind of device, the browser family and the input, in plain words (no version numbers or other identifying detail)
   var ua = navigator.userAgent || "", mm = function (q) { try { return matchMedia(q).matches; } catch (e) { return false; } }, coarse = mm("(pointer: coarse)"), fine = mm("(any-pointer: fine)"), sd = Math.min(screen.width || innerWidth, screen.height || innerHeight);
   var kind = coarse ? (sd < 600 ? "phone" : "tablet") : "desktop or laptop";
@@ -1751,7 +1791,7 @@ function setupBody(d) {
     '</div><p class="hint">' + (tr ? esc(tr.text) : "A battlefield from the two boxes in play, chosen at random.") + "</p></section>" +
     '<details class="more"' + (SET.open ? " open" : "") + '><summary>Rules for this game</summary><div class="opts">' +
     '<div><label>Goes first in round 1</label>' + seg("first", [["", "Random"], ["you", watch ? "South" : "You"], ["bot", watch ? "North" : "The bot"]]) + "</div>" +
-    '<div><label>Concept benefits</label>' + seg("concepts", [["0", "Off while we balance"], ["1", "On"]]) + "</div>" +
+    '<div><label>Concept benefits</label><p class="hint">Held for campaign play.</p></div>' +   /* v0.21 (ruling AS item 12): no switch; the base game is played without them */
     '<div><label>Hand at the end of the round</label>' + seg("fd", [["0", "Keep it"], ["1", "Draw 5 new"]]) + "</div>" +
     '<div><label>The game ends</label>' + seg("end", [["0", "At Assessment"], ["1", "The instant a condition is met"]]) + "</div></div></details>" +
     '<div class="go"><button id="pgo" class="big">' + (watch ? "Watch the game" : "Start the game") + '</button><p>' + esc(SET.you) + " against " + esc(SET.bot) + (SET.terrain ? ", " + esc(SET.terrain.toLowerCase()) : ", random ground") + '</p></div><pre id="serr"></pre>';
@@ -1760,16 +1800,60 @@ function setupBody(d) {
    START BASIC TRAINING is the primary until training is done, then PLAY (with the last setup under it) and TRAINING joins the list.
    Each label's description is its accessible description; only the primary's is printed. */
 function buildTag(d) { return "Battlefield table v0.20" + (d && d.version ? " · game " + d.version : "") + (d && d.cards ? " · " + d.cards : ""); }
+/* v0.21 (checkers A): the lead edits notices.js by hand, so its data is checked once: lists that are not lists become empty, entries
+   without a text id, title and body are dropped, and anything unusable hides the bell; the Main Menu never depends on it */
+(function () { try { var N = window.SS_NOTICES; if (!N || typeof N !== "object" || Array.isArray(N)) { window.SS_NOTICES = null; return; }
+  var ok = function (x) { return !!x && typeof x === "object" && typeof x.id === "string" && !!x.id && typeof x.title === "string" && typeof x.body === "string" && (x.date == null || typeof x.date === "string") && (x.until == null || typeof x.until === "string"); };
+  var lst = function (a) { return Array.isArray(a) ? a.filter(ok) : []; }, w = N.welcome && typeof N.welcome === "object" ? N.welcome : {};
+  var full = typeof w.full === "string" && w.full.trim() ? w.full : "", short = typeof w.short === "string" && w.short.trim() ? w.short : (full.split(/\n\s*\n/)[0] || "");
+  var out = { welcome: short || full ? { short: short, full: full || short } : null, whatsNew: lst(N.whatsNew), devNotes: lst(N.devNotes) };
+  window.SS_NOTICES = out.welcome || out.whatsNew.length || out.devNotes.length ? out : null; } catch (e) { window.SS_NOTICES = null; } })();
+var SPLASH_BIG = "menu/keyart_wide_2560";   /* screens 1024 px wide and more: the upscaled key art (WebP, else JPEG); phones keep the 1280 poster */
+function splashErr(im) { var p = im.parentNode; if (p && p.tagName === "PICTURE" && !im.dataset.f) { im.dataset.f = "1"; Array.prototype.slice.call(p.querySelectorAll("source")).forEach(function (s) { s.remove(); }); im.src = SPLASH_ART; } else im.style.display = "none"; }   // the large file failed: the poster; that failed too: the plain background
+window.splashErr = splashErr;
+var SPLASH_ART = "opening/poster_wide.jpg";   /* the Main Menu key art: swap this one name for a larger copy (the same picture the opening already loads, so it is cached) */
 function menuBody(el, d) {
-  var done = false; try { done = !!localStorage.getItem("ss.trained"); } catch (e) { }
   var last = (SET.you && SET.bot ? SET.you + " vs " + SET.bot : "") + " · " + (SET.terrain || "RANDOM GROUND");
   var item = function (go, lab, desc, prim) { var id = "md_" + go; return '<button class="' + (prim ? "big mprim" : "ghost mi") + '" data-go="' + go + '" aria-describedby="' + id + '"><span>' + lab + '</span><i aria-hidden="true">' + (prim ? "↗" : "→") + "</i></button>" + (prim ? '<p class="mline" id="' + id + '">' + esc(desc) + "</p>" : '<span class="sr" id="' + id + '">' + esc(desc) + "</span>"); };
-  var h = '<nav class="mm" aria-label="Main Menu">' + (done ? item("play", "PLAY", last, true) : item("train", "START BASIC TRAINING", "Learn by playing. About 15 minutes.", true)) + '<div class="mlist">' +
-    (done ? item("train", "TRAINING", "Basic Training, and more lessons as they come.") : item("play", "PLAY", "Command a force against the bot.")) +
+  var N = window.SS_NOTICES, unread = 0, wel = false; try { unread = noticesUnread(); wel = !!(N && N.welcome && !welcomeSeen()); } catch (e) { N = null; }
+  /* v0.21 (lead's notes, 19 Nov): the key art fills the top of the Main Menu (a band on a phone held upright, the backdrop elsewhere); the
+     welcome note shows over it on a first visit only, and afterwards lives behind the bell and in About. PLAY and the buttons never move. */
+  var h = '<div class="splash" aria-hidden="false"><picture><source media="(min-width: 1024px)" type="image/webp" srcset="' + SPLASH_BIG + '.webp"><source media="(min-width: 1024px)" srcset="' + SPLASH_BIG + '.jpg"><img src="' + SPLASH_ART + '" alt="" aria-hidden="true" draggable="false" onerror="splashErr(this)"></picture><i class="scr" aria-hidden="true"></i>' +
+    '<h1 class="t">Shadows <span>&amp;</span> Steel<small> 2045</small></h1>' +
+    (N ? '<button class="ghost bell" id="nBell" aria-haspopup="dialog" aria-expanded="false" aria-label="' + (unread ? "Notices, " + unread + " new" : "Notices") + '"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6V11a7 7 0 0 0-5.5-6.84V3a1.5 1.5 0 0 0-3 0v1.16A7 7 0 0 0 5 11v5l-2 2v1h18v-1z"/></svg>' + (unread ? '<b class="cnt" aria-hidden="true">' + unread + "</b>" : "") + "</button>" : "") +
+    (wel ? '<div class="wnote" id="wNote" role="note" aria-label="Welcome"><button class="ghost wx" id="wX" aria-label="Close the welcome note">✕</button><div class="wtx" tabindex="0"><p class="wk">Welcome · playtest</p><p>' + md(N.welcome.short) + '</p><p class="wl">You can read this again under the bell, and in About.</p></div><div class="row"><button class="ghost" id="wGot">GOT IT</button></div></div>' : "") + "</div>";
+  h += '<nav class="mm" aria-label="Main Menu">' + item("play", "PLAY", last, true) + '<div class="mlist">' + item("train", "TRAINING", "Basic Training, and more lessons as they come.") +
     item("library", "LIBRARY", "Cards, the Field Manual and saved replays.") + item("settings", "SETTINGS", "Text size, sound, motion and controls.") + item("about", "ABOUT", "The game, the film and the team.") + "</div>" +
     ((SITE || LOCAL) ? '<div class="msec">' + (SITE ? '<button class="ghost lk" id="suSend" aria-describedby="md_fb">PROVIDE FEEDBACK</button><span class="sr" id="md_fb">Tell the team what worked and what did not.</span>' : "") + (LOCAL ? '<button class="ghost lk" id="suQuit">QUIT</button>' : "") + "</div>" : "") + "</nav>";
-  el.innerHTML = h;
+  el.innerHTML = h; splashFit();
 }
+/* the band is about 36% of a phone's height (250 px or more), smaller only if the menu would otherwise need scrolling */
+function splashFit() { var sp = document.querySelector("#suBody .splash"), mm = document.querySelector("#suBody .mm"); if (!sp || !mm) return; sp.style.height = "";
+  var w = innerWidth, h = innerHeight, cv = $("cover"); if (!(w < 600 && h > w)) return; var want = Math.max(250, Math.round(h * .36)); sp.style.height = want + "px";
+  var over = Math.round(mm.getBoundingClientRect().bottom + cv.scrollTop + 8 - h); if (over > 0) sp.style.height = Math.max(120, want - over) + "px"; }   // PLAY, the four buttons and Provide Feedback fit without scrolling; the build tag below may scroll
+addEventListener("resize", function () { if (G.setupData && (!SET.screen || SET.screen === "menu")) splashFit(); });
+/* notices (game/notices.js, the lead's own file): plain text, **bold** only; nothing from the file is inserted unescaped */
+function md(t) { return esc(t || "").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>"); }
+function mdP(t) { return String(t || "").split(/\n\s*\n/).map(function (p) { return "<p>" + md(p) + "</p>"; }).join(""); }
+function welcomeSeen() { try { return !!(localStorage.getItem("ss.welcomeSeen") || localStorage.getItem("ss.welcomed")); } catch (e) { return !!G.welcomeSeen; } }
+function noticeItems() { var N = window.SS_NOTICES || {}, today = new Date().toISOString().slice(0, 10); return { news: (N.whatsNew || []).slice(), dev: (N.devNotes || []).filter(function (x) { return !x.until || x.until >= today; }) }; }
+function noticesSeen() { try { var raw = localStorage.getItem("ss.noticesSeen"); if (raw === null) { var it = noticeItems(), ids = it.news.concat(it.dev).map(function (x) { return x.id; }); localStorage.setItem("ss.noticesSeen", JSON.stringify(ids)); return ids; } return JSON.parse(raw); } catch (e) { if (!G.noticesSeen) { var it2 = noticeItems(); G.noticesSeen = it2.news.concat(it2.dev).map(function (x) { return x.id; }); } return G.noticesSeen; } }   /* a first visit counts nothing as new: only entries added after it do */
+function noticesUnread() { if (!window.SS_NOTICES) return 0; var it = noticeItems(), seen = noticesSeen(); return it.news.concat(it.dev).filter(function (x) { return seen.indexOf(x.id) < 0; }).length; }
+function showNotices(open) { try { showNotices0(open); } catch (e) { var el = $("notices"); if (el) el.remove(); var b = $("nBell"); if (b) b.hidden = true; } }
+function showNotices0(open) { var N = window.SS_NOTICES; if (!N) return; var el = $("notices"), bell = $("nBell");
+  if (!open) { if (el) el.remove(); if (bell) { bell.setAttribute("aria-expanded", "false"); try { bell.focus({ preventScroll: true }); } catch (x) { } } return; }
+  var it = noticeItems(), seen = noticesSeen(), entry = function (x) { return '<div class="nent"><p class="nt"><b>' + esc(x.title) + "</b>" + (seen.indexOf(x.id) < 0 ? ' <span class="nnew">NEW</span>' : "") + ' <small>' + esc(x.date || "") + "</small></p><p>" + md(x.body) + "</p></div>"; };
+  el = document.createElement("div"); el.id = "notices"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-labelledby", "nTitle");
+  el.innerHTML = '<div class="npanel"><div class="nhead"><h2 class="t" id="nTitle">NOTICES</h2><button class="ghost" id="nClose">CLOSE</button></div><div class="nbody">' +
+    (N.welcome ? '<details open><summary>WELCOME</summary>' + mdP(N.welcome.full) + '<p><button class="ghost" id="wNotice">Read the playtest notice</button></p></details>' : "") +
+    '<details' + (it.news.some(function (x) { return seen.indexOf(x.id) < 0; }) ? " open" : "") + "><summary>WHAT'S NEW</summary>" + (it.news.length ? it.news.map(entry).join("") : "<p>No changes to report yet.</p>") + "</details>" +
+    (it.dev.length ? '<details open><summary>FROM THE DEV TEAM</summary>' + it.dev.map(entry).join("") + "</details>" : "") + "</div></div>";
+  $("cover").appendChild(el); if (bell) bell.setAttribute("aria-expanded", "true");
+  var all = it.news.concat(it.dev).map(function (x) { return x.id; }); try { localStorage.setItem("ss.noticesSeen", JSON.stringify(all)); } catch (x) { G.noticesSeen = all; }
+  if (bell) { bell.setAttribute("aria-label", "Notices"); var c = bell.querySelector(".cnt"); if (c) c.remove(); }
+  try { $("nClose").focus({ preventScroll: true }); } catch (x) { } }
+document.addEventListener("pointerdown", function (e) { var el = $("notices"); if (el && !e.target.closest(".npanel") && !e.target.closest("#nBell")) showNotices(false); }, true);
+addEventListener("keydown", function (e) { if (e.key === "Escape" && $("notices")) { e.preventDefault(); e.stopImmediatePropagation(); showNotices(false); } }, true);
 function libraryBody(el) {
   var row = function (id, lab, desc) { return '<button class="ghost mi" id="' + id + '"><span>' + lab + '<small>' + esc(desc) + '</small></span><i aria-hidden="true">→</i></button>'; };
   el.innerHTML = '<nav class="mm lib" aria-label="Library"><h2 class="mh2">LIBRARY</h2><div class="mlist">' + row("suLib", "CARDS", "Every card in the game, in full.") + row("suFM", "FIELD MANUAL", "Every lesson and every rules word.") + row("suReps", "SAVED REPLAYS", "Watch your saved battles again.") + "</div></nav>";
@@ -1781,15 +1865,19 @@ var FILM = "media/hype_540.mp4";
 function aboutBody(el, d) {
   var rm = reducedMotion();
   el.innerHTML = '<article class="about2">' +
-    '<h2 class="mh2">ABOUT SHADOWS &amp; STEEL 2045</h2><p>Shadows &amp; Steel is a card game about force design and concept development. It explores innovation in multi-domain warfare through strategic, competitive play. The game is in playtesting, and your feedback shapes it. Play a battle, then tell the team what you think.</p>' +
+    '<h2 class="mh2">ABOUT SHADOWS &amp; STEEL 2045</h2><h3>THE GAME</h3><p>Shadows &amp; Steel is a card game about force design and concept development. It explores innovation in multi-domain warfare through strategic, competitive play. The game is in playtesting, and your feedback shapes it. Play a battle, then tell the team what you think.</p>' +
     '<h3>THE FILM</h3><div class="film"><video id="abV" preload="none" playsinline controls hidden></video><button class="big" id="abPlay">PLAY VIDEO</button></div><p class="cap">A short film about the game and why it is being built. 2 min 25 s.</p><p class="cap" id="abErr" role="status"></p>' +
     '<p><button class="ghost" id="abOpening" aria-describedby="md_op"' + (rm ? " disabled" : "") + '>WATCH THE OPENING</button> <span class="cap" id="md_op">' + (rm ? "Reduced motion is on, so the opening film is skipped." : "Play the opening film again.") + "</span></p>" +
-    '<h3>THE TEAM</h3><p class="sub">Beta 3.0 printed edition</p><ul class="team">' + TEAM.map(function (r) { return "<li><b>" + esc(r[0]) + "</b> " + esc(r[1]) + "</li>"; }).join("") + "</ul>" +
+    (window.SS_NOTICES && window.SS_NOTICES.welcome ? '<h3>WELCOME</h3>' + mdP(window.SS_NOTICES.welcome.full) + '<p><button class="ghost lk" id="wNotice">Read the playtest notice</button></p>' : "") +
+    '<h3>CREDITS</h3><h4 class="sub4">The team</h4><p class="sub">Beta 3.0 printed edition</p><ul class="team">' + TEAM.map(function (r) { return "<li><b>" + esc(r[0]) + "</b> " + esc(r[1]) + "</li>"; }).join("") + "</ul>" +
     '<p>' + "Digital edition: designed and built by the Shadows &amp; Steel digital studio for the project team.</p>" +
+    (function () { var CR = window.SS_CREDITS || [], MU = window.SS_MUSIC || []; return '<h4 class="sub4">Sound and music</h4><ul>' + CR.map(function (c) { return "<li>" + esc(c.source) + ": " + esc(String(c.what).replace(/\b(\d+) musics\b/, "$1 tracks")) + "</li>"; }).join("") + "</ul>" + (MU.length ? "<p>Music: " + esc(MU.join(", ")) + ".</p>" : ""); })() +
+    '<h4 class="sub4">Card art</h4><p>Made for the project (Art Pass v6.0 and earlier passes); some cards show Beta 3 art until the next Art Pass.</p>' +
+    '<h4 class="sub4">Fonts and software</h4><p>Fonts: Rajdhani, Barlow and JetBrains Mono, under the SIL Open Font License.</p><p>Software: three.js (MIT License) and Pyodide (Mozilla Public License 2.0).</p>' +
     '<h3>FEEDBACK</h3><p>Questions and ideas reach the whole team at:</p><p><a href="mailto:ShadowsAndSteel@armywarcollege.edu">ShadowsAndSteel@armywarcollege.edu</a></p><p>Or use Provide Feedback after a game.</p>' +
     '<h3>NOT AN OFFICIAL PRODUCT</h3><p>' + "Shadows &amp; Steel is an unofficial educational game. The views in it are the designers' and do not reflect the official policy or position of the U.S. Army War College, the Department of the Army, the Department of Defense or the U.S. Government. Doctrine is quoted from publicly released publications for teaching purposes, and no endorsement is implied.</p>" +
-    '<h3>PLAYTEST NOTICE</h3><p><button class="ghost lk" id="wNotice">Read the playtest notice again</button></p>' +
-    '<h3>BUILD AND LICENCES</h3><p>Build ' + esc(buildTag(d)) + "</p><p>Fonts: Rajdhani, Barlow and JetBrains Mono, under the SIL Open Font License.</p><p>Software: three.js (MIT License) and Pyodide (Mozilla Public License 2.0).</p></article>";
+    (window.SS_NOTICES && window.SS_NOTICES.welcome ? "" : '<h3>PLAYTEST NOTICE</h3><p><button class="ghost lk" id="wNotice">Read the playtest notice again</button></p>') +
+    '<h3>THIS BUILD</h3><p>' + esc(buildTag(d)) + (d.training && d.training.version ? " · Basic Training v" + esc(d.training.version) : "") + (d.decks ? " · " + esc(d.decks) : "") + "</p></article>";
 }
 function aboutFilm() { var v = $("abV"), b = $("abPlay"), er = $("abErr"); if (!v) return; er.textContent = "";
   var vol = function (on) { try { if (musBus) musBus.gain.value = on ? (G.volMus == null ? 1 : G.volMus) : 0; } catch (x) { } };   // the menu music pauses while the film plays
@@ -1812,7 +1900,7 @@ function showSetup() {
     G.setupData = d; var cs = d.concepts; if (!SET.you) SET.you = cs[0].name; if (!SET.bot) SET.bot = (cs[1] || cs[0]).name;
     $("cover").style.display = "block"; $("cover").classList.add("map");
     $("cover").firstElementChild.innerHTML = '<canvas class="contours" id="suMap"></canvas><div class="su"><header class="su-h"><h1 class="t">Shadows <span>&amp;</span> Steel<small> 2045</small></h1>' +
-      '<button class="ghost gear" id="suBack" hidden>‹ Main Menu</button></header>' + (SITE ? siteWelcome() : "") +
+      '<button class="ghost gear" id="suBack" hidden>‹ Main Menu</button></header>' +
       '<div id="suBody"></div><footer class="su-f" id="suTag">' + esc(buildTag(d)) + "</footer></div>";   // v0.21 (WP8, spec 5.2): the build tag only; no logos (content pack decision 3)
     if (G.autoStart) SET.screen = SET.mode === "train" ? "train" : "play"; setupBody(d); if (G.autoStart) { G.autoStart = false; setTimeout(function () { var pg = $("pgo"); if (pg && !pg.disabled) pg.click(); }, 60); } requestAnimationFrame(function () { contourMap($("suMap"), SET.terrain); if (window.SSOpening && window.SSOpening.menuShown) window.SSOpening.menuShown(); });
     if (SITE) noticeGate();   // v0.20.2: the playtest website asks for the notice once before the Main Menu can be used
@@ -1822,6 +1910,8 @@ $("cover").addEventListener("click", function (e) {
   var b = e.target.closest("button"); if (b && G.setupData && (b.dataset.go || b.id === "suBack" || b.id === "suReps")) { var go = b.id === "suBack" ? "menu" : b.id === "suReps" ? "replays" : b.dataset.go; SFX.select && SFX.select();
     if (go === "settings") return showSettings(); if (go === "train") SET.mode = "train"; else if (go === "play" && SET.mode !== "watch") SET.mode = "bot"; else if (go === "replays") SET.mode = "replays";
     SET.screen = go; setupBody(G.setupData); try { (go === "menu" ? document.querySelector("#suBody .mprim") : $("suBack")).focus({ preventScroll: true }); } catch (x) { } return; }   // v0.21 (WP8): one screen at a time; Back returns to the Main Menu
+  if (b && b.id === "nBell") return showNotices(!$("notices")); if (b && b.id === "nClose") return showNotices(false);
+  if (b && (b.id === "wGot" || b.id === "wX")) { try { localStorage.setItem("ss.welcomeSeen", "1"); } catch (x) { G.welcomeSeen = true; } var wn = $("wNote"); if (wn) wn.remove(); try { var pp = document.querySelector("#suBody .mprim"); if (pp) pp.focus({ preventScroll: true }); } catch (x) { } return; }
   if (b && b.id === "abPlay") return aboutFilm(); if (b && b.id === "abOpening") { try { sessionStorage.setItem("ss.opAgain", "1"); } catch (x) { } return location.reload(); }
   if (b && b.id === "suGear") return showSettings(); if (b && b.id === "suQuit") return quitApp(b); if (b && b.id === "suSend") return showSend(); if (b && b.id === "wNotice") return showNotice(true); if (b && b.id === "wHide") { try { localStorage.setItem("ss.welcomed", "1"); } catch (er) { } var wl = $("welcome"); if (wl) wl.remove(); return; } if (b && (b.id === "suFM" || b.id === "tFM")) return showManual(); if (b && b.id === "suLib") return showLibrary(); if (!b || !G.setupData) return; var d = G.setupData, grp = b.closest("[data-set]");
   if (b.dataset.you || b.dataset.bot) { if (b.dataset.you) SET.you = b.dataset.you; else SET.bot = b.dataset.bot; SFX.select && SFX.select(); return setupBody(d); }
@@ -1831,7 +1921,7 @@ $("cover").addEventListener("click", function (e) {
     return setupBody(d); }
   if (b.id === "pgo") { audioInit(); unlock(); b.disabled = true; b.textContent = "Setting up…";
     if (SND && AC && !G.muted) { G.battleMus = true; setMood("approach", true); }   // v0.19.3: the battle music starts with the battle, on this tap (a phone allows a new track only from a tap)
-    api("/play/start", SET.mode === "train" ? { tutorial: "basic" } : { build: "", spectate: SET.mode === "watch" ? "1" : "", you: SET.you, bot: SET.bot, terrain: SET.terrain, first: SET.first, concepts: SET.concepts, forced_discard: SET.fd, instant_end: SET.end })
+    api("/play/start", SET.mode === "train" ? { tutorial: "basic" } : { build: "", seed: SET.seed || "", spectate: SET.mode === "watch" ? "1" : "", you: SET.you, bot: SET.bot, terrain: SET.terrain, first: SET.first, concepts: "0", forced_discard: SET.fd, instant_end: SET.end })
       .then(function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); }, function (e) { b.disabled = false; b.textContent = "Start the game"; $("serr").textContent = e.message; }); }
 });
 addEventListener("keydown", function (e) { if (e.key !== "Escape" || !G.setupData || $("cover").style.display === "none" || !SET.screen || SET.screen === "menu") return;   /* v0.21 (checkers): Esc goes back one screen from Play, Training, Library and About too */
@@ -1928,8 +2018,11 @@ function playReplay(rec, opts) {
     G.faces = body.faces || G.faces || {}; G.meta = body.meta || G.meta || {}; G.bases = body.bases || G.bases || {}; handCv = {}; handKey = "";
     G.info = body.info; G.lastN = fr.length; G.since = fr.length; G.latest = fr.length ? fr[fr.length - 1].view : null; G.latestPend = null; G.queue = fr.slice(); G.started = true;
     MUS.on = true; $("bot").style.visibility = ""; document.body.classList.add("replaying"); $("bQuit").textContent = R0(opts); playNext();
+    if (benOn(G.latest)) feed(BEN_NOTE);   /* v0.21 (RC1 item d): a game recorded with Concept benefits on plays as recorded, and says so */
   });
 }
+var BEN_NOTE = "Recorded with Concept benefits on, as the rules allowed then. New games are played without them: they are held for campaign play.";
+function benOn(v) { var b = v && v.you && v.you.benefit; return !!b && !/switched off/i.test(b); }
 function R0(opts) { return opts && opts.standalone ? "Stop the replay" : "Exit replay"; }
 function replayJump(i) {   // to the start of a round
   var R = G.replay; if (!R) return; var fr = R.body.frames; i = Math.max(0, Math.min(fr.length - 1, i));
@@ -2046,7 +2139,7 @@ function frame(now) {
   var M = (G.pend && !G.playing) ? maps() : null, fxs = G.playing && G.caption && G.view ? null : null, lerp = Math.min(1, raw * 9);
   Object.keys(O).forEach(function (uid) {
     var o = O[uid], g = o.grp, on = 0, col = 0x7fe0c8, ring = 0;
-    if (M) { if (M.src[uid]) on = .5 + Math.sin(T * 4 + o.tx) * .25; if (G.sel === uid) { on = 1; col = 0xffffff; } if (M.sups[uid]) { on = .9; col = 0x6aa8ff; } if (M.dsts[uid]) { ring = 1; if (G.pvDst === uid) { on = 1; col = 0xff8a66; } } if (G.multi && G.multi.picked.some(function (x) { return x.id === uid; })) { on = 1; col = 0xffd27a; } }
+    if (M) { if (M.src[uid]) on = .5 + Math.sin(T * 4 + o.tx) * .25; if (G.sel === uid || G.listHi === uid) { on = 1; col = 0xffffff; } if (M.sups[uid]) { on = .9; col = 0x6aa8ff; } if (M.dsts[uid]) { ring = 1; if (G.pvDst === uid) { on = 1; col = 0xff8a66; } } if (G.multi && G.multi.picked.some(function (x) { return x.id === uid; })) { on = 1; col = 0xffd27a; } }
     o.glow.material.color.set(col); o.glow.material.opacity += (on - o.glow.material.opacity) * .2; o.ring.material.opacity += (ring - o.ring.material.opacity) * .25; if (ring) { o.ring.rotation.z += raw * .9; }
     g.position.x += (o.tx - g.position.x) * lerp; g.position.z += (o.tz - g.position.z) * lerp;
     var ty = .42 + (o.type === "contact" ? Math.sin(T * 2 + o.tx) * .04 : 0) + (G.sel === uid ? .25 : 0);

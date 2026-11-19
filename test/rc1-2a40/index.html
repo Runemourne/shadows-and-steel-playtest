@@ -3,25 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<base href="../../">
-<script>window.SS_TEST_NAME = "first-look 2026-11-19";</script>
+<script>window.SS_TEST_NAME = "rc1 2026-11-19";</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Shadows &amp; Steel: Test (first-look)</title>
+<title>Shadows &amp; Steel: Test (rc1)</title>
 <link rel="icon" href="data:,">
-<link rel="preload" href="test/first-look-2289/fonts/Barlow-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="test/first-look-2289/fonts/BlackOpsOne-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="test/first-look-2289/tokens.css">
+<link rel="preload" href="fonts/Barlow-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/BlackOpsOne-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="tokens.css">
 <style>
 /* v0.20.2 (WP1, groundwork): the fonts are hosted with the game (fonts/, SIL Open Font Licence files beside them); no Google Fonts call.
    Black Ops One and Barlow are what the page uses today. Rajdhani and JetBrains Mono are declared for the style guide's interface (WP6);
    a browser only downloads a font when text uses it. Barlow 500 is not in the package: the page asks for 400 or 600 only (v0.21; cardface.js still names 500 on the card faces, which draws as 400, and is left as it is because the style guide fixture pins its hash). */
-@font-face{font-family:"Black Ops One";src:url("test/first-look-2289/fonts/BlackOpsOne-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:Barlow;src:url("test/first-look-2289/fonts/Barlow-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:Barlow;src:url("test/first-look-2289/fonts/Barlow-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:Rajdhani;src:url("test/first-look-2289/fonts/Rajdhani-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:Rajdhani;src:url("test/first-look-2289/fonts/Rajdhani-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
-@font-face{font-family:"JetBrains Mono";src:url("test/first-look-2289/fonts/JetBrainsMono-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:"JetBrains Mono";src:url("test/first-look-2289/fonts/JetBrainsMono-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"Black Ops One";src:url("fonts/BlackOpsOne-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:Barlow;src:url("fonts/Barlow-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:Barlow;src:url("fonts/Barlow-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:Rajdhani;src:url("fonts/Rajdhani-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:Rajdhani;src:url("fonts/Rajdhani-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url("fonts/JetBrainsMono-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url("fonts/JetBrainsMono-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
 /* Layers (style guide 5; values in tokens.css as --ss-layer-*): 0 world, 1 scrim and grid, 10 table, 30 HUD, 50 transient feedback,
    100 modal and inspector. Today's z-index values (2 to 41) move onto these names with the HUD work (WP7 and WP9), not before. */
 :root{--ui:1;--tsz:1;--ts:calc(var(--ui) * var(--tsz));--ink:#e8e2cf;--dim:#a9a48f;--line:rgba(232,226,207,.28);--panel:rgba(14,18,16,.86);--amber:#e0a85a;--teal:#7fe0c8;--red:#d8674e;--blue:#7fb6d8}
@@ -136,6 +135,54 @@ button.opt{display:block;width:100%;text-align:left;font-family:Barlow,system-ui
 .su{position:relative;max-width:1100px;margin:0 auto;padding:22px 18px 40px}
 .su-h{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
 .su-h h1{margin:0;font-size:calc(clamp(34px,6.4vw,64px) * var(--tsz));line-height:.9;letter-spacing:.02em}.su-h h1 span{color:var(--amber)}
+/* v0.21 (lead's notes, 19 Nov): the Main Menu's key art, welcome note and notices */
+#cover[data-screen=menu] .su-h{display:none}
+.su .splash{position:relative;margin:-16px -12px 14px;height:clamp(250px,36vh,420px);overflow:visible;background:var(--ground,#121816)}
+@media (min-width:421px){.su .splash{margin:-22px -18px 16px}}
+.su .splash img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:42% 30%}
+.su .splash .scr{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,9,8,.72) 0,rgba(6,9,8,.3) 14%,rgba(6,9,8,0) 26%,rgba(6,9,8,0) 42%,rgba(10,14,13,.88) 80%,var(--ground,#121816) 100%)}
+.su .splash h1{position:absolute;left:16px;right:72px;bottom:10px;margin:0;color:#F2F5F5;font-size:calc(clamp(30px,8.6vw,46px) * var(--tsz));line-height:1;letter-spacing:.03em;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.su .splash h1 span{color:var(--amber)}.su .splash h1 small{font-size:.38em;letter-spacing:.14em;color:#C9D2D3;margin-left:.4em}
+.su .splash .bell{position:absolute;top:10px;right:10px;width:46px;height:46px;min-height:46px;padding:0;display:flex;align-items:center;justify-content:center;background:rgba(17,29,31,.92);border:1px solid #E7EDEE;box-shadow:0 0 0 2px rgba(6,9,8,.7);color:#E8C77B;clip-path:none}
+.su .splash .bell .cnt{position:absolute;top:-1px;right:-1px;min-width:18px;height:18px;padding:0 4px;background:var(--amber);color:#14110a;font:700 12px/18px var(--f-title);text-align:center}
+.su .splash .wnote{position:absolute;z-index:3;left:10px;right:64px;top:10px;max-height:calc(100% - 20px);display:flex;flex-direction:column;overflow:hidden;padding:10px 12px 8px;background:rgba(14,20,22,.96);border:1px solid rgba(181,193,194,.45);border-left:3px solid var(--amber);font-size:calc(14.5px * var(--ts));line-height:1.4}
+.su .splash .wnote p{margin:4px 0}.su .splash .wnote .wk{margin:0 34px 4px 0;color:var(--amber);font:600 calc(12px * var(--ts))/1.2 var(--f-mono,monospace);letter-spacing:.1em;text-transform:uppercase}.su .splash .wnote .wl{color:#B5C1C2;font-size:calc(13px * var(--ts))}
+.su .splash .wnote .wtx{flex:1 1 auto;min-height:0;overflow-y:auto;touch-action:pan-y}.su .splash .wnote .row{flex:none;justify-content:flex-end;margin-top:4px}.su .splash .wnote button{min-height:44px}.su .splash .wnote .wx{position:absolute;top:4px;right:4px;width:44px;padding:0}
+@media not ((orientation:portrait) and (max-width:599px)){
+  .su .splash{position:static;margin:0 0 18px;height:auto;overflow:visible;background:none}
+  .su .splash img{position:fixed;inset:0;z-index:-2}.su .splash .scr{position:fixed;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(10,14,13,.96) 0,rgba(10,14,13,.92) 55%,rgba(10,14,13,.45) 80%,rgba(10,14,13,.6) 100%)}
+  .su .splash h1{position:static;padding-right:60px}
+  #cover[data-screen=menu] #suMap{display:none}
+  .su .splash .bell{position:fixed;top:14px;right:16px;z-index:2}
+  .su .splash .wnote{position:fixed;left:calc(max(0px, 50vw - 550px) + 490px);right:16px;top:70px;bottom:auto;width:auto;max-width:420px;max-height:calc(100vh - 90px);z-index:2}
+}
+#notices{position:fixed;inset:0;z-index:30;background:rgba(4,6,6,.6);display:flex;align-items:flex-start;justify-content:center;padding:12px}
+#notices .npanel{width:min(560px,100%);max-height:calc(100% - 8px);display:flex;flex-direction:column;background:#111D1F;border:1px solid rgba(181,193,194,.45)}
+#notices .nhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px 8px 14px;border-bottom:1px solid rgba(181,193,194,.25)}#notices .nhead h2{margin:0;font-size:calc(18px * var(--ts))}#notices .nhead button{min-height:44px}
+#notices .nbody{overflow-y:auto;padding:6px 14px 14px;font-size:calc(15px * var(--ts));line-height:1.45}
+#notices summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font:700 calc(15px * var(--ts))/1.2 var(--f-title);letter-spacing:.1em;color:var(--amber);border-bottom:1px solid rgba(181,193,194,.2)}
+#notices .nent{margin:10px 0}#notices .nent p{margin:2px 0}#notices .nt small{color:#9aa6a8}#notices .nnew{display:inline-block;padding:0 5px;background:var(--amber);color:#14110a;font:700 11px/16px var(--f-title)}#notices button{min-height:44px}
+/* v0.21 (WP8, spec 5.2 and 5.4): the Main Menu (one big action, four short ones), the Library and About */
+.su-h h1 small{font-size:.42em;letter-spacing:.12em;color:var(--dim);margin-left:.3em}
+.su .mm{max-width:460px;display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.su .mm .mprim{min-height:62px;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;padding:0 18px;font:700 calc(22px * var(--ts))/1.1 var(--f-title);letter-spacing:.06em}
+.su .mm .mline{margin:0 0 12px 2px;color:var(--dim);font-size:calc(15px * var(--ts))}
+.su .mm .mlist{display:flex;flex-direction:column;gap:6px}
+.su .mm .mi{min-height:56px;width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;padding:6px 16px;font:700 calc(18px * var(--ts))/1.1 var(--f-title);letter-spacing:.08em;text-transform:uppercase}
+.su .mm .mi small{display:block;margin-top:3px;font:500 calc(14px * var(--ts))/1.3 Barlow,system-ui,sans-serif;letter-spacing:0;text-transform:none;color:var(--dim)}
+.su .mm .mi i,.su .mm .mprim i{font-style:normal;flex:none}.su .mm .mi i{color:var(--action)}
+.su .mm .msec{display:flex;gap:14px;justify-content:flex-end;margin-top:12px}.su .mm .msec button,.su .about2 .lk{min-height:44px}.su .sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;margin:0;padding:0}
+.su .mh2{margin:4px 0 12px;font:700 calc(22px * var(--ts))/1.1 var(--f-title);letter-spacing:.06em}
+.su .about2{max-width:660px;font-size:calc(15px * var(--ts));line-height:1.5}
+.su .about2 p{margin:6px 0}
+.su .about2 h3{margin:22px 0 6px;padding-top:12px;border-top:1px solid rgba(181,193,194,.25);font:700 calc(16px * var(--ts))/1.2 var(--f-title);letter-spacing:.1em;color:var(--amber)}
+.su .about2 .team{list-style:none;padding:0;margin:4px 0}.su .about2 .team li{margin:4px 0}
+.su .about2 .sub,.su .about2 .cap{color:var(--dim)}
+.su .about2 .film{position:relative;max-width:640px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;background:#05080a;border:1px solid rgba(181,193,194,.35)}
+.su .about2 .film video{width:100%;height:100%;background:#000}
+.su .about2 .draft{border-left:3px solid var(--amber);padding-left:10px}
+.su .about2 .dtag{display:inline-block;padding:1px 6px;margin-right:4px;background:var(--amber);color:#14110a;font:700 calc(12px * var(--ts))/1.4 var(--f-title);letter-spacing:.08em}
+.su .about2 a{color:var(--action);word-break:break-all}
 .su button,#debrief button,#menu button{font-family:Barlow,system-ui,sans-serif;font-weight:600;text-transform:none;letter-spacing:0;font-size:calc(14px * var(--ts))}
 .seg,.seg2,.chips2{display:inline-flex;flex-wrap:wrap;gap:0;border:1px solid var(--line);background:rgba(10,13,11,.7)}
 .seg button,.seg2 button,.chips2 button{border:0;border-right:1px solid var(--line);background:none;color:var(--dim);padding:10px 14px}
@@ -197,7 +244,7 @@ button:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline
 .stat button.piles{pointer-events:auto;font:inherit;color:var(--dim);background:rgba(10,14,13,.6);border:1px solid var(--line);padding:2px 7px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}.stat button.piles:hover,.stat button.piles:focus-visible{border-color:var(--amber);outline:none}
 #zPick{min-width:200px}
 #piles{position:fixed;inset:0;z-index:7;background:rgba(6,9,8,.97);overflow-y:auto;touch-action:pan-y;display:none;padding:14px}
-#piles .pb{max-width:900px;margin:0 auto}#piles #pilesX{position:sticky;top:0;float:right;z-index:1}
+#piles .pb{max-width:900px;margin:0 auto}#piles #pilesX{float:none}
 #piles h3{margin:2px 0 4px}#piles h4{margin:16px 0 2px;font-family:"Black Ops One",Impact,sans-serif;font-weight:400;font-size:calc(15px * var(--ts));color:#d6caa8}#piles h4 b{color:var(--amber);margin-left:6px;font-weight:400}
 #piles h5{margin:10px 0 4px;font-size:calc(12.5px * var(--ts));color:var(--ink);font-weight:600}#piles .pd{margin:0 0 6px;color:var(--dim);font-size:calc(12.5px * var(--ts));max-width:62ch}#piles .pe{color:var(--dim);font-size:calc(12.5px * var(--ts));margin:2px 0}
 #piles .pt{display:flex;flex-wrap:wrap;gap:6px}#piles .pt button{position:relative;padding:0;border:0;background:none;cursor:pointer;border-radius:5px}#piles .pt img{height:118px;width:auto;border-radius:5px;display:block;box-shadow:0 3px 8px rgba(0,0,0,.6)}
@@ -216,7 +263,7 @@ html.rm *{animation-duration:.01ms!important;transition:none!important}
 #capt{position:fixed;left:50%;top:calc(78px * var(--ui));transform:translateX(-50%);z-index:4;pointer-events:none;max-width:min(92vw,560px);text-align:center;font-size:calc(15px * var(--ts));line-height:1.3;color:#f4efe0;background:rgba(10,14,13,.88);border-left:3px solid var(--teal);padding:5px 12px;display:none}
 #capt b{font-family:"Black Ops One",Impact,sans-serif;font-weight:400;color:var(--teal);margin-right:7px;letter-spacing:.06em}
 #settings{position:fixed;inset:0;z-index:10;background:#111612;overflow-y:auto;touch-action:pan-y;display:none;padding:16px}
-#settings .sb{max-width:760px;margin:0 auto}#settings h3{margin:4px 0 2px;font-size:calc(22px * var(--ts))}#settings #setX{position:sticky;top:0;float:right;z-index:1}
+#settings .sb{max-width:760px;margin:0 auto}#settings h3{margin:4px 0 2px;font-size:calc(22px * var(--ts))}#settings #setX{float:none}
 #settings h4{margin:20px 0 8px;font:400 calc(16px * var(--ts)) "Black Ops One",Impact,sans-serif;color:var(--khaki);letter-spacing:.04em;border-bottom:1px solid var(--line);padding-bottom:4px}
 #settings .row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin:10px 0}
 #settings .row>span{font-size:calc(14px * var(--ts));color:var(--ink);min-width:170px;flex:1}#settings .row>span small{display:block;color:var(--dim);font-size:calc(12.5px * var(--ts))}
@@ -340,7 +387,7 @@ body.dir #cover,body.dir #top,body.dir #bot,body.dir #tools,body.dir #feed,body.
 #zAct button.zab~button.zab,#zAct button.tg{background:rgba(17,29,31,.9);border:1px solid #75858D;color:#E8EDE8}
 #zAct button.za0{border:1px dashed #75858D;color:#A4AEAE;background:repeating-linear-gradient(135deg,rgba(232,237,232,.06) 0 2px,transparent 2px 8px);cursor:not-allowed}#zAct button.za0 small{color:#E8C77B;opacity:1}
 #zPick{min-height:52px;width:100%}
-#zoom.big #zBody{grid-template-columns:minmax(0,1fr)}#zoom.big .zc{position:static;text-align:center}#zoom.big #zImg{display:inline-block;width:auto;max-width:70%;max-height:calc(30vh / var(--tsz))}
+#zoom.big #zBody{grid-template-columns:minmax(0,1fr)}#zoom.big .zc{position:static;text-align:center}#zoom.big .zt{order:-1}#zoom.big .zc{margin-top:4px}#zoom.big #zImg{display:inline-block;width:auto;max-width:70%;max-height:calc(30vh / var(--tsz))}
 @media (min-width:900px) and (min-height:521px),(max-height:520px) and (min-width:600px){
   #zoom{justify-content:flex-start;align-items:flex-end;padding:2vh 3vw}#zPanel{width:min(940px,94vw);max-height:94vh;border:1px solid rgba(181,193,194,.38);clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))}#zGrab{display:none}
   #zBody{grid-template-columns:auto minmax(0,1fr);gap:20px;padding:6px 18px 14px}#zImg{width:auto;max-height:min(480px,72vh);max-width:min(36vw,330px)}
@@ -379,7 +426,7 @@ body.dragging #hand{opacity:.35;transition:opacity .15s}#hand{transition:opacity
 #preview .pvs{margin:0 0 6px;color:#B5C1C2;font-size:calc(14px * var(--tsz))}
 #preview .res{margin:6px 0;font:600 calc(16px * var(--tsz)) Barlow,system-ui,sans-serif;color:#E8C77B}
 #preview .sups{border-top:1px solid rgba(181,193,194,.2)}#preview .sups>p{font-size:calc(13px * var(--tsz));color:#B5C1C2}
-#preview label.sup{border-color:rgba(117,133,141,.6);background:rgba(12,18,21,.5);font-size:calc(15px * var(--tsz))}#preview label.sup b{font-weight:600}#preview label.sup.on{border-color:#8AB9D1;background:rgba(138,185,209,.12)}#preview label.sup input{accent-color:#D8B66A}
+#preview label.sup{border-color:rgba(117,133,141,.6);background:rgba(12,18,21,.5);font-size:calc(15px * var(--tsz))}#preview label.sup b{font-weight:600}#preview label.sup.on{border-color:#8AB9D1;background:rgba(138,185,209,.12)}#preview label.sup input{accent-color:#D8B66A}#preview label.sup small{display:inline;font-size:inherit}#preview label.sup{min-height:44px;padding:2px 8px;line-height:1.25}#preview .res{margin:2px 0 4px}
 #preview .pvf{flex:none;display:flex;gap:8px;justify-content:stretch;margin:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));border-top:1px solid rgba(181,193,194,.25)}#preview .pvf button{flex:1 1 0;min-height:52px;min-width:0;font:700 calc(19px * var(--tsz))/1.1 Rajdhani,Barlow,system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}#preview .pvf button.ghost{background:rgba(17,29,31,.9);border:1px solid #75858D;color:#E8EDE8}
 #preview .alt p{font-size:calc(13px * var(--tsz))!important}
 button.primary{border:0;background:#D8B66A;color:#0C1215;font:700 calc(19px * var(--tsz))/1.1 Rajdhani,Barlow,system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}button.primary:active{background:#E9C77C}
@@ -468,7 +515,7 @@ button.opt,#prompt button.opt{font:400 calc(15px * var(--ts))/1.3 var(--f-body);
 /* v0.21 (WP9): the status bars on a phone held upright: one row a side (Homefront, ISR, Supply), the rest one tap away under "More" */
 .stat .sbtn{display:none}
 .ph #top .stat .x,.ph #me .stat .x{display:none}
-.ph #top .stat .sbtn,.ph #me .stat .sbtn{display:inline-flex;align-items:center;min-height:36px;padding:4px 10px;margin-left:auto;pointer-events:auto;font:700 calc(13px * min(var(--ts),1.4))/1 var(--f-title);letter-spacing:.08em}
+.ph #top .stat .sbtn,.ph #me .stat .sbtn{display:inline-flex;align-items:center;min-height:44px;padding:4px 10px;margin-left:auto;pointer-events:auto;font:700 calc(13px * min(var(--ts),1.4))/1 var(--f-title);letter-spacing:.08em}
 .ph #me .stat,.ph #top .stat{flex-wrap:nowrap;white-space:nowrap}.ph #me .stat>span,.ph #top .stat>span{flex:none}
 #piles .stat.full{display:flex;flex-wrap:wrap;gap:6px 14px;margin:4px 0 12px;font-size:calc(14px * var(--ts))}#piles .stat.full .x{display:inline}#piles .stat.full .pips{display:inline-flex}
 
@@ -500,6 +547,16 @@ button.opt,#prompt button.opt{font:400 calc(15px * var(--ts))/1.3 var(--f-body);
 #zWrap{flex-direction:column}#zMore{position:static;align-self:flex-end;margin:2px 14px 4px}
 #preview .pvmore{position:static;align-self:flex-end;margin:2px 16px 4px}
 #prompt .pwrap{display:flex;flex-direction:column}#prompt .pmore{position:static;align-self:flex-end;margin:2px 2px 0}
+img,canvas{-webkit-touch-callout:none;-webkit-user-drag:none;-webkit-user-select:none;user-select:none}/* v0.21 (checkers; lead's look-and-feel pass): with the hand open on a phone, the hand shows the top of each card (cost, type, name, picture) and the panel shrinks to the instruction and its buttons, so your own half of the table stays in view while you deploy */
+.ph #hand.open .strip{height:112px;overflow-y:hidden;align-items:flex-start}.ph:not(.tut) #bot:has(#hand.open) #prompt{height:auto!important}.ph:not(.tut) #bot:has(#hand.open) #prompt .pbody>:is(.hits,p.h,.why,.hintb,.ftip){display:none!important}.ph:not(.tut) #bot:has(#hand.open) #prompt .pbody{max-height:none!important;flex:0 1 auto}.ph:not(.tut) #bot:has(#hand.open) #prompt .pmore{position:absolute;right:2px;bottom:0;margin:0}
+.ph #top #foe .sbtn{display:none}.ph #top #foe{padding-right:104px}   /* v0.21 (lead's phone notes): one More for both sides, on your row; the enemy row stays clear of the flag and menu buttons */
+#prompt .rsup{margin:4px 0;font-weight:600}#prompt .rlist{display:flex;flex-direction:column;gap:6px;margin:4px 0 8px}#prompt .rlist button{min-height:44px;height:auto;text-align:left;justify-content:flex-start;white-space:normal;overflow-wrap:anywhere;line-height:1.25;padding-top:6px;padding-bottom:6px}
+#piles .stat.mine .hf i u{background:var(--blue)}
+@media (max-width:380px){.ph #top #foe .who small{display:none}}
+.shead{position:sticky;top:-16px;z-index:2;display:flex;justify-content:flex-end;margin:-16px -16px 8px;padding:16px 16px 6px;background:#111612;box-shadow:0 6px 8px -6px rgba(0,0,0,.6)}#piles .shead{top:-14px;margin:-14px -14px 8px;padding:14px 14px 6px;background:#0a0d0c}   /* a header bar the sheet scrolls under: Close never lies over a control */
+.su .about2 .sub4{margin:14px 0 4px;font:700 calc(14px * var(--ts))/1.2 var(--f-title);letter-spacing:.08em;color:#E7EDEE;text-transform:uppercase}
+#rowband{position:fixed;inset:0;pointer-events:none;z-index:6}#rowband div{position:absolute;border:2px dashed rgba(138,185,209,.7);background:rgba(138,185,209,.08)}#rowband div.hov{border-style:solid;border-color:var(--action);background:rgba(216,182,106,.16)}#rowband span{position:absolute;left:6px;top:4px;padding:2px 8px;background:#111D1F;color:#E7EDEE;font:700 calc(13px * min(var(--ts),1.4))/1.2 var(--f-title);letter-spacing:.06em;text-transform:uppercase}#rowband div.hov span{color:var(--action)}
+#prompt .pfoot.cmp{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;padding:4px 0 0!important;margin-top:0!important}#prompt .pfoot.cmp>.btns,#prompt .pfoot.cmp .pmore{margin-top:0}#prompt .pfoot.cmp>.btns{flex:0 0 auto;flex-wrap:nowrap;justify-content:flex-start;margin-top:4px;gap:6px}#prompt .pfoot.cmp>.btns>button{flex:0 0 auto;min-height:44px;padding:0 14px;white-space:nowrap;font-size:calc(15px * min(var(--ts),1.4))}#prompt .pfoot.cmp .pmore{flex:none;margin:4px 0 0 auto;min-height:44px;padding:0 14px}#prompt .pfoot.cmp .fk{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--amber);font:600 calc(12px * min(var(--ts),1.4))/1.2 var(--f-mono,monospace);letter-spacing:.08em;text-transform:uppercase}#prompt .pfoot.cmp .fk+.pmore{margin-left:0}.ph #prompt .coach .ct{font-size:calc(18px * min(var(--ts),1.4));line-height:1.15}
 .ph body.dragging #hand{opacity:1}.ph body.dragging #hand .hhandle{opacity:.5}
 #zAct button.zab.zsec{background:rgba(17,29,31,.9);border:1px solid #75858D;color:#E8EDE8}
 #zScrim{background:rgba(4,9,10,.86)}
@@ -513,6 +570,16 @@ button.opt,#prompt button.opt{font:400 calc(15px * var(--ts))/1.3 var(--f-body);
 #prompt .ftip button#tipX{float:right;margin:0 0 4px 8px;min-height:36px;padding:2px 10px;text-decoration:none;border:1px solid var(--boundary);color:var(--ink)}
 #prompt .pbody,#zBody,#preview .pvb{overflow-anchor:none}
 .ph #hand .hhandle.cue{border-color:var(--action);color:var(--action);background:rgba(216,182,106,.12)}
+/* v0.21 (Council M2b, spec 3.1): on a phone held upright the hand sits at the bottom edge, under the panel; open, its strip takes the panel's place and the panel rides up over the foot of the table (where the strip used to lie), so the table never moves for it. Your status row is in the top band. */
+.ph #prompt{order:1;transition:transform .18s ease-out}.ph #hand{order:2}.ph #bot:has(#hand.open) #prompt{transform:translateY(calc(-1 * var(--stripH,162px)))}.rm .ph #prompt,.ph.rm #prompt{transition:none}
+.ph #top #me{margin-top:2px}.ph #top #me .stat{pointer-events:auto}
+.ph #hand .hhandle>span:first-child{flex:none;white-space:nowrap}.ph #hand .hhandle .pk{display:flex;flex:1 1 auto;min-width:0;align-self:stretch;align-items:flex-end;justify-content:flex-start;gap:3px;margin:0 6px 0 10px;overflow:hidden}
+.ph #hand .hhandle .pk img{flex:none;width:32px;height:31px;object-fit:cover;object-position:50% 0;border:1px solid rgba(181,193,194,.45);border-bottom:0;border-radius:3px 3px 0 0}
+.ph #hand .hhandle .pk img.r{border:2px solid var(--action);border-bottom:0}.ph #hand .hhandle .pk img.d{filter:saturate(.5) brightness(.8)}
+.ph #hand .hhandle .pk b{flex:none;align-self:center;padding-left:3px;font:700 calc(14px * min(var(--ts),1.4))/1 var(--f-title);color:var(--dim)}
+/* v0.21 (checkers): on phones the round line is two fixed lines (round and phase; Contact and ground), so the band never grows mid-game */
+.ph #phase{display:block;min-height:0}.ph #phase .pm,.ph #phase small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ph #phase .pm{line-height:1.25}.ph #phase small{line-height:1.25}
+#phase .sep{font-style:normal}#phase .rs{display:none}.ph.bigtext #phase .rs{display:inline}.ph.bigtext #phase .rl{display:none}.ph #phase small .sep:first-child{display:none}
 </style>
 </head>
 <body>
@@ -544,7 +611,7 @@ button.opt,#prompt button.opt{font:400 calc(15px * var(--ts))/1.3 var(--f-body);
 <div id="show"><img id="showImg" alt=""><div id="showLab" class="t"></div></div>
 <div id="preview"></div>
 <div id="bot"><div id="hand"></div><div id="prompt"></div><div id="me" class="me"><div class="stat" id="you"></div></div></div>
-<div id="zoom" role="dialog" aria-modal="true" aria-labelledby="zName"><div id="zScrim" aria-hidden="true"></div><div id="zPanel"><div id="zHead"><div id="zGrab" aria-hidden="true"><i></i></div><h3 id="zName"></h3><button class="ghost" id="zClose">Close</button></div><div id="zWrap"><div id="zBody"><div class="zc"><img id="zImg" alt=""></div><div class="zt"><p id="zCap"></p><p id="zWhy"></p><div id="zRules"></div><div id="zGlos"></div><p class="zn"><button class="ghost lk" id="zNote">Add a note about this card</button></p></div></div><button type="button" id="zMore" tabindex="-1" aria-hidden="true">More ▼</button></div><div id="zFoot"><button class="big" id="zPick" style="display:none"></button><div id="zAct"></div></div></div></div></div>
+<div id="zoom" role="dialog" aria-modal="true" aria-labelledby="zName"><div id="zScrim" aria-hidden="true"></div><div id="zPanel"><div id="zHead"><div id="zGrab" aria-hidden="true"><i></i></div><h3 id="zName"></h3><button class="ghost" id="zClose">Close</button></div><div id="zWrap"><div id="zBody"><div class="zc"><img id="zImg" alt="" draggable="false"></div><div class="zt"><p id="zCap"></p><p id="zWhy"></p><div id="zRules"></div><div id="zGlos"></div><p class="zn"><button class="ghost lk" id="zNote">Add a note about this card</button></p></div></div><button type="button" id="zMore" tabindex="-1" aria-hidden="true">More ▼</button></div><div id="zFoot"><button class="big" id="zPick" style="display:none"></button><div id="zAct"></div></div></div></div></div>
 <div id="debrief" role="dialog" aria-label="Debrief"></div>
 <div id="log"></div>
 <div id="piles" role="dialog" aria-label="Your cards"></div>
@@ -559,17 +626,18 @@ button.opt,#prompt button.opt{font:400 calc(15px * var(--ts))/1.3 var(--f-body);
 <script src="terrain.js"></script>
 <script src="art.js"></script>
 <script src="brand.js"></script>
-<script src="test/first-look-2289/cardface.js"></script>
+<script src="cardface.js"></script>
 <script src="sound.js"></script>
-<script src="test/first-look-2289/input.js"></script>
-<script src="test/first-look-2289/site.js"></script>
-<script src="test/first-look-2289/battle.js"></script>
+<script src="input.js"></script>
+<script src="notices.js"></script>
+<script src="site.js"></script>
+<script src="battle.js"></script>
 <script src="opening/opening.js"></script>
-<script src="test/first-look-2289/test_recorder.js"></script>
+<script src="test_recorder.js"></script>
 <script type="module">
 const msg = t => { const m = document.getElementById("lmsg"); if (m) m.textContent = t; };
 try {
-  const base = new URL("../../", location.href).href;
+  const base = new URL("./", location.href).href;
   const { loadPyodide } = await import(base + "pyodide/pyodide.mjs");
   const py = await loadPyodide({ indexURL: base + "pyodide/", stdLibURL: base + "pyodide/python_stdlib.wasm" });
   msg("Loading the cards and rules.");

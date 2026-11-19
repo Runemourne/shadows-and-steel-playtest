@@ -7,7 +7,7 @@
 "use strict";
 var FORM = "1FAIpQLScLoaIfdtlwpAwo2e8hO7lLPttbrRoM4LbSxtEXnTW0DMSyqg";
 window.SS_SITE = {
-  build: "TEST PAGE first-look, unlisted, 2026-11-19 · Battlefield v0.20 (playtest website, 2026-11-16) · Basic Training v0.3.4 · cards v0.17.1, decks v0.17.1",
+  build: "TEST PAGE rc1, unlisted, 2026-11-19 · Battlefield v0.20 (playtest website, 2026-11-16) · Basic Training v0.3.7 · cards v0.17.1, decks v0.17.1",
   form: {
     action: "https://docs.google.com/forms/d/e/" + FORM + "/formResponse",
     view: "https://docs.google.com/forms/d/e/" + FORM + "/viewform",

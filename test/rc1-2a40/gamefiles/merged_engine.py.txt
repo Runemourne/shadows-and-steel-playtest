@@ -7,6 +7,20 @@ Rule settings are the RULES dictionary below.
 14 Nov 2026 (Battlefield v0.15, RD-142 (1)): where a card's printed text leaves a choice to the player, a person now chooses
 (WRAITH INJECT, THE SILENT FALSE PICTURE and PARALYSIS, KILL WEB STRIKE PACKAGE, GREY KITE SCAN, ORACLE SPOOF, RELAY RETRANSMIT).
 All behind is_human(); the bot and the simulations are unchanged (merged_engine_v0.15.py is the rollback).
+19 Nov 2026 (engine v0.17.3, draft entry AW with the rules audit's fixes; trial switches, all OFF by default, so the game is unchanged):
+table_cap n = at most n cards on a player's table (Frontline plus Rear Area, face-down cards and decoys included; not Bases or the Mission
+Track). At the limit no deployment is offered (upgrades are); a card an effect would bring onto the table goes to its owner's hand instead
+(an Operator coming home), AIR ASSAULT deploys only into free places (a person picks which) and 3D PRINT is not offered.
+withdraw 1 = in Command, for 1 Lift each, return Ready cards from the table to your hand (not a Frontline card in Contact, not a PINNED
+card); its damage is gone; not destruction (no Homefront loss); it can't be deployed again this round. 2 = to the discard pile (open, so a
+face-down card is named). 3 (the lead's ruling, 19 Nov) = a face-up card to the discard pile, a face-down card or decoy to hand, not named. withdraw_refund: a share of the Supply actually paid for the card on the table (deploy, turning face up,
+upgrades): 0 none, 1 one Supply, 2 half rounded down, 3 all of it less its damage, 4 relief in place: no Supply back, but the next card
+you deploy face up this Command costs half of what was paid less 1 per damage point less (never below 1; the larger of two such
+discounts applies; lost when Command ends; not for upgrades). withdraw_fix 1 = an enemy FIX in force (the test that stops falling back)
+also stops withdrawing your Frontline cards. Person-only choices behind is_human(); the bot withdraws
+only to make room for a better card or to save a card one hit from destruction.
+19 Nov 2026 (engine v0.17.2, draft entry AS item 5; no rules change): a person repairs from one list of every damaged card (one press removes 1 damage;
+any order; "No more repairs" ends it), behind is_human(); the bot and the simulations are unchanged. Rule repair_list 0 restores the old prompt.
 15 Nov 2026 (Battlefield v0.16): decide() keeps the bot's rating of a person's options in s.opt_vals, for the Hint button (changes nothing). A card's behaviour comes from its Keys column; its printed lines are the Line 1-4 columns (Line 4 is for Effects)."""
 import csv, os, re, random, copy
 
@@ -223,7 +237,7 @@ class Game:
         m = " ".join(str(x) for x in a)
         if "You" in m:  # second person for the human seat
             m = m.replace("You's", "Your").replace("You is ", "You are ").replace("You must", "You must")
-            m = re.sub(r"\bYou (deploy|upgrade|play|use|put|advance|lose|reveal|react|fire|pay|take|get|win|hold|retreat|reshuffle|air-assault)s\b", r"You \1", m)
+            m = re.sub(r"\bYou (deploy|upgrade|play|use|put|advance|lose|reveal|react|fire|pay|take|get|win|hold|retreat|reshuffle|air-assault|withdraw)s\b", r"You \1", m)
             m = m.replace("You passes", "You pass").replace("You reaches", "You reach").replace("You falls", "You fall").replace("You cannot", "You cannot")
         s.log.append(m); del s.log[:-400]
         if s.on_event: s.on_event(m, s.fx)
@@ -242,6 +256,7 @@ class Game:
             if k == "effect": return dict(t="effect", card=pl[1].id)
             if k in ("dep", "hide"): return dict(t=k, card=pl[1].id)
             if k == "up": return dict(t="up", card=pl[1].id, dst=pl[2].uid)
+            if k == "wd": return dict(t="wd", src=pl[1].uid)   # trial withdraw (AW)
             if k in ("cover", "cancel", "glide"): return dict(t="react", src=pl[1].uid)
             if k == "card": return dict(t="react", card=pl[1].id)
         return dict(t="")
@@ -353,6 +368,40 @@ class Game:
         if base: return (t.t()["alone"] if t.t().get("alone") is not None and all(x.dev for x in d.bases if x is not t) else t.t()["surv"]) + (2 if d.ben == "BULWARK" else 0) + (1 if d.has("DOME") else 0) + (1 if s.cond(d, "E_DEPTH") else 0)
         return t.c.surv + (1 if t.row == "R" and d.has("DOME") else 0) + (1 if t.row == "F" and (s.cond(d, "E_DEPTH") or d.fl.get("wd")) else 0)
     def unit_value(s, u): return 1.5 + u.c.cost * 0.6 + u.c.hf * 1.5 + (0.5 if u.c.gi > 1 else 0) + s.R.get("convoy_value", 0) * u.c.keys.get("CONVOY", 0)
+    # Trial table limit and withdraw (draft entry AW, 19 Nov 2026; switches table_cap, withdraw, withdraw_refund; all 0 = the game as it was)
+    def table_room(s, p):   # how many more cards p may put on the table (99 while the limit is off)
+        n = s.R.get("table_cap", 0); return 99 if not n else n - len(p.units)
+    def refund(s, u):   # a share of the Supply actually paid for this card on the table (rules audit B1): nothing for a card deployed face down
+        sp = getattr(u, "spent", 0); return {1: min(1, sp), 2: sp // 2, 3: max(0, sp - u.dmg)}.get(s.R.get("withdraw_refund", 0), 0)
+    def relief(s, u):   # withdraw_refund 4, relief in place: half of what was paid, less 1 per damage point (nothing for a face-down card)
+        return 0 if s.R.get("withdraw_refund", 0) != 4 or u.hidden else max(0, getattr(u, "spent", 0) // 2 - u.dmg)
+    def wd_blocked(s, p, c):   # a card withdrawn this round can't come back onto the table this round (copies by name)
+        w = getattr(p, "wd_round", None)
+        return bool(w) and sum(1 for x in p.hand if x.name == c.name) <= w.count(c.name)
+    def wd_discard(s, u):   # where a withdrawn card goes: withdraw 2 the discard pile; 3 the discard pile if face up, hand if face down (a decoy kept for its effect); 1 hand
+        w = s.R.get("withdraw", 0); return w == 2 or (w == 3 and not u.hidden)
+    def withdraw(s, p, u):
+        """u leaves the table to its owner's hand (withdraw 1; withdraw 3 for a face-down card) or discard pile (withdraw 2; 3 for a face-up card). Not destruction: no Homefront loss, no
+        on-destroy effects; its damage is gone. To hand, a face-down card is not named; the discard pile is open, so there it is."""
+        p.units.remove(u); disc = s.wd_discard(u); (p.discard if disc else p.hand).append(u.c)
+        rf = s.refund(u); rl = s.relief(u)
+        if rf: s.add_supply(p, rf)
+        if rl: p.relief = max(getattr(p, "relief", 0), rl)   # two withdrawals before a deploy: the larger discount applies
+        if getattr(p, "wd_round", None) is not None: p.wd_round.append(u.c.name)
+        s.stats["withdrawn"] = s.stats.get("withdrawn", 0) + 1; s.ev(p, "WITHDRAW")
+        what = ("a face-down card (%s)" % u.c.name if disc else "a face-down card") if u.hidden else u.c.name
+        s.say(s.who(p), "withdraws", what, "to the discard pile" if disc else "to hand", "(1 Lift%s%s; no Homefront loss)." % ((", %d Supply back" % rf) if rf and (disc or not u.hidden) else (", Supply back" if rf else ""), ("; relief in place: the next card deployed this Command costs %d less" % rl) if rl else ""))
+    def withdraw_options(s, p):   # Command step 3 (withdraw 1 or 2): Ready cards, not a Frontline card in Contact, not a PINNED card; 1 Lift each
+        us = [u for u in p.units if not u.ex and not u.pin and not (u.row == "F" and (s.contact() or (s.R.get("withdraw_fix", 0) and s.fixed(p))))]   # withdraw_fix 1: an enemy FIX in force holds the Frontline too
+        lab = lambda u: "Withdraw %s to %s (1 Lift%s%s)" % (("your face-down " + u.c.name) if u.hidden else u.c.name, "the discard pile" if s.wd_discard(u) else "your hand", (", %d Supply back" % s.refund(u)) if s.refund(u) else "", (", next deploy %d less" % s.relief(u)) if s.relief(u) else "")
+        if s.is_human(p): return [(0, lab(u), ("wd", u)) for u in us]
+        us = [u for u in us if not (u.row == "F" and len(p.front()) == 1)]   # the bot never withdraws its last Frontline card
+        sav = [u for u in us if u.dmg and u.dmg >= u.c.dur - 1 and u.c.hf >= 2]   # (b) save a card one hit from destruction
+        if sav: u = max(sav, key=lambda u: s.unit_value(u)); return [(4.0, lab(u), ("wd", u))]
+        if us and s.table_room(p) <= 0 and p.lift >= 2:   # (a) make room for a better card it can afford
+            u = min(us, key=lambda u: (u.row == "F", s.card_worth(u.c))); best = max([s.card_worth(c) for c in p.hand if c.cap and not c.keys.get("UPGRADE_ONLY") and p.sup() >= c.cost and c.name != u.c.name] + [-1])
+            if best > s.card_worth(u.c): return [(3.5, lab(u), ("wd", u))]
+        return []
     # ------------------------------------------------------------ damage and loss
     def destroy(s, d, u, why="destroyed"):
         if u not in d.units: return
@@ -715,7 +764,18 @@ class Game:
         o = s.opp(p); k = next(iter(c.keys)); E = s.best_enemy
         base = lambda: next((b for b in sorted(o.bases, key=lambda b: (b.t()["dur"] - b.dmg)) if not b.dev), None)
         if k == "E_AIRASSAULT":
-            for x in sorted([x for x in p.hand if x.cap and x.gi < 3], key=lambda x: -x.cost)[:2]: p.hand.remove(x); p.units.append(Unit(x, "F" if len(p.front()) < s.R["front_limit"] else "R")); s.say(s.who(p), "air-assaults", x.name, "into play.")
+            pool = sorted([x for x in p.hand if x.cap and x.gi < 3 and not s.wd_blocked(p, x)], key=lambda x: -x.cost); room = min(2, max(0, s.table_room(p)))   # trial table_cap (AW): only into free places
+            if s.R.get("table_cap", 0) and s.is_human(p):   # trial (rules audit M1): a person picks which, up to the free places
+                pick = []
+                while len(pick) < room:
+                    left = [x for x in pool if x not in pick or pool.count(x) > pick.count(x)]
+                    if not left: break
+                    x = s.decide(p, "air_assault", "AIR ASSAULT: deploy up to %d Generation I or II Capabilities from your hand (%d free place%s on the table)." % (room - len(pick), room - len(pick), "" if room - len(pick) == 1 else "s"), [(x.cost, "Air-assault %s" % x.name, x) for x in dict.fromkeys(left)] + [(0, "Done", None)])
+                    if x is None: break
+                    pick.append(x)
+            else: pick = pool[:room]
+            if s.R.get("table_cap", 0) and len(pool) > len(pick) and room < 2: s.say("The table is full: AIR ASSAULT deploys only %d." % len(pick))
+            for x in pick: p.hand.remove(x); p.units.append(Unit(x, "F" if len(p.front()) < s.R["front_limit"] else "R")); s.say(s.who(p), "air-assaults", x.name, "into play.")
             if not s.contact(): s.pos[p.i] += 1 if p.i == 0 else -1
         elif k == "E_MTC":
             if s.dist() > 0: s.pos[p.i] += 1 if p.i == 0 else -1; s.say(s.who(p), "moves to contact: advances 1 Zone." + (" The forces are in Contact." if s.contact() else ""))
@@ -874,7 +934,7 @@ class Game:
             if K("A_RETRANS"): opts.append((0.6 + (0.7 if any(t["kind"] == "op" and t["t"] > 1 for t in p.track) else 0), "Use %s: advance 1 of your Mission Track cards and gain 1 ISR" % n, ("ab", u, "A_RETRANS")))
             if K("A_UPLINK") and (p.mf or p.ie): opts.append((1.0, "Use %s: look at the top 3 cards of your deck and take 1" % n, ("ab", u, "A_UPLINK")))
             if K("A_PREDICT") and p.isr >= 1 and p.mf: opts.append((1.1, "Use %s (1 ISR): look at the top 3 Main Force cards and take 1" % n, ("ab", u, "A_PREDICT")))
-            if K("A_PRINT") and p.sup() >= 2 and any(c.cap and c.gi < 3 for c in p.ash + p.discard): opts.append((1.8, "Use %s (2 Supply): return a destroyed Generation I or II card to your Rear Area" % n, ("ab", u, "A_PRINT")))
+            if K("A_PRINT") and p.sup() >= 2 and s.table_room(p) > 0 and any(c.cap and c.gi < 3 for c in p.ash + p.discard): opts.append((1.8, "Use %s (2 Supply): return a destroyed Generation I or II card to your Rear Area" % n, ("ab", u, "A_PRINT")))
             for ik, what, val in (("INF_HIT", "deal %d damage to an enemy LAND card anywhere" % K("INF_HIT"), 1.6), ("INF_INTEL", "gain %d ISR and draw 1" % K("INF_INTEL"), 1.3), ("INF_REVEAL", "gain 2 ISR and reveal up to %d Hidden enemy cards" % K("INF_REVEAL"), 1.0 + 0.4 * sum(1 for x in o.units if x.hidden))):
                 if K(ik) and p.isr >= 1 and (u.row == "F" or s.R.get("op_anyrow", 0)): opts.append((val + (s.track_threat(o) if K("DISRUPT") else 0), "Send %s to infiltrate (1 ISR): on the Mission Track for %d round(s), then %s%s" % (n, u.c.timer or 2, what, (" and cancel %d enemy Mission Track card" % K("DISRUPT")) if K("DISRUPT") else ""), ("ab", u, ik)))
             if K("INF_PSYOP") and p.isr >= 1 and u.row == "F": opts.append((1.7, "Send %s to infiltrate (1 ISR): on the Mission Track for 2 rounds, then %s" % (n, ("an enemy Base takes %d damage" % K("SABOT")) if K("SABOT") else ("the enemy loses %d Homefront" % K("INF_PSYOP"))), ("ab", u, "INF_PSYOP")))
@@ -970,7 +1030,7 @@ class Game:
         elif k == "A_PREDICT": p.isr -= 1; s.dig(p, 3)
         elif k == "A_PRINT":
             s.pay(p, 2); pool = [c for c in p.ash + p.discard if c.cap and c.gi < 3]; c = s.decide(p, "target", "Return which card?", [(x.cost + x.atk, x.name, x) for x in dict.fromkeys(pool)])
-            (p.ash if c in p.ash else p.discard).remove(c); p.units.append(Unit(c, "R")); s.say(c.name, "returns to the Rear Area.")
+            (p.ash if c in p.ash else p.discard).remove(c); u2 = Unit(c, "R"); u2.spent = 2; p.units.append(u2); s.say(c.name, "returns to the Rear Area.")
         elif k.startswith("INF_"):
             p.isr -= 1; p.units.remove(u); p.track.append(dict(c=u.c, t=(u.c.timer or 2), kind="inf", dmg=u.dmg, op=k, dis=u.c.keys.get("DISRUPT", 0), n=u.c.keys[k], sab=u.c.keys.get("SABOT", 0))); s.say(u.c.name, "slips onto the Mission Track.")
         if any(x.k("AITEMPO") for x in p.units) and not p.fl.get("tempo"): p.fl["tempo"] = 1; again = True
@@ -1003,10 +1063,12 @@ class Game:
         for u in [u for u in p.units if u.hidden and u.c.cap]:  # reveal for free timing in Command (still pays the cost)
             rc = 0 if getattr(u, "paid", False) else u.c.cost
             if getattr(u, "paid", False) and not s.is_human(p): continue   # a flipped card stays face down until it acts
-            if p.sup() >= rc and s.decide(p, "deploy", "Reveal your Hidden %s now by paying %d Supply?" % (u.c.name, rc), [(1, "Reveal it", 1), (0, "Keep it Hidden", 0)]): s.pay(p, rc); u.hidden = False; s.say(s.who(p), "reveals", u.c.name + ".")
+            if p.sup() >= rc and s.decide(p, "deploy", "Reveal your Hidden %s now by paying %d Supply?" % (u.c.name, rc), [(1, "Reveal it", 1), (0, "Keep it Hidden", 0)]): s.pay(p, rc); u.hidden = False; u.spent = getattr(u, "spent", 0) + rc; s.say(s.who(p), "reveals", u.c.name + ".")
+        if s.R.get("withdraw", 0): p.wd_round = []; p.relief = 0   # trial withdraw (AW): names withdrawn this round; withdraw_refund 4's discount
         while p.lift > 0 or any(c.cap and c.keys.get("AIRDROP") for c in p.hand):
             opts = []; disc = discount(); reserve = sum(u.c.ready for u in p.units if u.ex and not u.hidden) * 0.5
             for c in dict.fromkeys(p.hand):
+                if s.R.get("withdraw", 0) and s.wd_blocked(p, c): continue   # trial withdraw (rules audit M2): not back onto the table this round
                 if p.lift <= 0 and not (c.cap and c.keys.get("AIRDROP")): continue  # out of Lift: only an AIRDROP card can still deploy
                 if c.cap and c.keys.get("FLAGSHIP") and any(u.c.name == c.name for u in p.units): continue   # FLAGSHIP: one in play per player
                 if c.cap:
@@ -1016,20 +1078,29 @@ class Game:
                         d = max(0, c.cost - u.c.cost - disc - (s.R.get("maint", 0) if any(x.k("MAINT") for x in p.units if not x.hidden) else 0))   # Patch 15: WRENCH's MAINTENANCE
                         if p.sup() >= d: opts.append((3 + c.cost, "Upgrade %s to %s (pay %d Supply, 1 Lift)" % (u.c.name, c.name, d), ("up", c, u, d)))
                     if c.keys.get("UPGRADE_ONLY"): pass   # a flagship arrives only as an upgrade of a card already in play
+                    elif getattr(p, "relief", 0) and p.sup() >= max(min(cost, 1), cost - p.relief):   # withdraw_refund 4: relief in place (never below 1 because of it)
+                        cr = max(min(cost, 1), cost - p.relief); opts.append((2 + c.cost * 0.3 + (c.atk * 0.2) + (0.8 if c.keys.get("CONVOY") else 0) - (1.5 if p.sup() - cr < reserve else 0) - (0.6 if len(p.units) >= 8 else 0), "Deploy %s (%d Supply, %d less: relief, %d Lift): %s" % (c.name, cr, cost - cr, 0 if c.keys.get("AIRDROP") else 1, c.stats()), ("dep", c, cr)))
                     elif p.sup() >= cost: opts.append((2 + c.cost * 0.3 + (c.atk * 0.2) + (0.8 if c.keys.get("CONVOY") else 0) - (1.5 if p.sup() - cost < reserve else 0) - (0.6 if len(p.units) >= 8 else 0), "Deploy %s (%d Supply, %d Lift): %s" % (c.name, cost, 0 if c.keys.get("AIRDROP") else 1, c.stats()), ("dep", c, cost)))
                     elif not s.is_human(p) and len(p.units) < 7 and not c.keys.get("UPGRADE_ONLY"): opts.append((0.7, "", ("hide", c)))
                     if s.is_human(p) and not c.keys.get("UPGRADE_ONLY"): opts.append((0, "Deploy %s face down as a Hidden card (0 Supply, 1 Lift)" % c.name, ("hide", c)))
                 elif s.is_human(p) or (not s.req_ok(p, c) and c.sub != "Reaction" and len(p.front()) < R["front_limit"] and s.dist() <= 2 and not any(u.hidden and not u.c.cap for u in p.units)):
                     opts.append((0.5, "Deploy %s face down as a decoy (0 Supply, 1 Lift)" % c.name, ("hide", c)))
             if p.lift <= 0: opts = [o for o in opts if o[2][0] == "dep"]
+            if s.R.get("table_cap", 0) and s.table_room(p) <= 0: opts = [o for o in opts if o[2][0] not in ("dep", "hide")]   # trial table_cap (AW): at the limit no deployment (AIRDROP included); upgrades still
+            if s.R.get("withdraw", 0) and p.lift > 0: opts += s.withdraw_options(p)   # trial withdraw (AW)
             if not opts: break
             ch = s.decide(p, "deploy", "Command, round %d: deploy or upgrade. You have %d Supply, %d Lift left." % (s.round, p.sup(), p.lift), opts + [(0.6, "Done deploying", None)])
             if ch is None: break
+            if ch[0] == "wd": p.lift -= 1; s.withdraw(p, ch[1]); continue
             c = ch[1]; p.hand.remove(c)
             if not (ch[0] == "dep" and c.keys.get("AIRDROP")): p.lift -= 1
-            if ch[0] == "dep": s.pay(p, ch[2]); used[0] = used[0] or disc > 0; p.units.append(Unit(c, "R")); s.say(s.who(p), "deploys", c.name + ".")
+            if ch[0] == "dep":
+                s.pay(p, ch[2]); used[0] = used[0] or disc > 0; nu = Unit(c, "R"); nu.spent = ch[2]; p.units.append(nu); rl = max(0, c.cost - disc) - ch[2] if getattr(p, "relief", 0) else 0
+                if getattr(p, "relief", 0): p.relief = 0   # withdraw_refund 4: the next face-up deploy uses the discount up
+                if rl > 0: s.say(s.who(p), "deploys", c.name, "(relief in place: %d Supply less)." % rl)
+                else: s.say(s.who(p), "deploys", c.name + ".")
             elif ch[0] == "up":
-                u = ch[2]; s.pay(p, ch[3]); used[0] = used[0] or disc > 0; p.discard.append(u.c); u.c = c; u.dmg = 0; s.say(s.who(p), "upgrades to", c.name + ".")
+                u = ch[2]; s.pay(p, ch[3]); used[0] = used[0] or disc > 0; p.discard.append(u.c); u.c = c; u.dmg = 0; u.spent = getattr(u, "spent", 0) + ch[3]; s.say(s.who(p), "upgrades to", c.name + ".")
             else: p.units.append(Unit(c, "R", hidden=True)); s.stats["hidden"] += 1; s.say(s.who(p), "deploys a card face down.")
     def up_hosts(s, p, c, hidden=False):
         """The cards in play that c can upgrade (its printed Upgrades From line). hidden=True lists the face-down ones instead (for the screen's reasons)."""
@@ -1109,7 +1180,9 @@ class Game:
                 if t["t"] > 0: continue
                 p.track.remove(t); c = t["c"]
                 if t["kind"] == "inf":
-                    s.say("H-Hour:", s.who(p) + "'s", c.name, "completes its mission."); u = Unit(c, "R"); u.ex = True; u.dmg = t.get("dmg", 0); p.units.append(u)
+                    s.say("H-Hour:", s.who(p) + "'s", c.name, "completes its mission."); u = Unit(c, "R"); u.ex = True; u.dmg = t.get("dmg", 0)
+                    if s.table_room(p) > 0: p.units.append(u)
+                    else: p.hand.append(c); s.say("The table is full (%d of %d):" % (len(p.units), s.R["table_cap"]), c.name, "returns to hand instead.")   # trial table_cap (rules audit B2)
                     op = t.get("op", "INF_PSYOP"); o = s.opp(p); s.ev(p, "H:" + op)
                     if op == "INF_HIT":
                         tg = [x for x in o.units if x.c.cap and (s.R.get("op_anydomain", 1) or "LAND" in x.c.tags)]
@@ -1172,8 +1245,18 @@ class Game:
                 for u, c0, d0 in paid:
                     if u.c.air: p.units.remove(u); p.discard.append(u.c); s.say(s.who(p) + "'s", u.c.name, "returns to base (discarded, no Homefront loss).")
             rc = max(1, R["recover_cost"] - (R.get("maint", 0) if any(x.k("MAINT") for x in p.units if not x.hidden) else 0))   # Patch 15: WRENCH's MAINTENANCE makes repairs cheaper
-            for u in sorted([u for u in p.units if u.dmg and not u.hidden], key=lambda u: -(u.dmg + s.unit_value(u))):
-                while u.dmg and p.sup() >= rc + (0 if s.is_human(p) else 4) and s.decide(p, "ready", "Recover 1 damage on %s for %d Supply? You have %d Supply." % (u.c.name, rc, p.sup()), [(1 if u.c.dur - u.dmg <= 2 else -1, "Pay and remove 1 damage", 1), (0, "No", 0)]): s.pay(p, rc); u.dmg -= 1
+            if s.is_human(p) and s.R.get("repair_list", 1):   # digital game (engine v0.17.2, draft entry AS item 5): the person picks from a list of every damaged card, in any order; one press removes 1 damage; same rule and cost (repair_list 0 = the old one-card-at-a-time prompt, for game records made before v0.17.2)
+                order = sorted([u for u in p.units if u.dmg and not u.hidden], key=lambda u: -(u.dmg + s.unit_value(u)))
+                while p.sup() >= rc:
+                    can = [u for u in order if u.dmg and u in p.units and not u.hidden]
+                    if not can: break
+                    ch = s.decide(p, "ready", "Sustainment: repair your damaged cards. Each repair removes 1 damage for %d Supply (shown on the button); you have %d Supply." % (rc, p.sup()),
+                                  [(1 if u.c.dur - u.dmg <= 2 else -1, "Pay %d and remove 1 damage from %s (%d of %d Durability left, %d after)" % (rc, u.c.name, u.c.dur - u.dmg, u.c.dur, u.c.dur - u.dmg + 1), u) for u in can] + [(0, "No more repairs", 0)])
+                    if not ch: break
+                    s.pay(p, rc); ch.dmg -= 1
+            else:
+                for u in sorted([u for u in p.units if u.dmg and not u.hidden], key=lambda u: -(u.dmg + s.unit_value(u))):
+                    while u.dmg and p.sup() >= rc + (0 if s.is_human(p) else 4) and s.decide(p, "ready", "Recover 1 damage on %s for %d Supply? You have %d Supply." % (u.c.name, rc, p.sup()), [(1 if u.c.dur - u.dmg <= 2 else -1, "Pay and remove 1 damage", 1), (0, "No", 0)]): s.pay(p, rc); u.dmg -= 1
         for p in s.P:
             for u in p.units: u.spot = False; u.over = False; u.fresh = False; u.rl = False; u.rt = False
     def assessment(s):
@@ -1260,4 +1343,7 @@ class Game:
                         track=[dict(name=t["c"].name, space=t["t"], text=t["c"].text(), kind=t["kind"], id=t["c"].id, cls=t["c"].cls) for t in p.track],
                         hand=[dict(name=c.name, kind=c.kind(), cls=c.cls, gen=c.gen, cost=c.cost_text(), stats=c.stats(), text=c.text(), id=c.id, cap=c.cap, lines=c.lines(), costn=c.cost, isrn=c.isr, atkn=c.atk, range=c.range, surv=c.surv, dur=c.dur, conc=c.conc, hf=c.hf, timer=c.timer, tags=" ".join(sorted(c.tags)), sub=c.sub, ready=c.ready) for c in p.hand] if own else [])
         me = s.P[pid]
-        return dict(round=s.round, last=s.R["last"], phase=s.phase, Z=s.Z, contact=s.contact(), limit=s.R["front_limit"], terrain=s.terrain, rule=TERRAIN[s.terrain]["text"], you=side(me, True), bot=side(s.opp(me), False), log=list(s.log or [])[-120:])
+        v = dict(round=s.round, last=s.R["last"], phase=s.phase, Z=s.Z, contact=s.contact(), limit=s.R["front_limit"], terrain=s.terrain, rule=TERRAIN[s.terrain]["text"], you=side(me, True), bot=side(s.opp(me), False), log=list(s.log or [])[-120:])
+        if s.R.get("table_cap", 0) or s.R.get("withdraw", 0):   # trial (AW): the page's "Cards on the table 7 / 10" counter and Withdraw button
+            v.update(table_cap=s.R.get("table_cap", 0), withdraw=s.R.get("withdraw", 0), withdraw_refund=s.R.get("withdraw_refund", 0), withdraw_fix=s.R.get("withdraw_fix", 0)); v["you"]["table"] = len(me.units); v["bot"]["table"] = len(s.opp(me).units)
+        return v

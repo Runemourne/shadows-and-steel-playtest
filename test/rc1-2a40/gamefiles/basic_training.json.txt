@@ -1,6 +1,6 @@
 {
  "name": "Basic Training",
- "version": "0.3.5",
+ "version": "0.3.7",
  "game": {
   "seed": 1945,
   "terrain": "OPEN PLAIN",
@@ -154,7 +154,7 @@
    "label": "up to the Frontline",
    "pages": [
     {
-     "t": "Each Frontline card adds 1 to your Frontline Strength. {CAP-102} has HOLD 2, so it adds 2. Watch your Strength go up in your status bar.",
+     "t": "Each Frontline card adds 1 to your Frontline Strength. {CAP-102} has HOLD 2, so it adds 2. Watch your Strength go up; if it is hidden, tap More.",
      "spot": "you"
     }
    ],
@@ -254,7 +254,7 @@
      "spot": "front"
     }
    ],
-   "do": "Move {CAP-212} up to the Frontline."
+   "do": "Tap {CAP-212}, then Move to Frontline. (Or drag it up.)"
   },
   {
    "kind": "arrange",
@@ -330,7 +330,7 @@
     "Sustainment: Bases restock, you gain 2 ISR, exhausted cards ready for Supply. In your half or the centre, one Frontline card readies free: {CAP-101} did.",
     "You can also repair: 2 Supply removes 1 damage. Your {CAP-102} can wait until next round."
    ],
-   "do": "Tap No. Then watch Assessment."
+   "do": "Tap No more repairs. Then watch Assessment."
   },
   {
    "kind": "discard",
@@ -375,7 +375,7 @@
    "title": "Strengthen the Frontline",
    "card": "CAP-102",
    "label": "up to the Frontline",
-   "do": "Move the new {CAP-102} up to the Frontline.",
+   "do": "Tap the new {CAP-102}, then Move to Frontline. (Or drag it up.)",
    "pages": []
   },
   {
@@ -475,7 +475,7 @@
    "pages": [
     "Your marker is in the enemy's half now, so nothing readies free. Readying a card costs 1 Supply. A ready card can act, react or support next round."
    ],
-   "do": "Tap your glowing {CAP-101} on the table, then Pay 1 and ready {CAP-101}."
+   "do": "Tap Ready {CAP-101} · 1 Supply."
   },
   {
    "kind": "ready_select",
@@ -483,7 +483,7 @@
    "lesson": "Sustainment",
    "title": "Ready your cards",
    "card": "CAP-103",
-   "do": "Now {CAP-103}: tap it, then Pay 1 and ready {CAP-103}.",
+   "do": "Now tap Ready {CAP-103} · 1 Supply.",
    "pages": []
   },
   {
@@ -492,7 +492,7 @@
    "lesson": "Sustainment",
    "title": "Ready your cards",
    "card": "CAP-212",
-   "do": "Now {CAP-212}: tap it, then Pay 1 and ready {CAP-212}.",
+   "do": "Now tap Ready {CAP-212} · 1 Supply.",
    "pages": []
   },
   {
@@ -501,7 +501,7 @@
    "lesson": "Sustainment",
    "title": "Repair",
    "label": "^Pay",
-   "do": "Tap Pay and remove 1 damage, for {CAP-102} (2 Supply).",
+   "do": "Tap Repair {CAP-102} · 2 Supply.",
    "pages": [
     "Repairing costs 2 Supply for each point of damage removed."
    ]
@@ -515,13 +515,13 @@
    "pages": [
     "{CAP-102} is back to 1 damage of 3. That is enough for now."
    ],
-   "do": "Tap No. Then watch Assessment: the enemy's last stand."
+   "do": "Tap No more repairs. Then watch Assessment: the enemy's last stand."
   }
  ],
  "free": {
   "title": "Your call",
   "pages": [],
-  "do": "Choose any option. The Hint button shows what the bot would do."
+  "do": "Choose any option. Stuck? The ? button shows what the bot would do."
  },
  "end": {
   "win": {
@@ -533,7 +533,7 @@
     "Not covered here (tips will point them out): Hidden cards, Reactions, Mission cards that wait on the Mission Track, upgrades between Generations, your Concept.",
     "Tap any card to read it; the words under it explain its keywords. The Field Manual (☰ menu) holds every lesson and the full glossary."
    ],
-   "next": "Play the bot next. Choose any two forces on the Main Menu. The Hint button shows what the bot would do."
+   "next": "Play the bot next: tap PLAY, then choose any two forces. Stuck? The ? button shows what the bot would do."
   },
   "other": {
    "title": "Basic Training is over",
@@ -588,7 +588,7 @@
    },
    {
     "h": "Your resources",
-    "t": "Your status bar shows what you have. Supply pays for cards. Lift is how many cards you can deploy this round.",
+    "t": "Your status bar shows what you have. Supply pays for cards. Lift is how many cards you can deploy this round. No Lift shown? Tap More.",
     "spot": "you"
    },
    {

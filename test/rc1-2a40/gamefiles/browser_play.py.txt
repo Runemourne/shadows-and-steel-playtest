@@ -48,7 +48,7 @@ the drift message says "the project team". No rule changes."""
 import json, random, traceback, os, re
 import merged_engine as E
 
-VERSION = "0.17"
+VERSION = "0.17.3"   # engine v0.17.3 (cards and decks v0.17.1): the trial table limit and withdraw (draft entry AW; off unless a game sets table_cap, withdraw, withdraw_refund). v0.17.2: the person's repair list; a game record with a version before 0.17.2 replays with the rule repair_list 0
 
 # 0.9 (14 Nov 2026): saved replays: Session.replay() and /play/replay (the whole game as frames, packed small).
 # 0.8 (14 Nov 2026, RD-133): one set of cards again. The Theory of Victory decks became cards and decks v0.11 and the
@@ -458,7 +458,7 @@ class Session:
         terr = [t for t, v in E.TERRAIN.items() if v["box"] in {key(x) for x in bx}]
         self.terrain = b.get("terrain") if b.get("terrain") in E.TERRAIN else rng.choice(terr)
         self.first = {"you": 0, "bot": 1}.get(b.get("first"), rng.randrange(2))
-        self.rules = {k: int(b[k]) for k in ("hf", "hand", "concepts", "forced_discard", "instant_end") if str(b.get(k) or "").strip()}
+        self.rules = {k: int(b[k]) for k in ("hf", "hand", "concepts", "forced_discard", "instant_end", "repair_list", "table_cap", "withdraw", "withdraw_refund", "withdraw_fix") if str(b.get(k) or "").strip()}
         if b.get("tutorial"): self.rules.update({k: int(v) for k, v in (b.get("rules") or {}).items()})
         self.spectate = str(b.get("spectate") or "") in ("1", "true", "True")   # watch the bot play both sides
         self.names = ([you, bot] if you != bot else [you + " (south)", bot + " (north)"]) if self.spectate else ["You", "The bot"]

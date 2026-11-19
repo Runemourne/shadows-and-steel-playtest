@@ -20,8 +20,8 @@
  "sha256": {
   "SS_Merged_Cards_v0.17.1.csv": "4be2faf69b520648588dcdba1f2868f471b10dd07e72ee4db2b4bd7106a47a7c",
   "SS_Merged_Decks_v0.17.1.csv": "14cf2673123ecae909af1dc10fd67b8e33db2be4515fec5eaa55f2e054431a1b",
-  "basic_training.json": "438cbf61917d71923de2204d652fa977606de896c508c90fd2f6b9fc1ac67c07",
-  "browser_play.py": "b2669e5fc0b25a38f4a55667e498d3b66b5e499f046f160c9baa19326c22d90a",
-  "merged_engine.py": "1dd8150709762aed1fcbaea884e09ada41b806c7d078f7690b349441e83adc2f"
+  "basic_training.json": "7657d86a6ac6396eb03eba5101d2714c2e2a12841b9c44ec40378532b0e2dd6a",
+  "browser_play.py": "f0f73cd35d161c45c0941374783d9c4d4d648ab1971385c36e792283fe38f13a",
+  "merged_engine.py": "2206dd051c46e6065fb91ae0453d5516417120e133dcca3bc2f01b2642b3702f"
  }
 }
