@@ -8,20 +8,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Shadows &amp; Steel: Test (first-look)</title>
 <link rel="icon" href="data:,">
-<link rel="preload" href="test/first-look-af60/fonts/Barlow-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="test/first-look-af60/fonts/BlackOpsOne-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="test/first-look-af60/tokens.css">
+<link rel="preload" href="test/first-look-384b/fonts/Barlow-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="test/first-look-384b/fonts/BlackOpsOne-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="test/first-look-384b/tokens.css">
 <style>
 /* v0.20.2 (WP1, groundwork): the fonts are hosted with the game (fonts/, SIL Open Font Licence files beside them); no Google Fonts call.
    Black Ops One and Barlow are what the page uses today. Rajdhani and JetBrains Mono are declared for the style guide's interface (WP6);
    a browser only downloads a font when text uses it. Barlow 500 is not in the package: the page asks for 400 or 600 only (v0.21; cardface.js still names 500 on the card faces, which draws as 400, and is left as it is because the style guide fixture pins its hash). */
-@font-face{font-family:"Black Ops One";src:url("test/first-look-af60/fonts/BlackOpsOne-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:Barlow;src:url("test/first-look-af60/fonts/Barlow-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:Barlow;src:url("test/first-look-af60/fonts/Barlow-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:Rajdhani;src:url("test/first-look-af60/fonts/Rajdhani-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:Rajdhani;src:url("test/first-look-af60/fonts/Rajdhani-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
-@font-face{font-family:"JetBrains Mono";src:url("test/first-look-af60/fonts/JetBrainsMono-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:"JetBrains Mono";src:url("test/first-look-af60/fonts/JetBrainsMono-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:"Black Ops One";src:url("test/first-look-384b/fonts/BlackOpsOne-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:Barlow;src:url("test/first-look-384b/fonts/Barlow-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:Barlow;src:url("test/first-look-384b/fonts/Barlow-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:Rajdhani;src:url("test/first-look-384b/fonts/Rajdhani-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:Rajdhani;src:url("test/first-look-384b/fonts/Rajdhani-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url("test/first-look-384b/fonts/JetBrainsMono-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"JetBrains Mono";src:url("test/first-look-384b/fonts/JetBrainsMono-SemiBold.woff2") format("woff2");font-weight:600;font-style:normal;font-display:swap}
 /* Layers (style guide 5; values in tokens.css as --ss-layer-*): 0 world, 1 scrim and grid, 10 table, 30 HUD, 50 transient feedback,
    100 modal and inspector. Today's z-index values (2 to 41) move onto these names with the HUD work (WP7 and WP9), not before. */
 :root{--ui:1;--tsz:1;--ts:calc(var(--ui) * var(--tsz));--ink:#e8e2cf;--dim:#a9a48f;--line:rgba(232,226,207,.28);--panel:rgba(14,18,16,.86);--amber:#e0a85a;--teal:#7fe0c8;--red:#d8674e;--blue:#7fb6d8}
@@ -558,13 +558,13 @@ button.opt,#prompt button.opt{font:400 calc(15px * var(--ts))/1.3 var(--f-body);
 <script src="terrain.js"></script>
 <script src="art.js"></script>
 <script src="brand.js"></script>
-<script src="test/first-look-af60/cardface.js"></script>
+<script src="test/first-look-384b/cardface.js"></script>
 <script src="sound.js"></script>
-<script src="test/first-look-af60/input.js"></script>
-<script src="test/first-look-af60/site.js"></script>
-<script src="test/first-look-af60/battle.js"></script>
+<script src="test/first-look-384b/input.js"></script>
+<script src="test/first-look-384b/site.js"></script>
+<script src="test/first-look-384b/battle.js"></script>
 <script src="opening/opening.js"></script>
-<script src="test/first-look-af60/test_recorder.js"></script>
+<script src="test/first-look-384b/test_recorder.js"></script>
 <script type="module">
 const msg = t => { const m = document.getElementById("lmsg"); if (m) m.textContent = t; };
 try {

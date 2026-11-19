@@ -325,7 +325,7 @@ function keepBars() { ["top", "me"].forEach(function (id) { var e = $(id), h = e
     var spare = FR ? Math.floor((FR.B - FR.T) - MIN_TABLE * H) : 0;
     if (need > cap - 24 && cap < H * .5 && spare > 4) { var nc = Math.round(Math.min(H * .5, need + 24, cap + spare)); pr.style.height = pr.style.maxHeight = nc + "px"; pr.dataset.cap = String(nc); cap = nc; requestFit(); }   // the smallest screens: the panel grows (once, never back) until its buttons fit; the table gives way, never a choice
     ft.style.maxHeight = Math.round(Math.max(48, need > cap - one ? cap - 24 : cap - one)) + "px"; }   // v0.21: the pinned buttons may take all but one line of the body, and on the smallest screens the whole panel: no choice is ever cut off
-  if (pr && !(pr.querySelector(".pbody") || {}).scrollTop) requestAnimationFrame(function () { unslice(pr.querySelector(".pbody"), 28); promptCue(); });
+  if (pr && !(pr.querySelector(".pbody") || {}).scrollTop) requestAnimationFrame(function () { unslice(pr.querySelector(".pbody"), pr.classList.contains("more") ? 0 : 28); promptCue(); });
   document.documentElement.classList.toggle("tight", (W < 420 && PREF.text >= 1.5) || (H < 420 && W < 600)); }   // narrow and large text: Undo and Hint become icons (their names stay as labels)   // v0.21: the pinned buttons may take all but one line of the body, so no choice is ever cut off
 function feedLine() { return W < 900 ? Math.round(12 * PREF.text * 1.25 + 12) : 0; }   // on narrow screens the feed shows one line over the table's top edge: that line is kept free
 function topEdge(feed) {   // below the top bar, below the menu buttons where they reach down over the table and, with feed, below the feed's one line (narrow screens)
@@ -605,7 +605,7 @@ function setPrompt(el, h, top) {
   el.innerHTML = '<div class="pwrap"><div class="pbody"></div><button type="button" class="pmore" tabindex="-1" aria-hidden="true">More ▼</button></div>';
   body = el.querySelector(".pbody"); while (t.firstChild) body.appendChild(t.firstChild);
   if (foot.firstChild) el.appendChild(foot);
-  body.scrollTop = keep; body.addEventListener("scroll", promptCue, { passive: true }); promptCue(); requestAnimationFrame(function () { if (!keep) { var pb2 = el.querySelector(".pbody"); unslice(pb2, 28); if (pb2) pb2.scrollTop = 0; } promptCue(); });
+  body.scrollTop = keep; body.addEventListener("scroll", promptCue, { passive: true }); promptCue(); requestAnimationFrame(function () { if (!keep) { var pb2 = el.querySelector(".pbody"); unslice(pb2, $("prompt").classList.contains("more") ? 0 : 28); if (pb2) pb2.scrollTop = 0; } promptCue(); });
 }
 /* v0.21 (craft notes): no sliced lines. A scrolling box that has more than it shows is trimmed so its last visible line of text (or row, chip
    or button) is whole; the "More" pill sits in the space below it. Measured when the box is drawn, at its top. */
@@ -621,7 +621,8 @@ function unslice(sc, reserve) {
 }
 function promptCue() {   // "More ▼" while the panel's body has text below what it shows
   var el = $("prompt"), b = el && el.querySelector(".pbody"); if (!b) return;
-  el.classList.toggle("more", b.scrollHeight - b.clientHeight - b.scrollTop > 6);
+  var was = el.classList.contains("more"), now = b.scrollHeight - b.clientHeight - b.scrollTop > 6 || (was && b.scrollTop > 0); el.classList.toggle("more", now);
+  if (now && !was && !b.scrollTop) requestAnimationFrame(function () { b.dataset.mh = ""; unslice(b, 0); });   // the More pill took a row: trim again so no line is sliced
 }
 function render() { hud(); hand(); prompt(); requestFit(); try { spotlight(); } catch (e) { } try { inspRefresh(); } catch (e) { } }   // v0.20.1: the bars may have changed size: refit on the next frame if the safe frame moved
 /* what caused a loss: the last attack, played or fired card, ability or H-Hour before it (consequence lines are not causes) */
@@ -718,13 +719,13 @@ function zoom(u, o) {
   INS.act = o.act || null; INS.u = u; INS.o = o; var acts = inspActions(o.act, u, o); $("zAct").innerHTML = acts; $("zAct").style.display = acts ? "" : "none";
   var z = $("zoom"), was = z.style.display === "flex"; z.classList.toggle("over", $("lib").style.display === "block");   // above the card library
   if (!was) INS.prev = document.activeElement; z.classList.toggle("big", PREF.text >= 1.5 && !((W >= 900 && H >= 521) || (H <= 520 && W >= 600))); z.style.display = "flex";
-  var wide = (W >= 900 && H >= 521), hd = $("hand").getBoundingClientRect(); var pmh = wide && G.view && hd.height && hd.top > 380 ? Math.round(hd.top - 12 - H * .02) : 0; $("zPanel").style.maxHeight = pmh ? pmh + "px" : ""; $("zImg").style.maxHeight = pmh ? Math.max(200, pmh - 150) + "px" : ""; /* the card picture stays inside the panel; wide screens: the hand dock stays visible under it */ $("zBody").scrollTop = 0; zCue(); setTimeout(function () { unslice($("zBody"), 30); zCue(); }, 60); peekHide(); SFX.click();
+  var wide = (W >= 900 && H >= 521), hd = $("hand").getBoundingClientRect(); var pmh = wide && G.view && hd.height && hd.top > 380 ? Math.round(hd.top - 12 - H * .02) : 0; $("zPanel").style.maxHeight = pmh ? pmh + "px" : ""; $("zImg").style.maxHeight = pmh ? Math.max(200, pmh - 150) + "px" : ""; /* the card picture stays inside the panel; wide screens: the hand dock stays visible under it */ $("zBody").scrollTop = 0; zCue(); setTimeout(function () { unslice($("zBody"), $("zoom").classList.contains("more") ? 0 : 30); zCue(); }, 60); peekHide(); SFX.click();
   try { $("zClose").focus({ preventScroll: true }); } catch (e) { } setTimeout(function () { try { if ($("zoom").style.display === "flex" && !$("zoom").contains(document.activeElement)) $("zClose").focus({ preventScroll: true }); } catch (e) { } }, 60);   // after a touch tap the browser's own focus change comes later: take focus again
   G.zoomId = u.id; if (u.id && !o.canvas && CF.hi) CF.hi(u.id, function (fresh) { if (fresh && G.zoomId === u.id && $("zoom").style.display === "flex") try { $("zImg").src = drawCard(clean, 2.5, oo).toDataURL(); } catch (e) {} });
   try { pickTable(); } catch (e) { }
 }
 function zCue() { var b = $("zBody"); $("zoom").classList.toggle("more", b.scrollHeight - b.clientHeight - b.scrollTop > 6); }   // the "More" cue while the sheet has more below
-$("zBody").addEventListener("scroll", zCue, { passive: true }); $("zImg").addEventListener("load", function () { if (!$("zBody").scrollTop) unslice($("zBody"), 30); zCue(); });
+$("zBody").addEventListener("scroll", zCue, { passive: true }); $("zImg").addEventListener("load", function () { if (!$("zBody").scrollTop) unslice($("zBody"), $("zoom").classList.contains("more") ? 0 : 30); zCue(); });
 $("zMore").addEventListener("click", function (e) { e.stopPropagation(); var b = $("zBody"); b.scrollBy({ top: Math.max(40, b.clientHeight * .8), behavior: G.rm ? "auto" : "smooth" }); });
 function inspRefresh() { if ($("zoom").style.display !== "flex" || !INS.u) return; var acts = inspActions(INS.act, INS.u, INS.o); if ($("zAct").innerHTML !== acts) { $("zAct").innerHTML = acts; $("zAct").style.display = acts ? "" : "none"; } }   // a decision arrived or went while it is open
 function closeInspector(silent) { var z = $("zoom"); if (z.style.display !== "flex") return; z.style.display = "none"; G.zoomPick = null; G.zoomId = null; INS.u = null; if (!silent && SFX.close) SFX.close(); var p = INS.prev; INS.prev = null; try { if (p && p.focus && document.contains(p)) p.focus({ preventScroll: true }); } catch (e) { } try { pickTable(); } catch (e) { } }
@@ -830,7 +831,7 @@ function pvFit(el) {   // phones: a sheet from the bottom of the screen up to ju
   pb.style.maxHeight = Math.max(80, avail - (ft ? ft.offsetHeight : 0) - (hd ? hd.offsetHeight : 0) - 20) + "px"; el.style.setProperty("--pvf", (ft ? ft.offsetHeight : 64) + "px");
 }
 function pvOpen() { var d = $("preview").style.display; return !!d && d !== "none"; }
-function pvCue(el) { if (!el.dataset.cut) { el.dataset.cut = "1"; var pbx = el.querySelector(".pvb"); if (pbx && !pbx.scrollTop) { pbx.dataset.mh = pbx.style.maxHeight; unslice(pbx, 30); } el.dataset.cut = ""; } pvCue0(el); }
+function pvCue(el) { if (!el.dataset.cut) { el.dataset.cut = "1"; var pbx = el.querySelector(".pvb"); if (pbx && !pbx.scrollTop) { pbx.dataset.mh = pbx.style.maxHeight; unslice(pbx, el.classList.contains("more") ? 0 : 30); } el.dataset.cut = ""; } pvCue0(el); }
 function pvCue0(el) { var pb = el.querySelector(".pvb"); if (pb) el.classList.toggle("more", pb.scrollHeight - pb.clientHeight - pb.scrollTop > 6); }
 /* ---- why the bot did that: the engine reports what it chose and how it rated every option ---- */
 function shortOpt(l) { l = String(l); var i = l.indexOf(": "), j = l.indexOf(" ("); if (/^(Deploy|Upgrade|Attack|Play|Start|Use)/.test(l)) { var c = Math.min(i < 0 ? 999 : i, j < 0 ? 999 : j); if (c < 999) l = l.slice(0, c); } return l.length > 46 ? l.slice(0, 44) + "…" : l; }
@@ -948,7 +949,7 @@ addEventListener("pointerup", function (e) {
 /* v0.17.1: pointing at an option button draws the aim line from the card that acts to its target */
 $("prompt").addEventListener("mouseover", function (e) { var b = e.target.closest && e.target.closest("button[data-i]"); var m = b && G.pend && G.pend.meta && G.pend.meta[+b.dataset.i]; G.btnAim = m && m.src && m.dst ? { a: m.src, b: m.dst } : null; });
 $("prompt").addEventListener("mouseleave", function () { G.btnAim = null; });
-$("prompt").addEventListener("click", function (e) { var t = e.target.closest && e.target.closest(".ftip"); if (t && !e.target.closest("button")) { t.classList.toggle("open"); requestAnimationFrame(function () { unslice($("prompt").querySelector(".pbody"), 28); promptCue(); }); } });   // the first-time tip is folded to two lines; a tap unfolds it
+$("prompt").addEventListener("click", function (e) { var t = e.target.closest && e.target.closest(".ftip"); if (t && !e.target.closest("button")) { t.classList.toggle("open"); requestAnimationFrame(function () { unslice($("prompt").querySelector(".pbody"), $("prompt").classList.contains("more") ? 0 : 28); promptCue(); }); } });   // the first-time tip is folded to two lines; a tap unfolds it
 $("prompt").onclick = function (e) {
   var b = e.target.closest("button"); if (!b) return;
   if (b.classList.contains("pmore")) { var pb = $("prompt").querySelector(".pbody"); if (pb) pb.scrollBy({ top: Math.max(30, pb.clientHeight * .8), behavior: G.rm ? "auto" : "smooth" }); return; }
@@ -1087,9 +1088,12 @@ function dragLift(d) {   // past the slop: the card lifts, the places that take 
 addEventListener("pointermove", function (e) {
   if (!drag || (drag.id != null && e.pointerId !== drag.id)) return;
   if (e.pointerType !== "touch" && !e.buttons) return dragCancel();   // v0.20.2: the mouse button was let go outside the window: nothing is played
+  if (drag.dead) return;
   if (drag.hs) { var st0 = $("hand").querySelector(".strip"); if (st0) st0.scrollLeft = drag.hs.x0 - (e.clientX - drag.x); e.preventDefault(); return; }   // v0.21 (WP9): the open drawer scrolls sideways under the finger
   if (!drag.on) { if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) <= SSInput.slop(e.pointerType)) return; if (multiT) return dragCancel();
-    var st1 = drag.kind === "card" && isPh() && $("hand").querySelector(".strip"); if (st1 && st1.scrollWidth - st1.clientWidth > 2 && SSInput.axis(drag, e) === "x") { drag.hs = { x0: st1.scrollLeft }; return; }   // mostly sideways in the drawer: scroll it; mostly upward: lift the card (spec 1.3, direction)
+    var st1 = drag.kind === "card" && isPh() && $("hand").querySelector(".strip");
+    if (st1) { var ddx = e.clientX - drag.x, ddy = e.clientY - drag.y;   // v0.21 (checkers): from the phone drawer a card lifts only when the move is more upward than sideways (within 45 degrees of straight up) at the moment it leaves the slop
+      if (!(-ddy > Math.abs(ddx))) { if (st1.scrollWidth - st1.clientWidth > 2 && Math.abs(ddx) >= Math.abs(ddy)) { drag.hs = { x0: st1.scrollLeft }; return; } drag.dead = true; return; } }   // sideways scrolls the strip if it can; otherwise (or downward) the press does nothing at all
     dragLift(drag); drawerAuto(); }
   e.preventDefault();
   if (drag.kind !== "marker") { ghostAt(e.clientX, e.clientY, e.pointerType); dragTip(drag, e.clientX, e.clientY); }
@@ -1977,5 +1981,5 @@ var fontReady = (document.fonts && document.fonts.load) ? Promise.race([Promise.
 [1500, 6000, 15000].forEach(function (ms) { setTimeout(function () { dbReady().then(function (d) { if (d) recoverNotes(); }); }, ms); });
 (function () { var rj = document.getElementById("ss-replay"); if (!rj) return; try { window.SS_REPLAY = JSON.parse(rj.textContent); } catch (e) { return; }   // a saved-replay file: no engine, just the game
   Promise.all([artReady, fontReady]).then(function () { $("cover").classList.add("map"); $("cover").firstElementChild.innerHTML = standaloneCover(window.SS_REPLAY); requestAnimationFrame(function () { contourMap($("suMap"), (window.SS_REPLAY.meta || {}).terrain || window.SS_TNAME || ""); }); }); })();
-window.SS = { sendForm: sendForm, showSend: showSend, site: SITE, copyWhere: copyWhere, optWhere: optWhere, quitApp: quitApp, winTrack: winTrack, showLibrary: showLibrary, toggleWin: toggleWin, glossFor: glossFor, hintBox: hintBox, PREF: PREF, applyPrefs: applyPrefs, showSettings: showSettings, caption: caption, TER: TER, SND: SND, readCard: readCard, showPiles: showPiles, hitsBox: hitsBox, isCause: isCause, saveReplay: saveReplay, playReplay: playReplay, buildReplayFile: buildReplayFile, listReplays: listReplays, loadReplay: loadReplay, showDebrief: showDebrief, replayJump: replayJump, set: SET, drawCard: function (u, S) { return drawCard(u, S || 1); }, engine: function (handle) { Promise.all([artReady, fontReady]).then(function () { engineOk(handle); G.engineUp = true; var gate = window.SSOpening && window.SSOpening.gate && window.SSOpening.gate(); (gate || Promise.resolve()).then(showSetup); }); }, op: OPDIR, G: G, api: api, objs: function () { return O; }, fitInfo: fitInfo, choose: choose, tapObj: tapObj, objAt: objAt, peekAt: peekAt, zoom: zoom, resume: function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); } };
+window.SS = { unslice: unslice, sendForm: sendForm, showSend: showSend, site: SITE, copyWhere: copyWhere, optWhere: optWhere, quitApp: quitApp, winTrack: winTrack, showLibrary: showLibrary, toggleWin: toggleWin, glossFor: glossFor, hintBox: hintBox, PREF: PREF, applyPrefs: applyPrefs, showSettings: showSettings, caption: caption, TER: TER, SND: SND, readCard: readCard, showPiles: showPiles, hitsBox: hitsBox, isCause: isCause, saveReplay: saveReplay, playReplay: playReplay, buildReplayFile: buildReplayFile, listReplays: listReplays, loadReplay: loadReplay, showDebrief: showDebrief, replayJump: replayJump, set: SET, drawCard: function (u, S) { return drawCard(u, S || 1); }, engine: function (handle) { Promise.all([artReady, fontReady]).then(function () { engineOk(handle); G.engineUp = true; var gate = window.SSOpening && window.SSOpening.gate && window.SSOpening.gate(); (gate || Promise.resolve()).then(showSetup); }); }, op: OPDIR, G: G, api: api, objs: function () { return O; }, fitInfo: fitInfo, choose: choose, tapObj: tapObj, objAt: objAt, peekAt: peekAt, zoom: zoom, resume: function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); } };
 })();
