@@ -323,7 +323,7 @@ function capDock() {   // v0.20.2: sets the panel's fixed height for this screen
 var SQ = { n: 0, key: "" };
 function setSq(n) { var de = document.documentElement; SQ.n = n; de.classList.toggle("sq1", n >= 1); de.classList.toggle("sq2", n >= 2); de.classList.toggle("sq3", n >= 3); }
 function keepBars() { ["top", "me"].forEach(function (id) { var e = $(id), h = e && e.offsetHeight; if (h && h > (parseFloat(e.style.minHeight) || 0)) e.style.minHeight = h + "px"; }); if (isDesk()) deskColumn();
-  var pr = $("prompt"), ft = pr && pr.querySelector(".pfoot"), cap = pr && +pr.dataset.cap; if (ft && cap) { var tsz = PREF.text * (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ui")) || 1), need = ft.scrollHeight, one = Math.round(16 * tsz + 22);
+  var pr = $("prompt"), ft = pr && pr.querySelector(".pfoot"), cap = pr && +pr.dataset.cap; if (pr && isPh() && !isDesk()) panelFit(pr); else if (ft && cap) {   /* RC2.3: on a phone, panelFit sizes the panel and its foot */ var tsz = PREF.text * (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ui")) || 1), need = ft.scrollHeight, one = Math.round(16 * tsz + 22);
     var spare = FR ? Math.floor((FR.B - FR.T) - MIN_TABLE * H) : 0;
     var rows2 = need > 80 * Math.min(tsz, 1.4); if ((need > cap - 24 || rows2 && need > cap - 2 * one - 16) && cap < H * .5 && spare > 4) { var nc = Math.round(Math.min(H * .5, need + (rows2 ? 2 : 1) * one + 24, cap + spare));   /* RC2: with two rows of buttons (such as the trial's WITHDRAW under Done deploying), room for two lines of the question, not one */   /* v0.21 (checkers): room for the buttons and at least one line of the question, so the question never vanishes behind its own buttons */ pr.style.height = pr.style.maxHeight = nc + "px"; pr.dataset.cap = String(nc); cap = nc; requestFit(); }   // the smallest screens: the panel grows (once, never back) until its buttons fit; the table gives way, never a choice
     ft.style.maxHeight = Math.round(Math.max(48, need > cap - one ? cap - 24 : cap - one)) + "px"; }   // v0.21: the pinned buttons may take all but one line of the body, and on the smallest screens the whole panel: no choice is ever cut off
@@ -553,7 +553,7 @@ function drawerAuto() {
     hb.setAttribute("aria-label", "Hand, " + n + " card" + (n === 1 ? "" : "s") + (ready ? ", " + ready + " ready" : "") + (want ? ". Tuck it" : ". Open it")); }
   panelClear();
   var st2 = h.querySelector(".strip"); if (st2 && st2.clientWidth && st2.dataset.fw !== String(st2.clientWidth)) { st2.dataset.fw = String(st2.clientWidth); drawerFit(st2); } if (st2) placeTabs(st2);   // the strip's width is known only once it is laid out
-  if (was !== want && isPh()) { try { spotlight(); } catch (e) { } requestAnimationFrame(function () { var pb = $("prompt").querySelector(".pbody"); if (pb) { pb.dataset.mh = ""; pb.scrollTop = 0; if (!want) unslice(pb, $("prompt").classList.contains("more") ? 0 : 28); } promptCue(); }); }   /* the panel's text window changes with the drawer: the More cue follows it */
+  if (was !== want && isPh()) { try { spotlight(); } catch (e) { } requestAnimationFrame(function () { panelFit($("prompt")); var pb = $("prompt").querySelector(".pbody"); if (pb) { pb.dataset.mh = ""; pb.scrollTop = 0; if (!want) unslice(pb, $("prompt").classList.contains("more") ? 0 : 28); } promptCue(); }); }   /* the panel's text window changes with the drawer: the More cue follows it */
 }
 $("hand").addEventListener("click", function (e) {
   var b = e.target.closest && e.target.closest("button"); if (!b) return;
@@ -647,12 +647,29 @@ function setPrompt(el, h, top) {
 /* RC2 (Council F1): a panel holding a list (ready, repair, or an opened Withdraw list) with its Done row after the list grows upward over the
    table, up to 62% of the screen, so the whole list and Done show; if it still cannot, it scrolls, and Done is reached only after the list.
    The table does not move (its foot is the panel's usual top); the panel returns to its usual height for the next step. */
-function listGrow(el) { if (!el || isDesk()) return; var cap = +el.dataset.cap; if (!cap) return; var lf = el.querySelector(".pbody .rlist");
-  if (!lf || !isPh()) { if (el.dataset.grown) { el.dataset.grown = ""; el.style.height = el.style.maxHeight = cap + "px"; } return; }
-  var body = el.querySelector(".pbody"); if (!body) return; body.style.maxHeight = ""; body.dataset.mh = "";
-  var lst = body.querySelector(".rlist"), lr = lst.getBoundingClientRect(), br = body.getBoundingClientRect(), extra = el.offsetHeight - body.clientHeight,
-    need = Math.ceil(lr.bottom - br.top + body.scrollTop) + 8 + extra, hh = Math.max(cap, Math.min(Math.floor(H * .62), need));   /* RC2.2: tall enough for the whole list and its heading (the summary and notes below it scroll), never past 62% */
-  el.dataset.grown = "1"; el.style.height = el.style.maxHeight = hh + "px"; }
+function listGrow(el) { return panelFit(el); }
+/* RC2.3 (accessibility first; the checkers' large-text pass on RC2.2): on a phone, every step's panel is tall enough for ALL its buttons
+   (the foot wraps into as many rows as it needs: a step's choices are never hidden or covered), its whole action list, and at least two full
+   lines of the instruction (or all of it), plus the More cue's row when text follows. It grows upward over the table, up to 62% of the screen;
+   the table does not move (its foot stays at the panel's usual top). If even 62% cannot hold it, the buttons scroll inside the foot, with a cue,
+   and the instruction keeps its two lines. Measured each time the panel is drawn and when the layout changes. */
+function panelFit(el) { if (!el || isDesk()) return; var cap = +el.dataset.cap; if (!cap || !isPh()) return;
+  var body = el.querySelector(".pbody"), ft = el.querySelector(".pfoot"); if (!body) return;
+  if (document.querySelector("#bot #hand.open") && !document.documentElement.classList.contains("tut")) { if (ft) { ft.style.maxHeight = ""; ft.classList.remove("fscroll"); } el.dataset.grown = ""; el.style.height = el.style.maxHeight = cap + "px"; return; }   /* the slim panel while the hand is open sizes itself (height auto) */
+  el.style.height = el.style.maxHeight = cap + "px"; body.style.maxHeight = ""; body.dataset.mh = ""; body.style.flexBasis = ""; body.classList.remove("trim"); if (ft) { ft.style.maxHeight = "none"; ft.classList.remove("fscroll"); }
+  var q = function (e) { return e.getBoundingClientRect(); }, bq = q(body), pm = el.querySelector(".pmore"), pmH = pm && pm.offsetHeight ? pm.offsetHeight + 2 : 0, footH = ft ? ft.scrollHeight + (parseFloat(getComputedStyle(ft).marginTop) || 0) : 0;
+  var chrome = el.offsetHeight - body.clientHeight - pmH - (ft ? ft.offsetHeight : 0); if (chrome < 0) chrome = 16;
+  var lst = body.querySelector(".rlist"), lead = body.querySelector(".coach") || body.querySelector(".instr") || body.firstElementChild, need0 = 0, min0 = 0;
+  if (lead) { var lr = q(lead), lh = parseFloat(getComputedStyle(lead).lineHeight) || 20 * PREF.text, top = lr.top - bq.top + body.scrollTop; need0 = Math.ceil(top + Math.min(lr.height, (lead.classList.contains("coach") ? 6 : 2) * lh + 2)); min0 = Math.ceil(top + Math.min(lr.height, 2 * lh + 2)); }
+  if (lst) { var lb = Math.ceil(q(lst).bottom - bq.top + body.scrollTop) + 8; need0 = Math.max(need0, lb); }
+  var pill = body.scrollHeight > need0 + 12 ? Math.round(30 * Math.min(1.4, PREF.text)) + 6 : 0, lim = Math.floor(H * .62), need = chrome + need0 + pill + footH, hh = Math.max(cap, Math.min(lim, need));
+  if (need > lim) {   /* even 62% cannot hold it all: the ending buttons stay whole in the foot and the list scrolls above them, with the instruction's first two lines first */
+    var ins = body.querySelector(".instr"), rs = body.querySelector(".rsup") || lst; if (lst && ins && rs && (rs.compareDocumentPosition(ins) & 4)) { body.insertBefore(ins, body.firstChild); if (!G.instrOpen) { ins.classList.add("clamp2"); ins.setAttribute("title", "Tap to read it all"); } }   /* its first two lines (a tap shows it all), so the list's first button still shows */
+    var lh2 = ins ? (parseFloat(getComputedStyle(ins).lineHeight) || 20 * PREF.text) : 20 * PREF.text, bodyMin = Math.ceil(2 * lh2 + 8 + (lst ? 50 * Math.min(1.4, PREF.text) : 0)), roomF = lim - chrome - bodyMin - Math.round(30 * Math.min(1.4, PREF.text)) - 6;
+    if (ft && footH > roomF) { ft.style.maxHeight = Math.max(52, roomF) + "px"; ft.classList.add("fscroll"); } else if (ft) ft.style.maxHeight = "";   /* only a foot taller than the rest of the panel scrolls (with its amber edge) */
+    hh = lim; }
+  else if (ft) ft.style.maxHeight = "";
+  el.dataset.grown = hh > cap ? "1" : ""; el.style.height = el.style.maxHeight = hh + "px"; }
 /* v0.21 (craft notes): no sliced lines. A scrolling box that has more than it shows is trimmed so its last visible line of text (or row, chip
    or button) is whole; the "More" pill sits in the space below it. Measured when the box is drawn, at its top. */
 function unslice(sc, reserve) {
@@ -1124,7 +1141,7 @@ function autoStep() {
   while (q.ids.length) { var i = optFor(q.ids.shift()); if (i >= 0) return choose(i); }
   G.autoQ = null; choose(finalOpt());
 }
-$("prompt").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; if (b.id === "hitsAll") { G.hitsAll = !G.hitsAll; return render(); } if (b.id === "wdT") { G.wdOpen = !G.wdOpen; return render(); } if (b.id === "mAll") return readyAll(); if (b.id === "mGo") multiGo(); if (b.id === "mClr") { G.multi = null; handKey = ""; render(); } });
+$("prompt").addEventListener("click", function (e) { var ci = e.target.closest && e.target.closest(".instr.clamp2, .instr.cl-open"); if (ci && !e.target.closest("button")) { G.instrOpen = !G.instrOpen; ci.classList.toggle("clamp2", !G.instrOpen); ci.classList.toggle("cl-open", G.instrOpen); return; } var b = e.target.closest("button"); if (!b) return; if (b.id === "hitsAll") { G.hitsAll = !G.hitsAll; return render(); } if (b.id === "wdT") { G.wdOpen = !G.wdOpen; return render(); } if (b.id === "mAll") return readyAll(); if (b.id === "mGo") multiGo(); if (b.id === "mClr") { G.multi = null; handKey = ""; render(); } });
 
 /* ================= drag and drop: hand to table or Mission Track; your card to a target; the marker along the route ================= */
 var drag = null, dragged = false;
@@ -1420,7 +1437,7 @@ function choose(i, sure) {
   if (co && !coachReady(G.pend)) { G.cpage[G.pend.n] = 99; }
   if (!co && G.tipNow && G.tipNow.key && G.tipNow.n === G.pend.n) tipSeen(G.tipNow.key);
   if (PREF.confirm && !sure && needsConfirm(i)) { G.confirm = { i: i, n: G.pend.n }; SFX.select && SFX.select(); return render(); }
-  G.confirm = null; var n = G.pend.n; G.lastChosen = { i: i, n: n, label: G.pend.options[i], meta: (G.pend.meta || [])[i] || null }; SFX.click(); G.hits = []; G.hitsAll = false; if (G.hgrp) G.hgrp = G.hgrp.own ? null : { cause: G.hgrp.cause, lines: [] };   /* an exchange your choice interrupted (a reaction, a target) keeps its cause for what follows */ closePreview(); closeInspector(true); G.sel = null; G.selT = null; G.pend = null; G.latestPend = null; G.busy = true; handKey = ""; render();
+  G.confirm = null; var n = G.pend.n; G.lastChosen = { i: i, n: n, label: G.pend.options[i], meta: (G.pend.meta || [])[i] || null }; SFX.click(); G.hits = []; G.hitsAll = false; G.instrOpen = false; if (G.hgrp) G.hgrp = G.hgrp.own ? null : { cause: G.hgrp.cause, lines: [] };   /* an exchange your choice interrupted (a reaction, a target) keeps its cause for what follows */ closePreview(); closeInspector(true); G.sel = null; G.selT = null; G.pend = null; G.latestPend = null; G.busy = true; handKey = ""; render();
   api("/play/choose", { i: i, n: n }).then(poll, fail);
 }
 function undo() { if (G.busy) return; G.busy = true; G.sel = null; G.selT = null; G.pend = null; closePreview(); render(); api("/play/undo", {}).then(poll, fail); }
