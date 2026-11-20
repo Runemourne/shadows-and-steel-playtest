@@ -15,7 +15,8 @@ var SS = window.SS, D = SS && SS.op, BASE = "opening/";
 var gateRes, gateP = new Promise(function (r) { gateRes = r; }), menuCb = null;
 var O = { on: false, state: "off", cut: "", sound: false, blocked: false, restarts: 0, loops: 0, exit: "", t: 0, fired: [] };
 window.SSOpening = { gate: function () { return gateP; }, menuShown: function () { if (menuCb) { var f = menuCb; menuCb = null; f(); } }, state: function () { return O; } };
-if (!D || document.getElementById("ss-replay") || !D.PREF.opening || D.reducedMotion()) { O.state = !D ? "no page" : !D.PREF.opening ? "off in Settings" : "skipped: reduced motion"; gateRes(); return; }
+var again = false; try { again = sessionStorage.getItem("ss.opAgain") === "1"; sessionStorage.removeItem("ss.opAgain"); } catch (e) { }   // v0.21 (WP8): About's WATCH THE OPENING plays it once more, even with Settings > Opening off
+if (!D || document.getElementById("ss-replay") || !(D.PREF.opening || again) || D.reducedMotion()) { O.state = !D ? "no page" : !D.PREF.opening ? "off in Settings" : "skipped: reduced motion"; gateRes(); return; }
 
 var G = SS.G, SND = SS.SND, J = null, S3 = null, $ = function (id) { return document.getElementById(id); };
 var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };

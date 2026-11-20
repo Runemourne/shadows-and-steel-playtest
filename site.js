@@ -1,13 +1,13 @@
 // Shadows & Steel: the playtest website (GitHub Pages). Loaded only on the website, before battle.js; the claude.ai page and the
 // Workbench never load it. Two things live here:
-//   window.SS_SITE     where Send notes posts (the project lead's Google Form) and the welcome text. build_site.py stamps BUILD.
+//   window.SS_SITE     where Provide Feedback posts (the project lead's Google Form). build_site.py stamps BUILD. (The welcome text and the playtest notice are in battle.js.)
 //   window.SS_LOCALDB  a stand-in for the claude.ai game store: games, notes and saved replays stay in this browser (IndexedDB).
 // Version 0.1, 15 November 2026 (Shareable Build Brief v0.2, RD-144, RD-150 (6)).
 (function () {
 "use strict";
 var FORM = "1FAIpQLScLoaIfdtlwpAwo2e8hO7lLPttbrRoM4LbSxtEXnTW0DMSyqg";
 window.SS_SITE = {
-  build: "Battlefield v0.20 (playtest website, 2026-11-16) · Basic Training v0.3.4 · cards v0.17.1, decks v0.17.1",
+  build: "Battlefield v0.21 (playtest website, 2026-11-20) · Basic Training v0.3.7 · cards v0.17.1, decks v0.17.1",
   form: {
     action: "https://docs.google.com/forms/d/e/" + FORM + "/formResponse",
     view: "https://docs.google.com/forms/d/e/" + FORM + "/viewform",
@@ -16,8 +16,8 @@ window.SS_SITE = {
     pacing: "entry.1584703091", unbalanced: "entry.842879544", notes: "entry.1329073961", code: "entry.1661233936",
     pages: "0,1"   // the form has two pages since 18 Nov 2026 (page 2 is Game Balance); Google needs this to keep page 2's answers
   },
-  // the answer choices, copied word for word from the form as the project lead edited it on 18 Nov 2026 (a choice that differs from the form voids the whole answer)
-  modeChoices: ["Tutorial (Basic Training or AIT)", "Game against the bot (Skirmish or another single player mode)", "Game against a person"],
+  // the answer choices, copied word for word from the form (a choice that differs from the form is not recorded)
+  modeChoices: ["Tutorial (Basic Training or AIT)", "Game against the bot (Skirmish or another single player mode)", "Game against a person"],   // tutorial first, then the bot, then a person
   fairChoices: ["Well balanced: Game systems felt right. I felt like I had a reasonable chance to win when playing.", "Mixed: most things feel about right. A little bit of swing and a few over/underpowered cards.", "Unbalanced: Felt too swingy, many aspects were over or underpowered, costs were all over the place."],
   unbalancedChoices: ["User Interface (UI) / User Experience (UX)", "Capabilities Cards / Unit Costs", "Effects Cards / Class Abilities", "Damage Output / Scaling", "Resources (Generation and Costs)"],
   ends: {"overall": ["Poor", "Excellent"], "pacing": ["Too Slow", "Too Fast"]},   // the words at each end of the 1 to 5 scales

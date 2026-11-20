@@ -87,7 +87,7 @@ function drawGlance(u, S, o) {
     if (tx + w > 264) { tx = 16; ty += 38; } if (ty > 432) return;
     rr(g, tx, ty, w, 32, 7); g.fillStyle = INK; g.fill(); g.fillStyle = "#f3eedc"; g.fillText(t, tx + 9, ty + 23); tx += w + 6; });
   if (!tags.length && cap) { g.fillStyle = INK2; g.font = "600 15px " + BAR; g.fillText("No special abilities.", 18, ty + 22); }
-  g.fillStyle = INK2; g.font = "600 12px " + BAR; g.textAlign = "center"; g.fillText("Hold to read the whole card", 140, 466); g.textAlign = "left";
+  g.fillStyle = INK2; g.font = "600 12px " + BAR; g.textAlign = "center"; g.fillText("Tap to read the whole card", 140, 466); g.textAlign = "left";
   overlays(g, u, o); return c;
 }
 function overlays(g, u, o) {

@@ -39,11 +39,16 @@ project lead's note); it uses Mission, not the old Operations and Conditions.
 0.17 (16 Nov 2026, Battlefield v0.20, Patch 15): the Supply entry gives the 60/40 payment (the Hub pays its share of each cost,
 the Staging Base the rest; the number comes from the engine's pay_hub); the Lift entry counts THROUGHPUT; new keywords
 THROUGHPUT (FARP) and MAINTENANCE (WRENCH). GRAY ZONE's and STALL's person-only choices need nothing here: they arrive as
-ordinary prompts with plain answers. The engine is unchanged."""
+ordinary prompts with plain answers. The engine is unchanged.
+0.17.1 (19 Nov 2026, Basic Training v0.3.5): the glossary retires "Long shot" (draft entry A: an attack at Tactical or Theater range
+costs 1 more ISR, now said in the Tactical, Theater and ISR entries); adds "Supported" (entry C, worded for the released engine, where
+supporters back attacks only); Close reads "This attack needs Contact" (the Studio Lead's call: Close means in Contact); the SWARM and
+SUSTAIN patterns match only cards that carry those keywords (not MOTE SWARM's HUNTER SWARM, MYRMIDON's SWARM PODS or a SUSTAINMENT heading);
+the drift message says "the project team". No rule changes."""
 import json, random, traceback, os, re
 import merged_engine as E
 
-VERSION = "0.17"
+VERSION = "0.17.3"   # engine v0.17.3 (cards and decks v0.17.1): the trial table limit and withdraw (draft entry AW; off unless a game sets table_cap, withdraw, withdraw_refund). v0.17.2: the person's repair list; a game record with a version before 0.17.2 replays with the rule repair_list 0
 
 # 0.9 (14 Nov 2026): saved replays: Session.replay() and /play/replay (the whole game as frames, packed small).
 # 0.8 (14 Nov 2026, RD-133): one set of cards again. The Theory of Victory decks became cards and decks v0.11 and the
@@ -217,13 +222,13 @@ def glossary(R=None):
          ("FIRE SUPPORT", "FIRE SUPPORT", "As a supporter: the attack gets that much more ATK."),
          ("CROSS-CUE", "CROSS-CUE", "As a supporter: the action costs that much less ISR."),
          ("JAM", "JAM", "As a supporter: the enemy must pay that much ISR to react."),
-         ("SUSTAIN", "SUSTAIN", "As a supporter: after the action, put that much Supply on your Bases."),
+         ("SUSTAIN", "\\bSUSTAIN\\b", "As a supporter: after the action, put that much Supply on your Bases."),
          ("COMMAND", "COMMAND \\d", "Your Span of Control (how many supporters an attack may have) goes up by that much, to at most 3."),
          ("COVER", "COVER", "Reaction: exhaust this card to give the targeted card or Base that much more Survivability against the attack."),
          ("ESCORT", "ESCORT", "Air defense for the Frontline: COVER a Frontline card, or cancel an AIR attack on it."),
          ("GUARD", "GUARD", "Air defense for the Rear Area and Bases: COVER one, or cancel an AIR or ROCKET attack on it."),
          ("CANCEL", "CANCEL|INTERCEPT", "The attack or Effect does nothing. An attack that cannot be canceled ignores a card's cancel; a Reaction card from hand still works."),
-         ("SWARM", "SWARM", "+1 ATK for each other ROBOT or DRONE card you control."),
+         ("SWARM", "· SWARM(?! [A-Z])", "+1 ATK for each other ROBOT or DRONE card you control."),
          ("FLAGSHIP", "FLAGSHIP", "Only one of this card in play per player."),
          ("INFILTRATE", "INFILTRATE", "From your Frontline, pay the mission cost: the card goes onto your Mission Track for its Timer. At H-Hour its mission happens and it returns to your Rear Area exhausted."),
          ("ON STATION", "ON STATION", "Air time: in Sustainment an exhausted AIR card must be paid for to ready, or it returns to base (discarded, no Homefront loss)."),
@@ -239,11 +244,10 @@ def glossary(R=None):
          ("Ready", "\\bREADY\\b|\\bReady\\b", "An exhausted card stands up again. In Sustainment you pay its Ready cost (usually 1 Supply) to ready it."),
          ("Contact", "\\bContact\\b", "Both Force Markers are in the same Zone. Close attacks and the Frontline contest need Contact."),
          ("Force Marker", "Force Marker", "Your piece on the Terrain. It stands in one Zone and moves at Maneuver: 1 Zone toward the enemy, 1 toward home, or it stays. You control your Zone and every Zone behind it."),
-         ("Close", "\\bClose\\b", "A Close attack reaches only in Contact."),
-         ("Tactical", "\\bTactical\\b", "A Tactical attack has a range of 0 to %d Zones: it reaches when the Force Markers are %d Zones apart or less." % (R.get("tac_reach", 3), R.get("tac_reach", 3))),
-         ("Theater", "\\bTheater\\b", "A Theater attack reaches any distance."),
-         ("Long shot", "\\bTactical\\b|\\bTheater\\b|long shot", "Any attack that is not Close (Tactical or Theater) is a long shot: it costs %d more ISR, for the targeting data needed at a distance." % R.get("ranged_isr", 1)),
-         ("ISR", "\\bISR\\b", "Intelligence, surveillance and reconnaissance: what your force knows about the enemy. An attack spends ISR to find its target (the target's Concealment, plus 1 for a long shot). You start with %d, gain %d each Sustainment (%d more when the enemy has at least 2 more face-up Capabilities than you), and hold at most %d. Some cards and events give more; a devastated Base gives its owner 3." % (R.get("isr0", 4), R.get("isr_income", 2), 1, R.get("isr_cap", 10))),
+         ("Close", "\\bClose\\b", "This attack needs Contact (both Force Markers in the same Zone)."),
+         ("Tactical", "\\bTactical\\b", "A Tactical attack has a range of 0 to %d Zones: it reaches when the Force Markers are %d Zones apart or less. An attack at Tactical or Theater range costs %d more ISR." % (R.get("tac_reach", 3), R.get("tac_reach", 3), R.get("ranged_isr", 1))),
+         ("Theater", "\\bTheater\\b", "A Theater attack reaches any distance. An attack at Tactical or Theater range costs %d more ISR." % R.get("ranged_isr", 1)),
+         ("ISR", "\\bISR\\b", "Intelligence, surveillance and reconnaissance: what your force knows about the enemy. An attack spends ISR to find its target: the target's Concealment, and %d more for an attack at Tactical or Theater range. You start with %d, gain %d each Sustainment (%d more when the enemy has at least 2 more face-up Capabilities than you), and hold at most %d. Some cards and events give more; a devastated Base gives its owner 3." % (R.get("ranged_isr", 1), R.get("isr0", 4), R.get("isr_income", 2), 1, R.get("isr_cap", 10))),
          ("Supply", "\\bSupply\\b", "Pays to deploy, ready and repair cards. It sits on your Bases, and each Base restocks its own Supply each Sustainment, up to what it can hold. When you pay, the Hub pays %d%% of the cost, rounded down (so a cost of 3 takes %d from the Hub and %d from the Staging Base), and the Staging Base pays the rest; if a Base runs short, the other Base covers it. The table shows each Base's share as it pays." % (R.get("pay_hub", 40), 3 * R.get("pay_hub", 40) // 100, 3 - 3 * R.get("pay_hub", 40) // 100) if R.get("pay_hub") else "Pays to deploy, ready and repair cards. It sits on your Bases, and each Base restocks its own Supply each Sustainment, up to what it can hold. When you pay, the Supply comes from the Base holding the most."),
          ("Lift", "\\bLift\\b", "How many cards you can deploy or upgrade this round: 2 for each Base, 1 for a devastated Base, plus any THROUGHPUT."),
          ("Hidden", "\\bHidden\\b|face down", "A face-down card. Attacking it costs %d extra ISR; a Hidden Effect is a decoy and is discarded when revealed." % R.get("hidden_isr", 2)),
@@ -251,6 +255,7 @@ def glossary(R=None):
          ("H-Hour", "H-Hour", "When a Mission Track card reaches H-Hour it resolves; nobody may react to it."),
          ("Frontline", "\\bFrontline\\b", "Your front row, at most %d cards. It shields your Rear Area and Bases and decides the Frontline contest." % R.get("front_limit", 4)),
          ("Rear Area", "Rear Area", "Your back row. The enemy can hit it only when your Frontline is empty, or with DEEP FIRES, FLANK or a spotlight."),
+         ("Supported", "\\b[Ss]upported\\b", "An attack that another of your cards is helping. A ready card with a SUPPORT line can be exhausted to back one attack, which then gets that line's bonus (for example, +2 ATK, or 2 less ISR). Each supporter must differ in Class from the attacker and from the other supporters, and your Span of Control limits how many. In this version only attacks can be supported."),
          ("Span of Control", "Span of Control", "How many supporters one attack may have: 1, plus your COMMAND numbers, at most %d." % R.get("span_max", 3)),
          ("Survivability", "Survivability|\\bSurv\\b", "Taken off each attack's ATK before damage."),
          ("Concealment", "Concealment", "The ISR the enemy pays to target this card."),
@@ -382,7 +387,7 @@ class Coach:
         st = self.steps[self.i]
         if st.get("kind") != kind or (st.get("round") and st["round"] != g.round):
             self.drift.append("step %d expects %s in round %s; the game asks %s in round %d" % (self.i + 1, st.get("kind"), st.get("round", "any"), kind, g.round))
-            return dict(allow=None, auto=None, coach=dict(n=self.i, of=len(self.steps), drift=True, title="Your call", pages=[], do="Choose any option. (The lesson script and the game have drifted apart: please tell the project lead.)"))
+            return dict(allow=None, auto=None, coach=dict(n=self.i, of=len(self.steps), drift=True, title="Your call", pages=[], do="Choose any option. (The lesson script and the game have drifted apart: please tell the project team.)"))
         al = self.match(g, st, labels, meta)
         if not al:
             self.drift.append("step %d (%s, round %d): no option matches %s" % (self.i + 1, kind, g.round, {k: st[k] for k in ("card", "dst", "label") if k in st}))
@@ -453,7 +458,7 @@ class Session:
         terr = [t for t, v in E.TERRAIN.items() if v["box"] in {key(x) for x in bx}]
         self.terrain = b.get("terrain") if b.get("terrain") in E.TERRAIN else rng.choice(terr)
         self.first = {"you": 0, "bot": 1}.get(b.get("first"), rng.randrange(2))
-        self.rules = {k: int(b[k]) for k in ("hf", "hand", "concepts", "forced_discard", "instant_end") if str(b.get(k) or "").strip()}
+        self.rules = {k: int(b[k]) for k in ("hf", "hand", "concepts", "forced_discard", "instant_end", "repair_list", "table_cap", "withdraw", "withdraw_refund", "withdraw_fix") if str(b.get(k) or "").strip()}
         if b.get("tutorial"): self.rules.update({k: int(v) for k, v in (b.get("rules") or {}).items()})
         self.spectate = str(b.get("spectate") or "") in ("1", "true", "True")   # watch the bot play both sides
         self.names = ([you, bot] if you != bot else [you + " (south)", bot + " (north)"]) if self.spectate else ["You", "The bot"]

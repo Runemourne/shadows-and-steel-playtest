@@ -10,9 +10,9 @@ SPEARHEAD,Crimson Reign,Main Force,MYRMIDON,1
 SPEARHEAD,Crimson Reign,Main Force,WARLORD,1
 SPEARHEAD,Crimson Reign,Main Force,RIPCORD,2
 SPEARHEAD,Crimson Reign,Main Force,NIGHT TALON,2
-SPEARHEAD,Crimson Reign,Main Force,FARP,2
+SPEARHEAD,Crimson Reign,Main Force,ARMING STATION,2
 SPEARHEAD,Crimson Reign,Main Force,RED BALL,1
-SPEARHEAD,Crimson Reign,Main Force,TRIBUNE HQ,1
+SPEARHEAD,Crimson Reign,Main Force,LONGKNIFE HQ,1
 SPEARHEAD,Crimson Reign,Main Force,BREAKTHROUGH,3
 SPEARHEAD,Crimson Reign,Main Force,MOVEMENT TO CONTACT,1
 SPEARHEAD,Crimson Reign,Main Force,SEAD STRIKE,1
@@ -43,8 +43,8 @@ BULWARK,Stormwatch,Main Force,MYRMIDON,2
 BULWARK,Stormwatch,Main Force,DRUMFIRE,2
 BULWARK,Stormwatch,Main Force,SUNLANCE,1
 BULWARK,Stormwatch,Main Force,CITADEL,1
-BULWARK,Stormwatch,Main Force,FARP,1
-BULWARK,Stormwatch,Main Force,TRIBUNE HQ,1
+BULWARK,Stormwatch,Main Force,ARMING STATION,1
+BULWARK,Stormwatch,Main Force,LONGKNIFE HQ,1
 BULWARK,Stormwatch,Main Force,HARD KILL,1
 BULWARK,Stormwatch,Main Force,ORBITAL DROP,1
 BULWARK,Stormwatch,Main Force,COUNTERATTACK,2
@@ -65,9 +65,9 @@ KILL CHAIN,Crimson Reign,Main Force,BLACK FALCON,1
 KILL CHAIN,Crimson Reign,Main Force,HIGH WATCH,2
 KILL CHAIN,Crimson Reign,Main Force,MOTE SWARM,1
 KILL CHAIN,Crimson Reign,Main Force,VELITES,1
-KILL CHAIN,Crimson Reign,Main Force,KILL WEB,1
+KILL CHAIN,Crimson Reign,Main Force,PROSECUTOR,1
 KILL CHAIN,Crimson Reign,Main Force,RED BALL,1
-KILL CHAIN,Crimson Reign,Main Force,TRIBUNE HQ,1
+KILL CHAIN,Crimson Reign,Main Force,LONGKNIFE HQ,1
 KILL CHAIN,Crimson Reign,Main Force,GLIDE STRIKE,1
 KILL CHAIN,Crimson Reign,Main Force,CONVERGENCE,1
 KILL CHAIN,Crimson Reign,Main Force,MARITIME STRIKE,1
@@ -87,7 +87,7 @@ SPECTRUM,Stormwatch,Main Force,WAR WEARINESS,1
 SPECTRUM,Stormwatch,Main Force,LISTENING POST,1
 SPECTRUM,Stormwatch,Main Force,SYSTEMS CASCADE,1
 BULWARK,Stormwatch,Main Force,WRENCH,1
-SPECTRUM,Stormwatch,Main Force,TRIBUNE HQ,1
+SPECTRUM,Stormwatch,Main Force,LONGKNIFE HQ,1
 SPECTRUM,Stormwatch,Main Force,TACTICAL WITHDRAWAL,1
 SPECTRUM,Stormwatch,Main Force,GRAY ZONE,1
 SPECTRUM,Stormwatch,Main Force,STALL,1
