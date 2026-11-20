@@ -7,6 +7,10 @@ Rule settings are the RULES dictionary below.
 14 Nov 2026 (Battlefield v0.15, RD-142 (1)): where a card's printed text leaves a choice to the player, a person now chooses
 (WRAITH INJECT, THE SILENT FALSE PICTURE and PARALYSIS, KILL WEB STRIKE PACKAGE, GREY KITE SCAN, ORACLE SPOOF, RELAY RETRANSMIT).
 All behind is_human(); the bot and the simulations are unchanged (merged_engine_v0.15.py is the rollback).
+20 Nov 2026 (engine v0.17.4, draft entry AN.4; a name only, no rules change): the waiting Effect subtype is called Plan (was Operation):
+an Order happens now, a Plan waits on the Mission Track and then happens at H-Hour, a Condition works while it waits. Cards v0.17.2 print
+Plan. A card file that still says Operation (v0.17.1 and older, test files, old records) is read as Plan, so it plays exactly as before.
+The word a player sees changes in three places: "Discard X (Plan)", the DISRUPT keyword text and the SPECTRUM deck-building goal.
 19 Nov 2026 (engine v0.17.3, draft entry AW with the rules audit's fixes; trial switches, all OFF by default, so the game is unchanged):
 table_cap n = at most n cards on a player's table (Frontline plus Rear Area, face-down cards and decoys included; not Bases or the Mission
 Track). At the limit no deployment is offered (upgrades are); a card an effect would bring onto the table goes to its owner's hand instead
@@ -49,11 +53,11 @@ CONCEPTS = {
     "KILL CHAIN": dict(box="Shadow", isr=1, text="SENSOR TO SHOOTER. Start with 1 more ISR. Once a round, a Fires attack supported by an Intelligence card costs 0 ISR and ignores 1 more Survivability.",
                        criteria=[("8 or more Fires cards", lambda d: sum(c.cls == "FIRES" for c in d) >= 8), ("4 or more Intelligence cards", lambda d: sum(c.cls == "INTEL" for c in d) >= 4), ("3 or more cards with HOLD", lambda d: sum("HOLD" in c.keys for c in d) >= 3)]),
     "SPECTRUM": dict(box="Shadow", isr=1, text="DECISION ADVANTAGE. Start with 1 more ISR. At Assessment, if you have 3 or more ISR more than the enemy, the enemy loses 1 Homefront (2 if it has no ISR).",
-                     criteria=[("8 or more Information cards", lambda d: sum(c.cls == "INFO" for c in d) >= 8), ("4 or more Intelligence cards", lambda d: sum(c.cls == "INTEL" for c in d) >= 4), ("3 or more Operations or Conditions", lambda d: sum(c.sub in ("Operation", "Condition") for c in d) >= 3)])}
+                     criteria=[("8 or more Information cards", lambda d: sum(c.cls == "INFO" for c in d) >= 8), ("4 or more Intelligence cards", lambda d: sum(c.cls == "INTEL" for c in d) >= 4), ("3 or more Plans or Conditions", lambda d: sum(c.sub in ("Plan", "Condition") for c in d) >= 3)])}
 # keyword list for the Workbench: word -> (when, how it is typed, what it does)
 ABILITY_TEXT = {
     "HOLD": ("Frontline", "HOLD {n}", "Counts as {n} for Frontline Strength."), "ROUT": ("Contact", "ROUT", "If you win the Frontline contest, the enemy retreats 1 more Zone."),
-    "SEIZE": ("Frontline", "SEIZE", "Your Force Marker may advance 1 extra Zone."), "OVERRUN": ("Contact", "OVERRUN", "When this card's attack destroys a Frontline card, ready this card (once a round)."), "UPGRADE_ONLY": ("Deploy", "FLAGSHIP", "Enters play only as an upgrade of a card in play (pay the difference)."), "INF_HIT": ("Infiltrate", "INFILTRATE: DIRECT ACTION {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour deal {n} damage to an enemy LAND card anywhere, then return to the Rear Area exhausted."), "INF_INTEL": ("Infiltrate", "INFILTRATE: SPECIAL RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain {n} ISR and draw 1, then return to the Rear Area exhausted."), "INF_REVEAL": ("Infiltrate", "INFILTRATE: COUNTER-RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain 2 ISR and reveal up to {n} Hidden enemy cards, then return to the Rear Area exhausted."), "A_RIPOSTE": ("Action", "RIPOSTE {n}", "Deal {n} damage to each Exhausted enemy Frontline card."), "DISRUPT": ("Infiltrate", "DISRUPT {n}", "At H-Hour, also cancel {n} enemy Mission Track card(s): Conditions first, then Operations, then Operators. Canceled cards go to their owner's discard pile."), "FLAGSHIP": ("Deploy", "FLAGSHIP", "Only one of this card in play per player."), "A_FLIP": ("Action", "FALSE PICTURE {n}", "Flip up to {n} of your other cards face down; revealing them again costs nothing."), "A_STRIKEPKG": ("Action", "STRIKE PACKAGE {n}", "Ready up to {n} of your FIRES cards."), "SHOOTER": ("Ability", "SENSOR-TO-SHOOTER {n}", "Your FIRES attacks cost {n} less ISR."), "RETARGET": ("Ability", "RE-ATTACK", "When your FIRES attack destroys a card or damages a Base, ready that card (once a round each)."), "RIPOSTE": ("Reaction", "RIPOSTE {n}", "When an enemy unit attacks your Frontline, deal {n} damage to it."), "IMMOVABLE": ("Frontline", "IMMOVABLE", "While in your Frontline, your Force Marker is pushed back at most 1 Zone."), "RAMPAGE": ("Contact", "BREAKTHROUGH ASSAULT", "Each time this card's attack destroys a card, ready this card."),
+    "SEIZE": ("Frontline", "SEIZE", "Your Force Marker may advance 1 extra Zone."), "OVERRUN": ("Contact", "OVERRUN", "When this card's attack destroys a Frontline card, ready this card (once a round)."), "UPGRADE_ONLY": ("Deploy", "FLAGSHIP", "Enters play only as an upgrade of a card in play (pay the difference)."), "INF_HIT": ("Infiltrate", "INFILTRATE: DIRECT ACTION {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour deal {n} damage to an enemy LAND card anywhere, then return to the Rear Area exhausted."), "INF_INTEL": ("Infiltrate", "INFILTRATE: SPECIAL RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain {n} ISR and draw 1, then return to the Rear Area exhausted."), "INF_REVEAL": ("Infiltrate", "INFILTRATE: COUNTER-RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain 2 ISR and reveal up to {n} Hidden enemy cards, then return to the Rear Area exhausted."), "A_RIPOSTE": ("Action", "RIPOSTE {n}", "Deal {n} damage to each Exhausted enemy Frontline card."), "DISRUPT": ("Infiltrate", "DISRUPT {n}", "At H-Hour, also cancel {n} enemy Mission Track card(s): Conditions first, then Plans, then Operators. Canceled cards go to their owner's discard pile."), "FLAGSHIP": ("Deploy", "FLAGSHIP", "Only one of this card in play per player."), "A_FLIP": ("Action", "FALSE PICTURE {n}", "Flip up to {n} of your other cards face down; revealing them again costs nothing."), "A_STRIKEPKG": ("Action", "STRIKE PACKAGE {n}", "Ready up to {n} of your FIRES cards."), "SHOOTER": ("Ability", "SENSOR-TO-SHOOTER {n}", "Your FIRES attacks cost {n} less ISR."), "RETARGET": ("Ability", "RE-ATTACK", "When your FIRES attack destroys a card or damages a Base, ready that card (once a round each)."), "RIPOSTE": ("Reaction", "RIPOSTE {n}", "When an enemy unit attacks your Frontline, deal {n} damage to it."), "IMMOVABLE": ("Frontline", "IMMOVABLE", "While in your Frontline, your Force Marker is pushed back at most 1 Zone."), "RAMPAGE": ("Contact", "BREAKTHROUGH ASSAULT", "Each time this card's attack destroys a card, ready this card."),
     "HIJACK_ATK": ("Attack", "HIJACK", "Take control of 1 enemy DRONE or ROBOT, even if it is exhausted, and attack with its ATK. Then exhaust it."),
     "SPOT_ISR": ("Action", "SPOTLIGHT +{n} ISR", "SPOTLIGHT also gains {n} ISR."),
     "LIFT": ("Ability", "THROUGHPUT {n}", "You get +{n} Lift each Command phase."),
@@ -105,6 +109,7 @@ class Card:
     def __init__(s, r):
         g = lambda k, d=0: int(float(r.get(k) or d))
         s.id, s.name, s.type, s.cls, s.gen, s.sub = r["ID"], r["Name"].strip().upper(), r["Type"], r["Class"], r["Gen"], (r.get("Subtype") or "").title()
+        if s.sub == "Operation": s.sub = "Plan"   # v0.17.4 (AN.4): the subtype is called Plan; a card file that still says Operation is read as Plan
         s.tags = set((r.get("Tags") or "").upper().split()); s.cost, s.ready, s.isr, s.timer = g("Cost"), g("Ready", 1), g("ISR"), g("Timer")
         s.conc, s.surv, s.dur, s.atk, s.hf = g("Conc"), g("Surv"), g("Dur"), g("ATK"), g("HF")
         s.range, s.targets, s.req = r.get("Range") or "", r.get("Targets") or "", (r.get("Req") or "").upper().split()
@@ -223,7 +228,7 @@ class Game:
         else: s.say("%s: %s looks at the top of %s's Main Force." % (src, s.who(p), s.who(o)))
         s.ev(p, "COMPROMISED %d" % len(out)); return len(out)
     def spoof_orders(s, p, c):
-        """SPOOFED ORDERS (reaction): when p plays an Operation or a Pulse, the enemy may cancel it unless p pays 2 ISR. ADVANTAGE: p cannot pay. True if canceled."""
+        """SPOOFED ORDERS (reaction): when p plays a Plan or a Pulse, the enemy may cancel it unless p pays 2 ISR. ADVANTAGE: p cannot pay. True if canceled."""
         d = s.opp(p); r = next((x for x in d.hand if "R_SPOOFORD" in x.keys and d.sup() >= x.cost and d.isr >= x.isr), None)
         if not r: return False
         n = r.keys["R_SPOOFORD"]
@@ -352,7 +357,7 @@ class Game:
     def track_threat(s, o):   # how much the enemy's Mission Track is worth disrupting (bot)
         return sum(1.6 if t["kind"] == "cond" else (1.2 if t["kind"] == "op" else 0.9) for t in o.track)
     def cancel_track(s, o, src):
-        """DISRUPT: cancel 1 enemy Mission Track card (Conditions first, then Operations, then Operators); it goes to its owner's discard pile."""
+        """DISRUPT: cancel 1 enemy Mission Track card (Conditions first, then Plans, then Operators); it goes to its owner's discard pile."""
         if not o.track: return
         t = max(o.track, key=lambda t: ({"cond": 3, "op": 2}.get(t["kind"], 1), -t["t"])); o.track.remove(t); o.discard.append(t["c"])
         s.say(src, "cancels", s.who(o) + "'s", t["c"].name, "on the Mission Track.")
@@ -736,20 +741,20 @@ class Game:
         opts = []
         for c in dict.fromkeys(p.hand):
             if c.cap or c.sub == "Reaction" or p.sup() < c.cost + (int(c.req[-1]) if c.req[:1] == ["PULSE"] else 0) * 0 or p.isr < c.isr or not s.req_ok(p, c): continue
-            if c.sub in ("Operation", "Condition") and any(t["c"].name == c.name for t in p.track): continue
+            if c.sub in ("Plan", "Condition") and any(t["c"].name == c.name for t in p.track): continue
             v = s.effect_value(p, c)
             if v < 0 and not s.is_human(p): continue
             verb = "Play" if c.sub == "Order" else "Start"
-            opts.append((v - 0.25 * c.cost - 0.2 * c.isr, "%s %s (%s%s): %s" % (verb, c.name, c.cost_text(), ", waits %d round%s" % (c.timer, "s" if c.timer > 1 else "") if c.sub == "Operation" else (", lasts %d rounds" % c.timer if c.sub == "Condition" else ""), c.l[0]), ("effect", c)))
+            opts.append((v - 0.25 * c.cost - 0.2 * c.isr, "%s %s (%s%s): %s" % (verb, c.name, c.cost_text(), ", waits %d round%s" % (c.timer, "s" if c.timer > 1 else "") if c.sub == "Plan" else (", lasts %d rounds" % c.timer if c.sub == "Condition" else ""), c.l[0]), ("effect", c)))
         return opts
     def play_effect(s, p, c):
         o = s.opp(p); s.pay(p, c.cost); p.isr -= c.isr; p.hand.remove(c); s.stats["effects"] += 1
         if c.req[:1] == ["PULSE"]:
             b = next(b for b in p.bases if not b.dev and not b.ex and (set(c.req[1:-1]) & set(b.t()["access"]))); b.ex = True; s.say(s.who(p), "fires a Joint Pulse from", b.name + ".")
         s.ev(p, next(iter(c.keys)))
-        if (c.sub == "Operation" or c.req[:1] == ["PULSE"]) and s.spoof_orders(p, c): (p.ash if c.expend else p.discard).append(c); return
-        if c.sub in ("Operation", "Condition"):
-            p.track.append(dict(c=c, t=c.timer, kind="op" if c.sub == "Operation" else "cond")); s.say(s.who(p), "puts", c.name, "on the Mission Track (%d round%s)." % (c.timer, "s" if c.timer > 1 else "")); return
+        if (c.sub == "Plan" or c.req[:1] == ["PULSE"]) and s.spoof_orders(p, c): (p.ash if c.expend else p.discard).append(c); return
+        if c.sub in ("Plan", "Condition"):
+            p.track.append(dict(c=c, t=c.timer, kind="op" if c.sub == "Plan" else "cond")); s.say(s.who(p), "puts", c.name, "on the Mission Track (%d round%s)." % (c.timer, "s" if c.timer > 1 else "")); return
         s.say(s.who(p), "plays", c.name + ".")
         r = s.react(p, o, dict(kind="effect", unit=None, target=None, air=bool(c.tags & {"AIR", "MISSILE", "DRONE"}), ranged=True, threat=s.effect_value(p, c), text="%s plays %s: %s" % (s.who(p), c.name, c.l[0])))
         if r["cancel"]: s.say(c.name, "is canceled.")

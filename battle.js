@@ -672,8 +672,10 @@ function panelFit(el) { if (!el || isDesk()) return; var cap = +el.dataset.cap; 
     var ins = body.querySelector(".instr"), rs = body.querySelector(".rsup") || lst; if (lst && ins && rs && (rs.compareDocumentPosition(ins) & 4)) body.insertBefore(ins, body.firstChild);
     if (ins && !G.instrOpen) { ins.classList.add("clamp2"); ins.setAttribute("title", "Tap to read it all"); }   /* its first two lines (a tap shows it all), so the list's first button and every choice still show */
     var lh2 = ins ? (parseFloat(getComputedStyle(ins).lineHeight) || 20 * PREF.text) : 20 * PREF.text, insEnd = ins ? Math.ceil(q(ins).bottom - q(body).top + body.scrollTop) : 0, more2 = body.scrollHeight > insEnd + 12,
-      bodyMin = Math.ceil(2 * lh2 + 8 + (lst ? 50 * Math.min(1.4, PREF.text) : 0)), roomF = lim - chrome - bodyMin - (more2 ? Math.round(30 * Math.min(1.4, PREF.text)) + 6 : 0);   /* the More cue's row only when text or a list follows the instruction */
-    if (ft && footH > roomF) { ft.style.maxHeight = Math.max(52, roomF) + "px"; ft.classList.add("fscroll"); } else if (ft) ft.style.maxHeight = "";   /* only a foot taller than the rest of the panel scrolls (with its amber edge) */
+      lhd = lst ? (body.querySelector(".wdh") || body.querySelector(".rsup") || lst) : null, fb = lst ? lst.querySelector("button") : null, listMin = lhd && fb ? Math.ceil(q(fb).bottom - q(lhd).top) + 6 : 0,   /* the list's heading (with the Withdraw list's HIDE) and its first button */
+      bodyMin = Math.ceil(2 * lh2 + 8 + listMin), roomF = lim - chrome - bodyMin - (more2 ? Math.round(30 * Math.min(1.4, PREF.text)) + 6 : 0);   /* the More cue's row only when text or a list follows the instruction */
+    var roomF2 = lim - chrome - Math.ceil(2 * lh2 + 8) - (more2 ? Math.round(30 * Math.min(1.4, PREF.text)) + 6 : 0);   /* the ending buttons come before the list's first button: if both cannot show, the list scrolls and the foot stays whole */
+    if (ft && footH > roomF2) { ft.style.maxHeight = Math.max(52, roomF2) + "px"; ft.classList.add("fscroll"); } else if (ft) ft.style.maxHeight = "";   /* only a foot taller than the rest of the panel scrolls (with its amber edge) */
     hh = lim; }
   else if (ft) ft.style.maxHeight = "";
   if (open) hh = Math.min(hh, lim);   /* with the hand open the panel never rises over the top band, even below its usual height */
@@ -735,12 +737,12 @@ function inspRules(u, o) {
   var f = Object.assign({}, (G.faces || {})[u.name] || {}, u), h = "", tm = +f.timer || 0;
   if (!f.lines && !f.cls) return '<p class="zl">' + esc(u.name || "") + "</p>";
   var cap = isCap(f);
-  var subW = f.sub === "Operation" ? "Mission" : f.sub;   // v0.21 (Council M7): the word the card's type line prints (MISSION); the name itself is the lead's call
+  var subW = planWord(f.sub), realSub = planWord(((G.faces || {})[u.name] || {}).sub || f.sub);   // next update (draft entry AN.4): the waiting Effect kind is called Plan (was Operation; this line said Mission). realSub is the card's own kind, which a card read from the Mission Track needs: there f.sub is the heading "Mission Track"
   h += '<p class="zk">' + esc([cap ? "Capability" : (subW || f.kind || "Effect"), f.cls, f.gen ? "Generation " + f.gen : "", cap ? (f.costn != null ? "Deploy: " + f.costn + " Supply" : f.cost) : (f.cost ? "Cost: " + f.cost : "")].filter(Boolean).join(" · ")) + "</p>";
   var stats = "";
   if (cap) { var chip = function (k, v, t) { return '<span title="' + t + '"><i>' + k + "</i><b>" + v + "</b></span>"; };   // v0.21 (craft pass): a tidy stat row under the rules, not a run-on line
     stats = '<div class="zstats" role="list" aria-label="Numbers">' + (f.atkn ? chip("ATK", f.atkn + (f.range ? " <small>" + esc(f.range) + "</small>" : ""), "Attack") : "") + chip("SURV", f.surv, "Survivability") + chip("DUR", f.dmg ? Math.max(0, f.dur - f.dmg) + "/" + f.dur : f.dur, "Durability") + chip("CONC", f.conc, "Concealment") + chip("READY", f.ready, "Ready cost") + chip("HF", f.hf, "Homefront loss") + "</div>"; }
-  else h += '<p class="zs2">' + esc(f.sub === "Reaction" ? "Reaction: played when its trigger happens; it goes to the Mission Track and happens at once." : tm > 0 ? (f.sub === "Condition" ? "Condition: lasts " + tm + " round" + (tm === 1 ? "" : "s") + " on the Mission Track." : "Mission: waits " + tm + " round" + (tm === 1 ? "" : "s") + " on the Mission Track, then acts at H-Hour.") : "Order: lands on the Mission Track at H-Hour and happens at once.") + "</p>";
+  else h += '<p class="zs2">' + esc(realSub === "Reaction" ? "Reaction: played when its trigger happens; it goes to the Mission Track and happens at once." : tm > 0 ? (realSub === "Condition" ? "Condition: lasts " + tm + " round" + (tm === 1 ? "" : "s") + " on the Mission Track." : (realSub === "Plan" ? "Plan" : "Mission") + ": waits " + tm + " round" + (tm === 1 ? "" : "s") + " on the Mission Track, then acts at H-Hour.") : "Order: lands on the Mission Track at H-Hour and happens at once.") + "</p>";
   h += (f.lines || []).map(function (l) { return '<p class="zl">' + inspHead(l) + "</p>"; }).join("") + stats;
   if (f.upfrom) h += '<p class="zl"><b>Upgrades from</b> ' + esc(f.upfrom) + "</p>";
   if (f.tags) h += '<p class="zt2">Tags: ' + esc(String(f.tags).split(/\s+/).filter(Boolean).join(", ")) + "</p>";
@@ -1092,6 +1094,7 @@ $("prompt").onclick = function (e) {
   if (b.id === "cPlay") { SET.mode = "bot"; return quit(true); }
   if (b.id === "tipX" && G.tipNow && G.tipNow.key) { tipSeen(G.tipNow.key); G.tipNow = { key: null, n: G.tipNow.n }; return render(); }   /* one tip a prompt: the next waits for the next prompt */
 };
+function planWord(s) { return s === "Operation" ? "Plan" : s; }   // next update (AN.4): a card file or a saved replay made before cards v0.17.2 still says Operation, and it is shown as Plan. An Operator read from the Mission Track keeps "Mission: waits", meaning its own mission
 $("mtrack").onclick = function (e) { var c = e.target.closest("[data-tr]"); if (!c || !G.view) return; var t = (c.dataset.own === "1" ? G.view.you : G.view.bot).track[+c.dataset.tr]; if (!t) return;
   zoom({ name: t.name, cls: t.cls, id: t.id, cap: false, gen: "", sub: t.kind === "inf" ? "Operator" : "Mission Track", lines: String(t.text).split(" / ") }, { caption: (c.dataset.own === "1" ? "Yours. " : "The enemy's. ") + (t.space <= 0 ? "Resolves at H-Hour." : t.space + " round" + (t.space === 1 ? "" : "s") + " to H-Hour.") }); };
 
@@ -1179,11 +1182,11 @@ addEventListener("keydown", function () { if (touchN || multiT) touchReset(); },
 function infOpt(uid) { var M = maps(), l = M.src[uid] || []; for (var k = 0; k < l.length; k++) if (/to infiltrate/.test(G.pend.options[l[k]])) return l[k]; return -1; }   /* an Operator's INFILTRATE option */
 function ghostAt(x, y, type) { var g = $("dragGhost"); g.style.left = x + "px"; g.style.top = (type === "touch" ? y - SSInput.LIFT : y) + "px"; }   // v0.21: on touch the card rides above the finger
 /* v0.21 (rules audit, drag hint): whether an option goes to the Mission Track is decided from the option's data, never from its wording.
-   Orders and Missions are tagged "effect" by the engine; a Reaction card played from the hand is tagged "react" (it goes to the Mission
+   Orders, Plans and Conditions are tagged "effect" by the engine; a Reaction card played from the hand is tagged "react" (it goes to the Mission
    Track and happens at once: Decision Register draft entry H). A Reaction by a card on the table (cover, intercept) is not a track play. */
 function trackOpt(i) { var m = ((G.pend && G.pend.meta) || [])[i] || {}; return m.t === "effect" || (m.t === "react" && !!m.card); }
 function trackOpts(list) { return (list || []).filter(trackOpt); }
-function trackHint(c) {   // what letting go over the Mission Track will do, from the card's own timer (Missions wait; Orders and Reactions happen now)
+function trackHint(c) {   // what letting go over the Mission Track will do, from the card's own timer (Plans and Conditions wait; Orders and Reactions happen now)
   var f = (G.faces || {})[c.name] || c, tm = +f.timer || 0;
   return "Let go: to the Mission Track · " + (tm > 0 && f.sub !== "Reaction" ? tm + " round" + (tm === 1 ? "" : "s") + " to H-Hour" : "H-Hour: happens now");
 }
@@ -1407,7 +1410,7 @@ var TIPS = [
   ["action", function (p) { return p.kind === "action"; }, "Operations: you and the enemy take turns, one action each. Tap a glowing card to act. Two passes in a row end the phase."],
   ["contact", function (p, v) { return v && v.contact && (p.kind === "action" || p.kind === "maneuver"); }, "In Contact: Close attacks can reach, and at Assessment the higher Frontline Strength wins the contest. The loser falls back and loses 1 Homefront."],
   ["operator", function (p) { return p.kind === "action" && p.options.some(function (o) { return /to infiltrate/.test(o); }); }, "Operators reach the Mission Track one way: from your Frontline, in Operations, by their INFILTRATE line (1 ISR). They act at H-Hour, then return to your Rear Area."],
-  ["effect", function (p) { return p.kind === "action" && (p.meta || []).some(function (m) { return m && m.t === "effect"; }); }, "Effect cards all go to the Mission Track. An Order lands at H-Hour and happens right away; a Mission waits on the track and acts when it reaches H-Hour. Drag a card onto the Mission Track, or tap it and choose Play to Mission Track."],
+  ["effect", function (p) { return p.kind === "action" && (p.meta || []).some(function (m) { return m && m.t === "effect"; }); }, "Effect cards all go to the Mission Track. An Order lands at H-Hour and happens right away; a Plan waits on the track and acts when it reaches H-Hour. Drag a card onto the Mission Track, or tap it and choose Play to Mission Track."],
   ["etrack", function (p, v) { return v && v.bot.track.length > 0; }, "The enemy has a card on its Mission Track. It acts at H-Hour; tap it on the track to read it."],
   ["reaction", function (p) { return p.kind === "reaction"; }, "A Reaction answers the enemy's move. Using it exhausts the card, or spends the Reaction card from your hand: drag that card onto the Mission Track, where it happens at once, or choose it below."],
   ["ready", function (p) { return p.kind === "ready_select"; }, "Sustainment: pay each card's Ready number in Supply to ready it for next round. Aircraft you do not ready return to base."],
@@ -1724,7 +1727,7 @@ var NOTICE_V = "d1-2026-11-18";   // change this whenever the wording changes, s
 var NOTICE = { title: "PLAYTEST BUILD", ok: "I UNDERSTAND", paras: [
   "This is a playtest build of a game still under development. Expect changes and rough edges.",
   "After a game, the team may ask for your feedback. It is anonymous and voluntary. We do not ask you to sign in, and we do not collect your email. Your notes and the record of your game go to the project team.",
-  "Shadows & Steel is a work of fiction made as a teaching tool. It is not an official position of any government body."] };
+  "Shadows & Steel is a work of fiction made as a teaching tool."] };   /* v0.21.1: the lead's wording of 20 Nov (draft Register entry BB). NOTICE_V is left as it was on purpose: returning players who acknowledged the notice are not asked again for this shortening */
 function noticeSeen() { try { return localStorage.getItem("ss.notice") === NOTICE_V; } catch (e) { return false; } }
 function noticeGate() { if (!noticeSeen() && !$("notice")) showNotice(false); }
 function showNotice(again) {
@@ -1883,7 +1886,7 @@ function setupBody(d) {
 /* v0.21 (WP8, spec 5.2; Menu, About and Briefing content pack v0.1, section 3): the Main Menu is one big action and four short ones.
    START BASIC TRAINING is the primary until training is done, then PLAY (with the last setup under it) and TRAINING joins the list.
    Each label's description is its accessible description; only the primary's is printed. */
-function buildTag(d) { return "Battlefield table v0.21" + (d && d.version ? " · game " + d.version : "") + (d && d.cards ? " · " + d.cards : ""); }
+function buildTag(d) { return "Battlefield table v0.21.1" + (d && d.version ? " · game " + d.version : "") + (d && d.cards ? " · " + d.cards : ""); }
 /* v0.21 (checkers A): the lead edits notices.js by hand, so its data is checked once: lists that are not lists become empty, entries
    without a text id, title and body are dropped, and anything unusable hides the bell; the Main Menu never depends on it */
 (function () { try { var N = window.SS_NOTICES; if (!N || typeof N !== "object" || Array.isArray(N)) { window.SS_NOTICES = null; return; }
@@ -1953,7 +1956,7 @@ function libraryBody(el) {
   el.innerHTML = '<nav class="mm lib" aria-label="Library"><h2 class="mh2">LIBRARY</h2><div class="mlist">' + row("suLib", "CARDS", "Every card in the game, in full.") + row("suFM", "FIELD MANUAL", "Every lesson and every rules word.") + row("suReps", "SAVED REPLAYS", "Watch your saved battles again.") + "</div></nav>";
 }
 /* v0.21 (WP8, spec 5.4; content pack section 4, in its order): About. The credits are live text, exactly as printed on card A2. The
-   digital-edition line and the disclaimer were approved by the lead on 19 Nov as worded. The film is fetched only when PLAY VIDEO is pressed. No logos (decision 3). */
+   digital-edition line was approved by the lead on 19 Nov as worded; the "About this game" section is the lead's wording of 20 Nov (draft Register entry BB). The film is fetched only when PLAY VIDEO is pressed. No logos (decision 3). */
 var TEAM = [["Command & Control:", "Samuel White, James Markley, COL Franklin Scherra"], ["Director:", "LTC Kurt Reynolds"], ["Design:", "Kris Wheaton & Joe Wheaton"], ["Developer:", "Steven Cunliffe"], ["Presentation & Playtesting:", "MAJ Gabriel Landowski"], ["Senior Editing:", "COL James Starling"], ["Rules Editing:", "Tracy Johnson"], ["Proof Reading:", "Walter Barnes"], ["Consultation & Design Inspiration:", "LTC Daniel T. Brooks"], ["Statistics:", "Kasthuri Kannan"], ["Cover Art:", "Kevin Boyce"], ["Fabrication & Procurement:", "Brett Rodgers, Michael Kelly"], ["Department of Strategic Wargaming:", "LTC Chris Miller, Matthew Wechsler, Brian Foster, Mark Leno, Ed Zukowski, CPT Jacob Kessler"]];
 var FILM = "media/hype_540.mp4";
 function aboutBody(el, d) {
@@ -1969,7 +1972,7 @@ function aboutBody(el, d) {
     '<h4 class="sub4">Card art</h4><p>Made for the project (Art Pass v6.0 and earlier passes); some cards show Beta 3 art until the next Art Pass.</p>' +
     '<h4 class="sub4">Fonts and software</h4><p>Fonts: Rajdhani, Barlow and JetBrains Mono, under the SIL Open Font License.</p><p>Software: three.js (MIT License) and Pyodide (Mozilla Public License 2.0).</p>' +
     '<h3>FEEDBACK</h3><p>Questions and ideas reach the whole team at:</p><p><a href="mailto:ShadowsAndSteel@armywarcollege.edu">ShadowsAndSteel@armywarcollege.edu</a></p><p>Or use Provide Feedback after a game.</p>' +
-    '<h3>NOT AN OFFICIAL PRODUCT</h3><p>' + "Shadows &amp; Steel is an unofficial educational game. The views in it are the designers' and do not reflect the official policy or position of the U.S. Army War College, the Department of the Army, the Department of Defense or the U.S. Government. Doctrine is quoted from publicly released publications for teaching purposes, and no endorsement is implied.</p>" +
+    '<h3>ABOUT THIS GAME</h3><p>' + "Shadows &amp; Steel 2045 is an educational wargame, made for training and for exploring ideas before experimentation. It is a work of fiction set about twenty years ahead. Its scenarios, forces and outcomes are illustrative and are not predictions or plans.</p>" +
     (window.SS_NOTICES && window.SS_NOTICES.welcome ? "" : '<h3>PLAYTEST NOTICE</h3><p><button class="ghost lk" id="wNotice">Read the playtest notice again</button></p>') +
     '<h3>THIS BUILD</h3><p>' + esc(buildTag(d)) + (d.training && d.training.version ? " · Basic Training v" + esc(d.training.version) : "") + (d.decks ? " · " + esc(d.decks) : "") + "</p></article>";
 }

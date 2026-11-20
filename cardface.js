@@ -14,7 +14,8 @@ function wrap(g, text, x, y, maxW, lh, maxY) { var words = String(text).split(" 
 var UPCLS = { "Movement & Maneuver": "M2", "Command & Control": "C2", "Intelligence": "INTEL", "Information": "INFO", "Protection": "PROT", "Sustainment": "SUST", "Fires": "FIRES" };
 function upShort(t) { return String(t).replace(/Movement & Maneuver|Command & Control|Intelligence|Information|Protection|Sustainment|Fires/g, function (m) { return UPCLS[m]; }).toUpperCase(); }
 function isCap(u) { return u.cap !== false && (u.cap || u.dur > 0); }
-var EFFWORD = { order: "ORDER", reaction: "REACTION", operation: "MISSION", condition: "MISSION", mission: "MISSION" };
+var EFFWORD = { order: "ORDER", reaction: "REACTION", plan: "PLAN", operation: "PLAN", condition: "CONDITION", mission: "MISSION" };   // next update (draft entry AN.4): the waiting Effect kind is called Plan (was Operation, printed here as MISSION). v0.21.1 (the lead, 20 Nov): a Condition prints CONDITION, so the card says what it is (it printed MISSION under RD-145 (6)). "operation" stays so that a card file or saved replay from before cards v0.17.2 reads PLAN too
+function subName(s) { return String(s || "").toLowerCase() === "operation" ? "Plan" : s; }
 function typeWord(u, cap) { if (cap) return "CAPABILITY"; var s = EFFWORD[String(u.sub || "").toLowerCase()]; return "EFFECT" + (s ? " · " + s : ""); }
 // The card face follows the project's Capability template (I. Card Production/02 Template, WARLORD reference): Generation badge top left,
 // Concealment / Survivability / Durability down the left of the art, the Class bar, ability lines with "TIMING | NAME" headings and ATK at the right,
@@ -111,7 +112,7 @@ function drawCard(u, S, o) {
   var gg = g.createLinearGradient(0, 17, 0, 71); gg.addColorStop(0, fin[0]); gg.addColorStop(.5, fin[1]); gg.addColorStop(1, fin[2]); g.fillStyle = gg; g.fill(); g.strokeStyle = fin[3]; g.lineWidth = 2; g.stroke();
   g.fillStyle = fin[4]; g.textAlign = "center"; g.textBaseline = "alphabetic"; g.font = "600 8px " + BAR; g.fillText("GEN", 38, 34); g.font = "21px " + BOO; g.fillText(String(u.gen || "I"), 38, 58);
   g.fillStyle = fin[2]; g.fillRect(72, 36, 194, 1.5);
-  // the type word above the name (RD-150 (2)): CAPABILITY, or EFFECT · ORDER / MISSION / REACTION (RD-145 (6): Operations and Conditions are Mission cards)
+  // the type word above the name (RD-150 (2)): CAPABILITY, or EFFECT · ORDER / PLAN / MISSION / REACTION (RD-150 (2); AN.4: a Plan prints PLAN; v0.21.1: a Condition prints CONDITION, on the lead's ruling of 20 Nov)
   var tw = typeWord(u, cap); g.fillStyle = BRICK; g.font = "700 8.4px " + BAR; g.textAlign = "left"; if (g.letterSpacing !== undefined) g.letterSpacing = "1.2px"; g.fillText(tw, 72, u.upfrom ? 20 : 29); if (g.letterSpacing !== undefined) g.letterSpacing = "0px";
   if (u.upfrom) { var uf = "UPGRADES FROM " + upShort(u.upfrom); g.fillStyle = INK2; g.font = "600 7.6px " + BAR; g.textAlign = "left"; while (g.measureText(uf).width > 194 && uf.length > 20) uf = uf.slice(0, -2); g.fillText(uf, 72, 31); }
   g.textAlign = "left"; g.fillStyle = INK; var fs = 25; g.font = fs + "px " + BOO; while (g.measureText(u.name).width > 194 && fs > 12) { fs--; g.font = fs + "px " + BOO; } g.fillText(u.name, 72, 62);
@@ -136,7 +137,7 @@ function drawCard(u, S, o) {
   g.strokeStyle = fin[1]; g.lineWidth = 2; [[ax - 2, 72, 1, 1], [ax + aw + 2, 72, -1, 1], [ax - 2, 236, 1, -1], [ax + aw + 2, 236, -1, -1]].forEach(function (t) { g.beginPath(); g.moveTo(t[0] + 12 * t[2], t[1]); g.lineTo(t[0], t[1]); g.lineTo(t[0], t[1] + 12 * t[3]); g.stroke(); });
   // Class bar
   rr(g, 16, 242, 248, 24, 6); var cb = g.createLinearGradient(0, 242, 0, 266); cb.addColorStop(0, fin[0]); cb.addColorStop(1, fin[1]); g.fillStyle = cb; g.fill(); g.strokeStyle = fin[3]; g.lineWidth = 1.2; g.stroke();
-  g.fillStyle = fin[4]; g.font = "12.5px " + BOO; var bar = cap ? (u.cls || "") + (u.tags ? " | " + String(u.tags).split(" ").slice(0, 3).join(" · ") : "") : (u.cls || "JOINT") + " | " + String(u.sub || u.kind || "Effect").toUpperCase(); while (g.measureText(bar).width > 232) bar = bar.slice(0, -2); g.fillText(bar, 26, 259);
+  g.fillStyle = fin[4]; g.font = "12.5px " + BOO; var bar = cap ? (u.cls || "") + (u.tags ? " | " + String(u.tags).split(" ").slice(0, 3).join(" · ") : "") : (u.cls || "JOINT") + " | " + String(subName(u.sub) || u.kind || "Effect").toUpperCase(); while (g.measureText(bar).width > 232) bar = bar.slice(0, -2); g.fillText(bar, 26, 259);
   // ability lines: every printed line is drawn; if they do not fit, the text is set smaller, never dropped
   var parsed = (u.lines || []).map(parseLine), top = 286, maxY = 400, fsz = 11.5;
   var rowsOf = function (text, fs) { g.font = "500 " + fs + "px " + BAR; var words = String(text).split(" "), ln = "", n = 1; for (var w = 0; w < words.length; w++) { if (g.measureText(ln + words[w]).width > 248 && ln) { n++; ln = ""; } ln += words[w] + " "; } return n; };

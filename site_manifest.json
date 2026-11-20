@@ -1,13 +1,13 @@
 {
-"build": "Battlefield v0.21 (playtest website, 2026-11-20) \u00b7 Basic Training v0.3.7 \u00b7 cards v0.17.1, decks v0.17.1",
+"build": "Battlefield v0.21.1 (playtest website, 2026-11-20) \u00b7 Basic Training v0.3.8 \u00b7 cards v0.17.2, decks v0.17.2",
 "files": {
 ".nojekyll": [
 0,
 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 ],
 "art.js": [
-2254731,
-"09c8bfcc7ae7e4f45b24459f936615224549df3a6780d8c3d73e434d28c3510c"
+2254551,
+"713dd802612ab657d93941e5b87b69333fe8f505951acc58bf72ccc188cf13fc"
 ],
 "art/hi/CAP-102.jpg": [
 158676,
@@ -134,8 +134,8 @@
 "ae2ab04dcc40d8f944a41a466b4e798b5ce830a9a82fb163f25f53235cbe8a1c"
 ],
 "art/hi/CAP-310.jpg": [
-104626,
-"3708c1fe21f0fdae303d74aab2351a427e13050c9bba786877be88e736cb4cfe"
+98435,
+"20597d7f61a69ce71418dba468c1dffe43eac0af8820182374595055f3b34f65"
 ],
 "art/hi/CAP-311.jpg": [
 103922,
@@ -210,16 +210,16 @@
 "f248145383b84c280dd070c971846fd2496715a4c39f15927248c623f91cf0c0"
 ],
 "art/hi/EFF-216.jpg": [
-121196,
-"90b93c76a240c683de69b2d1e48aaf9cdaae3a2047d0f03ff5a79f900d1be6ee"
+115305,
+"8f5b4f8af7b0426899871be3c78b1414a948623759d2b4776ba1d91935e092e2"
 ],
 "art/hi/EFF-217.jpg": [
 138435,
 "726e47df1e07d1a9bce66ae5e7c2432d83d752b22c3959f9035bc39e6fea4302"
 ],
 "art/hi/EFF-218.jpg": [
-74739,
-"587afe753e1a73f2324cb52c71c36363dda49805ccb25e7f7c043776df141765"
+68702,
+"1ffa6dd1820c522fd09c311ec6c4d5abbf817eadad00acc5c88cd4b1f7f485df"
 ],
 "art/hi/EFF-301.jpg": [
 160005,
@@ -674,16 +674,16 @@
 "4c9eada2ee5f6c3face54b3a18d407872d81a42f87e268a72ef523e73650cde2"
 ],
 "battle.js": [
-352182,
-"0bb25abe131537f335b254eac1be664fe5832ded0ed111d1bb7a348c4d779dec"
+353300,
+"13a72adfca08da3821ece35594aaec577bc50622c2ff86123c03cc875431e444"
 ],
 "brand.js": [
 25649,
 "f41cce32429a3051163d23fc86879705722090c2720f0caa2bb2e2359cbd20b4"
 ],
 "cardface.js": [
-24190,
-"cdf5e72bded78223835d1fbdcc07b199433d070dda5ab11e7f06c091d4399cd6"
+24700,
+"a32a99797a5f0aa32ccb58139768083306c0a948f299d790d93274cc36bf84db"
 ],
 "fonts/Barlow-OFL.txt": [
 4377,
@@ -729,29 +729,29 @@
 125080,
 "bdfdce9e26b5301ac5adbb50b27249fb7647ee5fdeee453bc06b385810800468"
 ],
-"gamefiles/SS_Merged_Cards_v0.17.1.csv.txt": [
-33878,
-"4be2faf69b520648588dcdba1f2868f471b10dd07e72ee4db2b4bd7106a47a7c"
+"gamefiles/SS_Merged_Cards_v0.17.2.csv.txt": [
+33848,
+"481f4add46c541c91be0738c9f40eb0fc649733c5c97b51aba353abd8c184946"
 ],
-"gamefiles/SS_Merged_Decks_v0.17.1.csv.txt": [
+"gamefiles/SS_Merged_Decks_v0.17.2.csv.txt": [
 4564,
 "14cf2673123ecae909af1dc10fd67b8e33db2be4515fec5eaa55f2e054431a1b"
 ],
 "gamefiles/basic_training.json.txt": [
-20529,
-"7657d86a6ac6396eb03eba5101d2714c2e2a12841b9c44ec40378532b0e2dd6a"
+20526,
+"ff24d7b26b2336b3711fc40b1fabe43a5ff9904629ecafd21c97e3875bf61fc4"
 ],
 "gamefiles/browser_play.py.txt": [
-51135,
-"f0f73cd35d161c45c0941374783d9c4d4d648ab1971385c36e792283fe38f13a"
+51514,
+"d17c844fafc647b9fdfb72ab106961e28676d85a36502c296e0ffdfe2965896a"
 ],
 "gamefiles/manifest.json": [
 983,
-"0ff804f688e8f1beaf5a86d8f33afc716dd5e6d22bb1b17ecba0ba27ab1e4c6f"
+"e0a02119724bff69c23bd13935fb29251c87376687906947176307d69110a14d"
 ],
 "gamefiles/merged_engine.py.txt": [
-133149,
-"2206dd051c46e6065fb91ae0453d5516417120e133dcca3bc2f01b2642b3702f"
+133790,
+"509b01880dbd47189f099ed4d1cea72f937fe6fd2c6c32b9decb932a7601e6f5"
 ],
 "heights.js": [
 43686,
@@ -778,8 +778,8 @@
 "3f462d71753cd4e1d5c4b10f0a528fd45c199f691da3dd7d6686137911865de9"
 ],
 "notices.js": [
-3713,
-"eda4e23e991c38c9421ec1fcb7bb6878e68a221435b943b989c3f7b03996ab96"
+4071,
+"c9d0af7cd2f61ced2eb9abee81218a823474beea6125ce133a53cde0618e568b"
 ],
 "opening/opening.js": [
 18108,
@@ -834,8 +834,8 @@
 "331ea9090db0c9f6f597bd9840fd5b171830f6e0b3ba1cb24dfa91f0c95aedc1"
 ],
 "site.js": [
-5560,
-"5e1157b54209841e3902a5abea5b9af0d36706c6f0c01df18c24bde9294851fe"
+5562,
+"a34d41b01683b33acef9ac512f51efd88b10e531a966eeaaeb27e18451b7f322"
 ],
 "sound.js": [
 11743,

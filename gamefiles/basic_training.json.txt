@@ -1,6 +1,6 @@
 {
  "name": "Basic Training",
- "version": "0.3.7",
+ "version": "0.3.8",
  "game": {
   "seed": 1945,
   "terrain": "OPEN PLAIN",
@@ -530,7 +530,7 @@
     "You drove the enemy off its home edge. That is one of four ways to win:",
     "Supremacy: win a Frontline contest while the enemy is on its home edge. Devastation: destroy both enemy Bases.",
     "Homefront collapse: bring the enemy's Homefront to 0. Higher Homefront: lead when round 8 ends. The ⚑ button shows how close each side is.",
-    "Not covered here (tips will point them out): Hidden cards, Reactions, Mission cards that wait on the Mission Track, upgrades between Generations, your Concept.",
+    "Not covered here (tips will point them out): Hidden cards, Reactions, Plans and Conditions on the Mission Track, upgrades between Generations, your Concept.",
     "Tap any card to read it; the words under it explain its keywords. The Field Manual (☰ menu) holds every lesson and the full glossary."
    ],
    "next": "Play the bot next: tap PLAY, then choose any two forces. Stuck? The ? button shows what the bot would do."

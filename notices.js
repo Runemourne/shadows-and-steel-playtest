@@ -10,6 +10,12 @@ window.SS_NOTICES = {
   },
   "whatsNew": [
     {
+      "id": "2026-11-20-v0-21-1",
+      "date": "2026-11-20",
+      "title": "Easier to read, and clearer names",
+      "body": "With large text on a small phone, every step's buttons now stay in view. Effect cards that wait on the Mission Track are now called Plans, and a Condition says CONDITION on the card. Four card pictures are updated."
+    },
+    {
       "id": "2026-11-19-ready-list",
       "date": "2026-11-19",
       "title": "Ready your cards in one go",

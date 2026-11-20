@@ -44,11 +44,13 @@ ordinary prompts with plain answers. The engine is unchanged.
 costs 1 more ISR, now said in the Tactical, Theater and ISR entries); adds "Supported" (entry C, worded for the released engine, where
 supporters back attacks only); Close reads "This attack needs Contact" (the Studio Lead's call: Close means in Contact); the SWARM and
 SUSTAIN patterns match only cards that carry those keywords (not MOTE SWARM's HUNTER SWARM, MYRMIDON's SWARM PODS or a SUSTAINMENT heading);
-the drift message says "the project team". No rule changes."""
+the drift message says "the project team". No rule changes.
+0.17.4 (20 Nov 2026, engine v0.17.4 and cards v0.17.2, draft entry AN.4): the waiting Effect subtype is called Plan (was Operation).
+The Mission Track entry names the kinds as the cards print them: an Order, a Plan, a Condition (it said "a Mission"). No rule changes."""
 import json, random, traceback, os, re
 import merged_engine as E
 
-VERSION = "0.17.3"   # engine v0.17.3 (cards and decks v0.17.1): the trial table limit and withdraw (draft entry AW; off unless a game sets table_cap, withdraw, withdraw_refund). v0.17.2: the person's repair list; a game record with a version before 0.17.2 replays with the rule repair_list 0
+VERSION = "0.17.4"   # engine v0.17.4 (cards and decks v0.17.2): the waiting Effect subtype is called Plan (was Operation; a name only, draft entry AN.4). v0.17.3: the trial table limit and withdraw (draft entry AW; off unless a game sets table_cap, withdraw, withdraw_refund). v0.17.2: the person's repair list; a game record with a version before 0.17.2 replays with the rule repair_list 0
 
 # 0.9 (14 Nov 2026): saved replays: Session.replay() and /play/replay (the whole game as frames, packed small).
 # 0.8 (14 Nov 2026, RD-133): one set of cards again. The Theory of Victory decks became cards and decks v0.11 and the
@@ -251,7 +253,7 @@ def glossary(R=None):
          ("Supply", "\\bSupply\\b", "Pays to deploy, ready and repair cards. It sits on your Bases, and each Base restocks its own Supply each Sustainment, up to what it can hold. When you pay, the Hub pays %d%% of the cost, rounded down (so a cost of 3 takes %d from the Hub and %d from the Staging Base), and the Staging Base pays the rest; if a Base runs short, the other Base covers it. The table shows each Base's share as it pays." % (R.get("pay_hub", 40), 3 * R.get("pay_hub", 40) // 100, 3 - 3 * R.get("pay_hub", 40) // 100) if R.get("pay_hub") else "Pays to deploy, ready and repair cards. It sits on your Bases, and each Base restocks its own Supply each Sustainment, up to what it can hold. When you pay, the Supply comes from the Base holding the most."),
          ("Lift", "\\bLift\\b", "How many cards you can deploy or upgrade this round: 2 for each Base, 1 for a devastated Base, plus any THROUGHPUT."),
          ("Hidden", "\\bHidden\\b|face down", "A face-down card. Attacking it costs %d extra ISR; a Hidden Effect is a decoy and is discarded when revealed." % R.get("hidden_isr", 2)),
-         ("Mission Track", "Mission Track|track card", "Where every Effect card goes, and where an Operator waits after INFILTRATE. An Order lands at H-Hour, so it happens right away; a Mission waits and moves 1 space toward H-Hour each Operations phase."),
+         ("Mission Track", "Mission Track|track card", "Where every Effect card goes, and where an Operator waits after INFILTRATE. An Order lands at H-Hour, so it happens right away; a Plan or a Condition waits and moves 1 space toward H-Hour each Operations phase."),
          ("H-Hour", "H-Hour", "When a Mission Track card reaches H-Hour it resolves; nobody may react to it."),
          ("Frontline", "\\bFrontline\\b", "Your front row, at most %d cards. It shields your Rear Area and Bases and decides the Frontline contest." % R.get("front_limit", 4)),
          ("Rear Area", "Rear Area", "Your back row. The enemy can hit it only when your Frontline is empty, or with DEEP FIRES, FLANK or a spotlight."),
