@@ -311,7 +311,7 @@ function capDock() {   // v0.20.2: sets the panel's fixed height for this screen
   var cap = Math.round(Math.min(H * (short ? .46 : .38), Math.max(floor, Math.min(design, room))));
   var two = W < 600 && !(G.info && G.info.tutorial) ? 0 : Math.round(2 * 46 * Math.min(1.4, ts) + 16 * ts + 44); cap = Math.round(Math.min(H * (short ? .46 : .38), Math.max(cap, Math.min(room, two))));
   cap = Math.max(60, Math.min(cap, Math.floor(H - top - TABLE_FLOOR * H - other)));   // the stated floor: whatever the screen and text size, the table keeps at least a quarter of the height   // v0.21: room for two rows of pinned buttons from the start when the table can spare it, so the panel need not grow mid-game
-  pr.style.height = cap + "px"; pr.style.maxHeight = cap + "px"; pr.dataset.cap = String(cap);
+  pr.style.height = cap + "px"; pr.style.maxHeight = cap + "px"; pr.dataset.cap = String(cap); pr.dataset.grown = ""; listGrow(pr);
   var me = $("me"); if (me) me.style.maxHeight = short ? cap + "px" : "";   // landscape phones: the dock is one row, so no part of it may be taller than the panel
   keepBars(); promptCue(); return true;
 }
@@ -325,7 +325,7 @@ function setSq(n) { var de = document.documentElement; SQ.n = n; de.classList.to
 function keepBars() { ["top", "me"].forEach(function (id) { var e = $(id), h = e && e.offsetHeight; if (h && h > (parseFloat(e.style.minHeight) || 0)) e.style.minHeight = h + "px"; }); if (isDesk()) deskColumn();
   var pr = $("prompt"), ft = pr && pr.querySelector(".pfoot"), cap = pr && +pr.dataset.cap; if (ft && cap) { var tsz = PREF.text * (parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ui")) || 1), need = ft.scrollHeight, one = Math.round(16 * tsz + 22);
     var spare = FR ? Math.floor((FR.B - FR.T) - MIN_TABLE * H) : 0;
-    if (need > cap - 24 && cap < H * .5 && spare > 4) { var nc = Math.round(Math.min(H * .5, need + one + 24, cap + spare));   /* v0.21 (checkers): room for the buttons and at least one line of the question, so the question never vanishes behind its own buttons */ pr.style.height = pr.style.maxHeight = nc + "px"; pr.dataset.cap = String(nc); cap = nc; requestFit(); }   // the smallest screens: the panel grows (once, never back) until its buttons fit; the table gives way, never a choice
+    var rows2 = need > 80 * Math.min(tsz, 1.4); if ((need > cap - 24 || rows2 && need > cap - 2 * one - 16) && cap < H * .5 && spare > 4) { var nc = Math.round(Math.min(H * .5, need + (rows2 ? 2 : 1) * one + 24, cap + spare));   /* RC2: with two rows of buttons (such as the trial's WITHDRAW under Done deploying), room for two lines of the question, not one */   /* v0.21 (checkers): room for the buttons and at least one line of the question, so the question never vanishes behind its own buttons */ pr.style.height = pr.style.maxHeight = nc + "px"; pr.dataset.cap = String(nc); cap = nc; requestFit(); }   // the smallest screens: the panel grows (once, never back) until its buttons fit; the table gives way, never a choice
     ft.style.maxHeight = Math.round(Math.max(48, need > cap - one ? cap - 24 : cap - one)) + "px"; }   // v0.21: the pinned buttons may take all but one line of the body, and on the smallest screens the whole panel: no choice is ever cut off
   if (pr && !(pr.querySelector(".pbody") || {}).scrollTop) requestAnimationFrame(function () { unslice(pr.querySelector(".pbody"), pr.classList.contains("more") || pr.querySelector(".pfoot .pmore") ? 0 : 28); promptCue(); });
   document.documentElement.classList.toggle("tight", (W < 420 && PREF.text >= 1.5) || (H < 420 && W < 600)); }   // narrow and large text: Undo and Hint become icons (their names stay as labels)   // v0.21: the pinned buttons may take all but one line of the body, so no choice is ever cut off
@@ -421,13 +421,14 @@ function reasonFor(name) { var n = (G.pend && G.pend.notes) || []; for (var i = 
 var lastHf = {};
 function stat(p, own) {
   var hit = lastHf[own] != null && p.hf < lastHf[own]; lastHf[own] = p.hf;
+  if (own) document.body.classList.toggle("trial", !!(G.view && +G.view.table_cap > 0));   /* RC2: with the trial's table count in the row, a phone drops the concept name and the Homefront bar there (both stay in the status sheet), so More stays on screen */
   var pips = ""; if (own) { for (var i = 0; i < 10; i++) pips += '<span class="' + (i < p.isr ? "on" : "") + '"></span>'; }
   var sp = G.info && G.info.spectate;
   return '<span class="who t">' + (sp ? esc(p.concept) : own ? "You" : "Bot") + "<small>" + (sp ? (own ? "south" : "north") : esc(p.concept)) + "</small></span>" +
     '<span class="hf' + (hit ? " hit" : "") + '"><span class="l">Homefront</span><span class="s">HF</span><b>' + p.hf + '</b><i><u style="width:' + Math.max(0, Math.min(100, p.hf * 5)) + '%"></u></i></span>' +
     "<span class='c-isr'>ISR<b>" + p.isr + "</b>" + (own ? '<span class="pips x">' + pips + "</span>" : "") + "</span><span class='c-sup'><span class='l'>Supply</span><span class='s'>Sup</span><b>" + p.sup + "</b></span>" +
     (own ? "<span class='x'>Lift<b>" + p.lift + "</b></span><span class='x'>Span<b>" + p.span + "</b></span>" : "<span class='x'>Hand<b>" + p.hand_count + "</b></span>") +
-    "<span class='x'><span class='l'>Strength</span><span class='s'>Str</span><b>" + p.strength + '</b></span><button type="button" class="sbtn" aria-expanded="false" aria-label="All the numbers and piles, both sides">More</button>' + (p.piles ? '<button class="piles x" id="' + (own ? "hudPiles" : "hudPilesFoe") + '" title="' + (own ? "Your" : "The enemy's") + ' discard pile, Ash Heap and decks"><span class="l">Deck<b>' + (p.ie + p.deck) + "</b> Discard<b>" + p.discard + "</b> Ash Heap<b>" + p.ash + '</b></span><span class="s">Discard<b>' + p.discard + "</b> Ash<b>" + p.ash + "</b></span></button>" : "<span class=\"l\">Deck<b>" + (p.ie + p.deck) + "</b></span>");
+    (G.view && +G.view.table_cap > 0 && p.table != null ? "<span class='c-tbl" + (p.table >= +G.view.table_cap - 1 ? " full" : "") + "'><span class='l'>On table</span><span class='s'>Tbl</span><b>" + p.table + "/" + G.view.table_cap + "</b></span>" : "") + "<span class='x'><span class='l'>Strength</span><span class='s'>Str</span><b>" + p.strength + '</b></span><button type="button" class="sbtn" aria-expanded="false" aria-label="All the numbers and piles, both sides">More</button>' + (p.piles ? '<button class="piles x" id="' + (own ? "hudPiles" : "hudPilesFoe") + '" title="' + (own ? "Your" : "The enemy's") + ' discard pile, Ash Heap and decks"><span class="l">Deck<b>' + (p.ie + p.deck) + "</b> Discard<b>" + p.discard + "</b> Ash Heap<b>" + p.ash + '</b></span><span class="s">Discard<b>' + p.discard + "</b> Ash<b>" + p.ash + "</b></span></button>" : "<span class=\"l\">Deck<b>" + (p.ie + p.deck) + "</b></span>");
 }
 function pileThumbs(names, counts) {
   if (!names.length) return '<p class="pe">Empty.</p>'; var F = G.faces || {};
@@ -437,7 +438,7 @@ function tally(list) { var c = {}, order = []; (list || []).forEach(function (n)
 function showPiles(side) { SFX.open();
   var v = G.view; if (!v) return; side = side === "bot" ? "bot" : "you"; var p = v[side], pl = p.piles || {}, el = $("piles"), mine = side === "you", sp = G.info && G.info.spectate, nm = (G.info && G.info.names) || ["You", "The bot"];
   var lab = function (k) { return sp ? nm[k === "you" ? 0 : 1] : k === "you" ? "Yours" : "The enemy's"; }, ie = tally(pl.ie), mf = tally(pl.mf);
-  el.innerHTML = '<div class="pb"><button class="ghost" id="pilesX">Close</button><h3 class="t">Discard piles and Ash Heaps</h3><p class="pd">Round ' + v.round + ". Both players' piles are face up. Tap a card to read it.</p>" +
+  el.innerHTML = '<div class="pb"><div class="shead"><button class="ghost" id="pilesX">Close</button></div><h3 class="t">Discard piles and Ash Heaps</h3><p class="pd">Round ' + v.round + ". Both players' piles are face up. Tap a card to read it.</p>" +
     '<div class="psw" role="tablist">' + ["you", "bot"].map(function (k) { return '<button role="tab" aria-selected="' + (k === side) + '" class="' + (k === side ? "on" : "") + '" data-side="' + k + '">' + esc(lab(k)) + "</button>"; }).join("") + "</div>" +
     "<h4>Discard pile <b>" + p.discard + "</b></h4><p class=\"pd\">Played and discarded cards, newest first. When the Main Force runs out, this pile is shuffled to make a new one.</p>" + pileThumbs(pl.discard || []) +
     "<h4>Ash Heap <b>" + p.ash + "</b></h4><p class=\"pd\">Destroyed and expended cards, newest first. They never return.</p>" + pileThumbs(pl.ash || []) +
@@ -447,7 +448,7 @@ function showPiles(side) { SFX.open();
   el.style.display = "block"; el.scrollTop = 0; }
 /* v0.21 (WP9): on a phone the status bars show Homefront, ISR and Supply; "More" opens this sheet with every number and both sides' piles */
 function showStatus() { var v = G.view; if (!v) return; SFX.open(); var el = $("piles"), clean = function (h) { return h.replace(/ id="hudPiles(Foe)?"/g, function (m, f) { return ' data-pside="' + (f ? "bot" : "you") + '"'; }); };
-  el.innerHTML = '<div class="pb"><button class="ghost" id="pilesX">Close</button><h3 class="t">Status</h3><p class="pd">Round ' + v.round + " of " + v.last + " · " + esc(v.phase) + ".</p><h4>" + ((G.info && G.info.spectate) ? "North" : "The enemy") + '</h4><div class="stat full">' + clean(stat(v.bot, 0)) + "</div><h4>" + ((G.info && G.info.spectate) ? "South" : "You") + '</h4><div class="stat full mine">' + clean(stat(v.you, 1)) + "</div></div>";
+  el.innerHTML = '<div class="pb"><div class="shead"><button class="ghost" id="pilesX">Close</button></div><h3 class="t">Status</h3><p class="pd">Round ' + v.round + " of " + v.last + " · " + esc(v.phase) + ".</p><h4>" + ((G.info && G.info.spectate) ? "North" : "The enemy") + '</h4><div class="stat full">' + clean(stat(v.bot, 0)) + "</div><h4>" + ((G.info && G.info.spectate) ? "South" : "You") + '</h4><div class="stat full mine">' + clean(stat(v.you, 1)) + "</div></div>";
   el.style.display = "block"; el.scrollTop = 0; }
 document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest(".sbtn") && !e.target.closest("#piles")) { showStatus(); Array.prototype.forEach.call(document.querySelectorAll(".sbtn"), function (b) { if (!b.closest("#piles")) b.setAttribute("aria-expanded", "true"); }); } });
 function statusClosed() { Array.prototype.forEach.call(document.querySelectorAll(".sbtn"), function (b) { b.setAttribute("aria-expanded", "false"); }); }
@@ -483,8 +484,8 @@ function hand() {
   var v = G.view, M = maps(), hs = (v && v.you.hand) || [], key = hs.map(function (c) { return c.id + (c.held ? "h" : ""); }).join(",") + "|" + Object.keys(M.card).join(",") + "|" + G.sel + "|" + (G.playing ? 1 : 0);
   key += "|" + (G.multi ? JSON.stringify(G.multi.picked) : "") + "|" + W + "x" + H + "|" + (G.pend && isMulti(G.pend) ? G.pend.n : ""); if (key === handKey) { drawerAuto(); return; } handKey = key; var hand0 = $("hand"), keepX = hand0.querySelector(".strip") ? hand0.querySelector(".strip").scrollLeft : 0; hand0.innerHTML = ""; var el = document.createElement("div"); el.className = "strip"; hand0.appendChild(el); var hi0 = 0;
   hs.forEach(function (c, hix) { if (c.held) { hi0++; return; } var k = c.id + c.name + (PREF.glance ? "|g" : ""); if (!handCv[k]) handCv[k] = drawCard(c, 1, { hand: true, glance: PREF.glance }).toDataURL("image/jpeg", .85); var im = new Image(); im.src = handCv[k]; im.alt = c.name; im.dataset.card = c.id;
-    var hi = hi0++; if (M.card[c.id] && !G.playing) im.className = "can"; if (G.sel === c.id) im.className = "sel"; if (G.multi && G.multi.picked.some(function (x) { return x.id === c.id && x.ix === hi; })) im.className = "sel";
-    im.dataset.ix = hi; im.draggable = false; im.tabIndex = 0; im.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tapHand(c, hi); } }); im.setAttribute("role", "button"); im.setAttribute("aria-label", c.name + (M.card[c.id] && !G.playing ? ", can be played" : "") + ". Tap to read it"); im.addEventListener("pointerdown", function (e) { peekHide(); handDown(e, c, hi, im); }); im.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse" && !e.buttons) handPeek(im, c); }); im.addEventListener("pointerleave", peekHide); im.oncontextmenu = function (e) { e.preventDefault(); if (rightCancel()) return; readCard(c, hi); };   /* v0.20.2: right-click cancels a selection, otherwise reads the card. v0.21: a tap is read on the pointer's up (input section) */ el.appendChild(im); });
+    var hi = hi0++, blf = M.card[c.id] && bluffOnly(c.id, M); if (M.card[c.id] && !G.playing && !blf) im.className = "can"; if (G.sel === c.id) im.className = "sel"; if (G.multi && G.multi.picked.some(function (x) { return x.id === c.id && x.ix === hi; })) im.className = "sel";
+    im.dataset.ix = hi; im.draggable = false; im.tabIndex = 0; im.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tapHand(c, hi); } }); im.setAttribute("role", "button"); im.setAttribute("aria-label", c.name + (M.card[c.id] && !G.playing ? (blf ? ", can only be deployed face down as a decoy" : ", can be played") : "") + ". Tap to read it"); im.addEventListener("pointerdown", function (e) { peekHide(); handDown(e, c, hi, im); }); im.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse" && !e.buttons) handPeek(im, c); }); im.addEventListener("pointerleave", peekHide); im.oncontextmenu = function (e) { e.preventDefault(); if (rightCancel()) return; readCard(c, hi); };   /* v0.20.2: right-click cancels a selection, otherwise reads the card. v0.21: a tap is read on the pointer's up (input section) */ el.appendChild(im); });
   hand0.insertAdjacentHTML("beforeend", '<button type="button" class="hnav l" aria-label="Scroll the hand left">‹</button><button type="button" class="hnav r" aria-label="Scroll the hand right">›</button><button type="button" class="hhandle" aria-expanded="false"></button>');
   drawerFit(el); el.scrollLeft = keepX; drawerAuto(); readyTabs(el, M);
   if (G.pend && !G.playing && isMulti(G.pend)) pickHand(el, M);
@@ -500,10 +501,12 @@ function deskColumn() { var de = document.documentElement, top = Math.round(($("
   de.style.setProperty("--colTop", top + "px"); de.style.setProperty("--colBot", bot + "px"); de.style.setProperty("--colW", w + "px"); var pr = $("prompt"); if (pr) pr.dataset.cap = String(Math.max(160, H - top - bot)); }
 /* v0.21 (Council M3): a card that can act now carries a tab that names its move (DEPLOY, PLAY, REACT, UPGRADE), by shape and text, not by
    glow alone; in a decision, a card that cannot act is dimmed but stays readable */
+function bluffOnly(id, M) { var ii = (M && M.card[id]) || [], p = G.pend; return !!(p && ii.length && ii.every(function (i) { var m = (p.meta || [])[i] || {}; return m.t === "hide" && /decoy/.test(p.options[i]); })); }   /* RC2 (Council F2): a card whose only move now is to go face down as a decoy: no DEPLOY tab, not counted as ready */
 function readyTabs(strip, M) {
-  var live = liveDecision() && !isMulti(G.pend), verb = function (id) { var t = ((G.pend.meta || [])[(M.card[id] || [])[0]] || {}).t; return t === "dep" || t === "hide" ? "DEPLOY" : t === "effect" ? "PLAY" : t === "react" ? "REACT" : t === "up" ? "UPGRADE" : "READY"; };
+  var live = liveDecision() && !isMulti(G.pend), verb = function (id) { var i0 = (M.card[id] || [])[0], t = ((G.pend.meta || [])[i0] || {}).t, l = i0 != null ? G.pend.options[i0] : "", rl = (l.match(/\((\d+) Supply, \d+ less: relief/) || [])[1]; return t === "dep" || t === "hide" ? (rl ? "DEPLOY " + rl + "↓" : "DEPLOY") : t === "effect" ? "PLAY" : t === "react" ? "REACT" : t === "up" ? "UPGRADE" : t === "card" ? "AIR ASSAULT" : "READY"; };
   Array.prototype.forEach.call(strip.querySelectorAll("img[data-card]"), function (im) { var id = im.dataset.card, ok = live && M.card[id] && !G.playing; im.classList.toggle("cant", !!(live && !ok));
-    if (!ok) return; var t = document.createElement("span"); t.className = "rdy"; t.textContent = verb(id); t.setAttribute("aria-hidden", "true"); t.dataset.ix = im.dataset.ix; strip.appendChild(t); });
+    if (ok && bluffOnly(id, M)) { var td = document.createElement("span"); td.className = "rdy full"; td.textContent = "DECOY ONLY"; td.setAttribute("aria-hidden", "true"); td.dataset.ix = im.dataset.ix; strip.appendChild(td); return; }
+    if (!ok) { if (live && G.pend.kind === "deploy" && tableFull() && isCap((G.faces || {})[im.alt] || {})) { var tf0 = document.createElement("span"); tf0.className = "rdy full"; tf0.textContent = "TABLE FULL"; tf0.setAttribute("aria-hidden", "true"); tf0.dataset.ix = im.dataset.ix; strip.appendChild(tf0); } return; } var t = document.createElement("span"); t.className = "rdy"; t.textContent = verb(id); t.setAttribute("aria-hidden", "true"); t.dataset.ix = im.dataset.ix; strip.appendChild(t); });
   placeTabs(strip); Array.prototype.forEach.call(strip.querySelectorAll("img"), function (im) { if (!im.complete) im.addEventListener("load", function () { drawerFit(strip); placeTabs(strip); }, { once: true }); });   // a card picture has no width until it has loaded
 }
 function placeTabs(strip) { Array.prototype.forEach.call(strip.querySelectorAll(".rdy"), function (t) { var im = strip.querySelector('img[data-ix="' + t.dataset.ix + '"]'); if (!im) return; t.style.left = Math.round(im.offsetLeft + 4) + "px"; t.style.top = Math.round(im.offsetTop - 7) + "px"; }); }
@@ -533,7 +536,7 @@ function panelClear() { var h = $("hand"), st = h && h.querySelector(".strip"), 
 addEventListener("resize", function () { try { panelClear(); } catch (e) { } });
 function drawerAuto() {
   var h = $("hand"); if (!h) return; var hb = h.querySelector(".hhandle"), hs = (G.view && G.view.you.hand) || [], n = hs.filter(function (c) { return !c.held; }).length;
-  var live = liveDecision(), M = live ? maps() : null, ready = M ? Object.keys(M.card).length : 0, p = G.pend;
+  var live = liveDecision(), M = live ? maps() : null, ready = M ? Object.keys(M.card).filter(function (id) { return !bluffOnly(id, M); }).length : 0, p = G.pend;
   var ownActs = !!(M && Object.keys(M.src).some(function (uid) { return O[uid] && O[uid].side === "own"; }));   // v0.21 (checkers): your own table cards can act: the drawer stays tucked so it never hides them; the handle says the hand can play too
   var want = !!(live && !(G.sel && (O[G.sel] || Object.keys(maps().dsts).length)) && !ownActs && (ready || (p && isMulti(p) && p.kind === "discard")));
   var sp = spotNow(), list = !sp ? [] : Array.isArray(sp) ? sp : [sp];
@@ -606,12 +609,14 @@ function prompt() {
         (tg ? '<p class="h">Tap a ringed card' + (direct.length ? ", or choose below" : "") + ". Tap empty ground, press Esc or Cancel to stop.</p>" : "") + direct.map(function (i) { return btn(i, pend.options[i], "opt"); }).join("") +
         '<div class="btns"><button class="ghost" id="pView">Read the card</button><button class="ghost" id="pCancel">Cancel</button></div>';
     } else {
-      if (pend.kind === "ready_select" || pend.kind === "ready") { var rl0 = readyList(pend, M); if (rl0) { var ix0 = h.indexOf('<p class="instr">'), e0 = ix0 >= 0 ? h.indexOf("</p>", ix0) : -1; h = e0 >= 0 ? h.slice(0, e0 + 4) + rl0 + h.slice(e0 + 4) : h + rl0; } }   /* v0.21 (checkers F): Basic Training's ready steps show the scripted card's button, as lesson v0.3.6 says */
+      var lst = false;   /* RC2 (Council F1): while a list is in the panel, its Done row is not pinned: it comes after the whole list, and the panel grows to show it (listGrow) */
+      var wdN = pend.kind === "deploy" ? wdCount(pend) : 0; if (wdN) { var wl = wdList(pend); if (wl) { lst = true; var ixw = h.indexOf('<p class="instr">'), ew = ixw >= 0 ? h.indexOf("</p>", ixw) : -1; h = ew >= 0 ? h.slice(0, ew + 4) + wl + h.slice(ew + 4) : h + wl; } }
+      if (pend.kind === "ready_select" || pend.kind === "ready") { var rl0 = readyList(pend, M); if (rl0 && !pend.coach) { lst = true; h = rl0 + h; } else if (rl0) { var ix0 = h.indexOf('<p class="instr">'), e0 = ix0 >= 0 ? h.indexOf("</p>", ix0) : -1; h = e0 >= 0 ? h.slice(0, e0 + 4) + rl0 + h.slice(e0 + 4) : h + rl0; } }   /* the list first, Ready all (or Repair all) its gold button; Basic Training keeps the lesson's card as the one gold button, under the instruction */   /* v0.21 (checkers F): Basic Training's ready steps show the scripted card's button, as lesson v0.3.6 says */
       if (n) h += '<p class="h tip">' + (pend.kind === "target" ? "Tap a glowing card to choose it." : pend.kind === "reaction" ? "Choose below, or drag a glowing Reaction card onto the Mission Track." : "Glowing cards can act. Tap one to read it and choose, or drag it.") + "</p>";
       h += hintBox(pend);
       if (pend.kind === "reaction") { var all = M.free.slice(); Object.keys(M.card).concat(Object.keys(M.src)).forEach(function (k) { (M.card[k] || M.src[k] || []).forEach(function (i) { if (all.indexOf(i) < 0) all.push(i); }); }); all.sort(function (a, b) { return a - b; }); M.free = all; }   // v0.21: in a reaction prompt every answer has its own button too
       var long = M.free.filter(function (i) { return pend.options[i].length > 26; }), shortO = M.free.filter(function (i) { return pend.options[i].length <= 26; });
-      h += long.map(function (i) { return btn(i, pend.options[i]); }).join("") + '<div class="btns">' + shortO.map(function (i) { return btn(i, pend.options[i], /^(Pass|Done|Do not|No\b|Keep|Leave|Stay)/.test(pend.options[i]) ? "ghost" : pend.kind === "maneuver" ? "go" : ""); }).join("") + (G.canUndo ? '<button class="ghost" id="pUndo" aria-label="Undo"><span class="ic">↶</span><span class="tx"> Undo</span></button>' : "") + (hintable(pend) && !(pend.coach && !pend.coach.free) && !(G.hint && G.hint.n === pend.n) ? '<button class="ghost" id="pHint" aria-label="Hint"><span class="ic">?</span><span class="tx">Hint</span></button>' : "") + "</div>";
+      h += long.map(function (i) { return btn(i, pend.options[i]); }).join("") + '<div class="btns' + (lst ? " lstfoot" : "") + '">' + shortO.map(function (i) { return btn(i, pend.options[i], /^(Pass|Done|Do not|No\b|Keep|Leave|Stay)/.test(pend.options[i]) ? "ghost" : pend.kind === "maneuver" ? "go" : ""); }).join("") + (wdN && !G.wdOpen ? '<button class="ghost" id="wdT" aria-expanded="false" aria-label="Withdraw a card: ' + wdN + ' can go">WITHDRAW ▸</button>' : "") + (G.canUndo ? '<button class="ghost" id="pUndo" aria-label="Undo"><span class="ic">↶</span><span class="tx"> Undo</span></button>' : "") + (hintable(pend) && !(pend.coach && !pend.coach.free) && !(G.hint && G.hint.n === pend.n) ? '<button class="ghost" id="pHint" aria-label="Hint"><span class="ic">?</span><span class="tx">Hint</span></button>' : "") + "</div>";
       var notes = pend.notes || []; if (notes.length) h += '<p class="why">' + (notes.length === 1 || pend.kind !== "action" ? notes.map(esc).join("<br>") : notes.length + " of your cards cannot act right now. Tap one to see why.") + "</p>";
     }
   } else h = "<p" + (G.info && G.info.spectate ? "" : " class='h'") + ">" + esc(G.caption || "…") + "</p>" + (G.explain && G.explainAt === G.shownN ? '<p class="why" style="color:#8fc8ff">' + esc(G.explain) + "</p>" : "") + (G.why && G.whyAt === G.shownN && G.info && G.info.spectate ? '<p class="why">' + esc(whyLine(G.why)) + "</p>" : "") + '<div class="btns">' + (G.why && G.info && G.info.spectate ? '<button class="ghost" id="pWhy">Why?</button>' : "") + '<button class="ghost" id="pPause">' + (G.paused ? "▶ Resume" : "❚❚ Pause") + "</button>" + (G.paused ? '<button class="ghost" id="pStep">Next event</button>' : "") + '<button class="ghost" id="pNote">✎ Add note</button></div>';
@@ -624,7 +629,7 @@ function setPrompt(el, h, top) {
   if (el.dataset.h === h) return; el.dataset.h = h;
   var t = document.createElement("div"); t.innerHTML = h;
   var rows = t.querySelectorAll(".btns"), pin = rows.length ? rows[rows.length - 1] : null, tip = t.querySelector("#tipX"), foot = document.createElement("div"); foot.className = "pfoot";
-  if (pin && pin.querySelector("button")) foot.appendChild(pin);
+  if (pin && pin.querySelector("button") && !pin.classList.contains("lstfoot")) foot.appendChild(pin);
   if (pin && pin.querySelector("#pUndo,#pHint")) Array.prototype.forEach.call(pin.querySelectorAll("#pUndo,#pHint"), function (b) { pin.insertBefore(b, pin.firstChild); });   // v0.21 (craft notes): Undo and Hint are compact icons at the start of the row; "Got it" stays with its tip in the text
   if (foot.querySelector(".cgo")) foot.classList.add("go", "cmp");   /* v0.21 (lead's phone notes 1): the coach's BACK and NEXT (or Continue) make one compact row at the foot, NEXT bottom left, with More at the right of the same row; every other pixel goes to the text */
   var body = el.querySelector(".pbody"), keep = body && !top ? body.scrollTop : 0;
@@ -632,9 +637,17 @@ function setPrompt(el, h, top) {
   body = el.querySelector(".pbody"); while (t.firstChild) body.appendChild(t.firstChild);
   if (foot.firstChild) el.appendChild(foot);
   if (foot.classList.contains("cmp")) { var ck = body.querySelector(".coach .ck"); if (ck) { var fk = document.createElement("span"); fk.className = "fk"; fk.textContent = ck.textContent; ck.remove(); foot.appendChild(fk); } foot.appendChild(el.querySelector(".pmore")); }   /* the kicker ("BRIEFING · 3 OF 13") rides in the control row, so the text gets its line */
-  body.scrollTop = keep; G.pbUser = !!keep; body.addEventListener("pointerdown", function () { G.pbUser = true; }); body.addEventListener("wheel", function () { G.pbUser = true; }, { passive: true }); body.addEventListener("keydown", function () { G.pbUser = true; });
+  listGrow(el); body.scrollTop = keep; G.pbUser = !!keep; body.addEventListener("pointerdown", function () { G.pbUser = true; }); body.addEventListener("wheel", function () { G.pbUser = true; }, { passive: true }); body.addEventListener("keydown", function () { G.pbUser = true; });
   body.addEventListener("scroll", function () { if (!G.pbUser && body.scrollTop && isPh() && $("hand").classList.contains("open")) body.scrollTop = 0; promptCue(); }, { passive: true });   /* with the hand open the instruction always starts at its first line; only the player scrolls it */ promptCue(); requestAnimationFrame(function () { if (!keep) { var pb2 = el.querySelector(".pbody"); unslice(pb2, $("prompt").classList.contains("more") || $("prompt").querySelector(".pfoot .pmore") ? 0 : 28); if (pb2) pb2.scrollTop = 0; } promptCue(); });
 }
+/* RC2 (Council F1): a panel holding a list (ready, repair, or an opened Withdraw list) with its Done row after the list grows upward over the
+   table, up to 62% of the screen, so the whole list and Done show; if it still cannot, it scrolls, and Done is reached only after the list.
+   The table does not move (its foot is the panel's usual top); the panel returns to its usual height for the next step. */
+function listGrow(el) { if (!el || isDesk()) return; var cap = +el.dataset.cap; if (!cap) return; var lf = el.querySelector(".btns.lstfoot");
+  if (!lf || !isPh()) { if (el.dataset.grown) { el.dataset.grown = ""; el.style.height = el.style.maxHeight = cap + "px"; } return; }
+  var body = el.querySelector(".pbody"); if (!body) return; body.style.maxHeight = ""; body.dataset.mh = "";
+  var extra = el.offsetHeight - body.clientHeight, need = body.scrollHeight + extra + 2, hh = Math.max(cap, Math.min(Math.floor(H * .62), need));
+  el.dataset.grown = "1"; el.style.height = el.style.maxHeight = hh + "px"; }
 /* v0.21 (craft notes): no sliced lines. A scrolling box that has more than it shows is trimmed so its last visible line of text (or row, chip
    or button) is whole; the "More" pill sits in the space below it. Measured when the box is drawn, at its top. */
 function unslice(sc, reserve) {
@@ -655,7 +668,10 @@ function promptCue() {   // "More ▼" while the panel's body has text below wha
 function render() { document.documentElement.classList.toggle("tut", !!(G.info && G.info.tutorial)); hud(); hand(); prompt(); requestFit(); try { spotlight(); } catch (e) { } try { inspRefresh(); } catch (e) { } }   // v0.20.1: the bars may have changed size: refit on the next frame if the safe frame moved
 /* what caused a loss: the last attack, played or fired card, ability or H-Hour before it (consequence lines are not causes) */
 function isCause(text, fx) { if (/takes \d+ damage|is destroyed|loses? \d+ Homefront|is suppressed|covers the target|intercepts|reloads|^--- /.test(text)) return false; return (fx && fx.kind === "attack") || /^H-Hour|\b(attacks|plays|fires|uses|puts|resolves|ends|completes)\b|spills onto/.test(text); }
-function hitsBox() { if (!G.hits || !G.hits.length) return ""; return '<div class="hits"><b>Since your last move:</b>' + G.hits.slice(-3).map(function (x) { return '<div class="hit1">' + (x.cause ? '<span class="cz">' + esc(x.cause.replace(/^H-Hour: (The |Your )?/, function (m, w) { return "At H-Hour, " + (w ? w.toLowerCase() : ""); })) + "</span>" : "") + '<span class="out">' + esc(x.lines.join(" ")) + "</span></div>"; }).join("") + "</div>"; }
+function mineTouched(a, b, text) { if (!a || !b) return false; if (a.you.hf !== b.you.hf || /\bHomefront\b/.test(text) && /^(You|Your)\b/.test(text)) return true;
+  var now = {}; b.you.front.forEach(function (u) { now[u.uid] = { u: u, row: "F" }; }); b.you.rear.forEach(function (u) { now[u.uid] = { u: u, row: "R" }; });
+  return a.you.front.map(function (u) { return { u: u, row: "F" }; }).concat(a.you.rear.map(function (u) { return { u: u, row: "R" }; })).some(function (x) { var y = now[x.u.uid]; return !y || (y.u.dmg || 0) > (x.u.dmg || 0) || (!x.u.ex && y.u.ex) || (x.u.hidden && !y.u.hidden) || x.row !== y.row; }); }
+function hitsBox() { if (!G.hits || !G.hits.length) return ""; return '<div class="hits"><b>Since your last move:</b>' + G.hits.map(function (x) { return '<div class="hit1">' + (x.cause ? '<span class="cz">' + esc(x.cause.replace(/^H-Hour: (The |Your )?/, function (m, w) { return "At H-Hour, " + (w ? w.toLowerCase() : ""); })) + "</span>" : "") + '<span class="out">' + esc(x.lines.join(" ")) + "</span></div>"; }).join("") + "</div>"; }
 /* v0.21 (Council M9, ruling B): the end of a game is told from the player's side; the engine's line is written from the winner's */
 function overHow(o) { var how = String((o && o.how) || ""); if (!o || (G.info && G.info.spectate) || G.replay) return how; var won = o.winner === "You", lost = o.winner === "The bot";
   if (/^Supremacy/.test(how)) return won ? "ROUTED: you drove the enemy off its home edge (Supremacy)" : lost ? "ROUTED: you were driven off your home edge (Supremacy)" : how;
@@ -699,14 +715,24 @@ function inspRules(u, o) {
   if (f.tags) h += '<p class="zt2">Tags: ' + esc(String(f.tags).split(/\s+/).filter(Boolean).join(", ")) + "</p>";
   return h;
 }
+/* v0.21 (engine v0.17.3 trial: Kurt's table limit of 10 and Withdraw; off unless a game turns them on) */
+function tableFull() { var v = G.view; if (!v || !(+v.table_cap > 0) || v.you.table == null) return ""; return v.you.table >= +v.table_cap ? v.you.table + "/" + v.table_cap : ""; }
+function wdWhy(uid) { var v = G.view, u = findUnit(uid) || {}; if (!v || !v.withdraw) return ""; var front = (v.you.front || []).some(function (x) { return x.uid === uid; });
+  if (u.pin || u.pinned) return "Not now: this card is PINNED.";
+  if (u.ex) return "Not now: only a Ready card can be withdrawn.";
+  if (front && v.contact) return "Not now: your Frontline is in Contact.";
+  if (front && v.withdraw_fix) return "Not now: an enemy FIX nearby may forbid withdrawing Frontline cards.";
+  return "Not offered at this step."; }
+function trialLine(r) { r = r || (G.view || {}); if (!(+r.table_cap > 0) && !(+r.withdraw > 0)) return ""; var ref = { 0: "no refund", 1: "1 Supply back", 2: "half of what you paid back", 3: "what you paid, less its damage, back", 4: "relief: the next deploy costs less" }[+r.withdraw_refund || 0] || ("refund " + r.withdraw_refund);
+  return "Trial rules: table limit " + (r.table_cap || "off") + (+r.withdraw ? " · Withdraw (" + ({ 1: "to hand", 2: "to the discard pile", 3: "face-up cards to the discard pile, face-down cards to hand" }[+r.withdraw] || "on") + ", " + ref + ")" : "") + (+r.withdraw_fix ? " · a FIX stops Frontline withdrawals" : ""); }
 function actHead(i) {   // v0.21 (craft pass): a move's button says the move in a few words; the cost and detail go on the second line. The card's name is not repeated: the sheet is about that card
   var pend = G.pend, l = String(pend.options[i]), m = pend.meta[i] || {}, pr = (l.match(/\(([^)]*)\)/) || [])[1] || "", after = (l.match(/\):\s*(.*)$/) || l.match(/:\s*(.*)$/) || [])[1] || "";
   var tidy = function (x) { return String(x || "").replace(/\s+/g, " ").trim(); };
   if (trackOpt(i)) { var c = ((G.view && G.view.you.hand) || []).filter(function (x) { return x.id === m.card; })[0] || {};
     return { h: "Play to Mission Track", s: trackHint(c).replace(/^Let go: to the Mission Track · /, "") + (pr ? " · " + pr : "") }; }
-  if (m.t === "dep") return { h: "Deploy", s: pr };
+  if (m.t === "dep") return { h: "Deploy", s: /less: relief/.test(pr) ? pr.replace(/, (\d+) less: relief/, " now, $1 less this Command only (relief in place)") : pr };
   if (m.t === "hide") return { h: /decoy/.test(l) ? "Deploy as a decoy" : "Deploy hidden", s: pr + " · face down" };
-  var r = [[/^Move .* up to the Frontline/, "Move to Frontline"], [/^Move .* back to the Rear Area/, "Move to Rear Area"], [/^Send .* to infiltrate/, "Infiltrate"], [/^Use /, "Use ability"], [/^Ready /, "Ready"], [/^Exhaust /, "Exhaust"], [/^Flip .* face down/, "Flip face down"], [/^Discard /, "Discard"], [/^Reveal /, "Reveal"], [/^Upgrade /, "Upgrade"], [/^Recover /, "Recover"]];
+  var r = [[/^Move .* up to the Frontline/, "Move to Frontline"], [/^Move .* back to the Rear Area/, "Move to Rear Area"], [/^Send .* to infiltrate/, "Infiltrate"], [/^Use /, "Use ability"], [/^Ready /, "Ready"], [/^Exhaust /, "Exhaust"], [/^Flip .* face down/, "Flip face down"], [/^Discard /, "Discard"], [/^Reveal /, "Reveal"], [/^Upgrade /, "Upgrade"], [/^Recover /, "Recover"], [/^Withdraw /, "Withdraw"], [/^Air-assault /, "Air assault"]];
   for (var k = 0; k < r.length; k++) if (r[k][0].test(l)) return { h: r[k][1], s: tidy([pr, after].filter(Boolean).join(" · ")) };
   var j = l.search(/ \(|: /); return j < 0 ? { h: l, s: "" } : { h: l.slice(0, j), s: tidy(l.slice(j).replace(/^: /, "").replace(/^ \(/, "(")) };
 }
@@ -720,6 +746,8 @@ function inspActions(act, u, o) {
   if (isMulti(pend)) return "";   // the PICK button does it
   if (!opts.length) {
     if (!mine) return "";
+    var tf = tableFull(), fc = (G.faces || {})[u.name] || u; if (act.card && tf && isCap(fc) && pend.kind === "deploy") return dis("Deploy", "Table full (" + tf + "): withdraw a card or upgrade.");
+    if (!act.card && mine && G.view.withdraw && pend.kind === "deploy") { var wy = wdWhy(act.uid); if (wy) return dis("Withdraw", wy); }
     var co = pend.coach, why = co && !coachReady(pend) ? "Read the coach's note first (Next), then do what it asks." : co && co.allow ? "Basic Training asks for another move now: " + (co.do || "see the coach.") : act.card ? ((pend.hand_notes || {})[u.name] || "This card has no move at this step (" + (G.view.phase || "") + ").") : (reasonFor(u.name) || "This card has no move at this step (" + (G.view.phase || "") + ").");
     return dis(moveName(), why);
   }
@@ -971,10 +999,20 @@ addEventListener("pointercancel", function (e) { if (press && e.pointerId === pr
    Keyboard activation (Enter or Space, a click with no pointer) is unaffected. */
 function ctlKey(el) { if (!el) return ""; if (el.id === "zScrim") return "zScrim"; var b = el.closest && el.closest("button"); return b ? (b.id || "") + "|" + (b.dataset.i || "") + "|" + (b.dataset.tg || "") + "|" + (b.dataset.sup || "") + "|" + b.textContent.slice(0, 24) : ""; }
 var lastDown = { key: "", t: 0 };
-addEventListener("pointerdown", function (e) { lastDown = { key: ctlKey(e.target.closest ? (e.target.closest("button") || (e.target.id === "zScrim" ? e.target : null)) : null), t: Date.now() }; }, true);
-addEventListener("click", function (e) { if (e.detail === 0 || !e.target.closest) return; var c = e.target.closest("#zoom button, #preview button, #preview input, #zScrim, #prompt button"); if (!c) return;
+/* RC2 (coordinator's ruling on the checkers' scope point): outside the game panel, reader and preview, menus and settings keep the phone's
+   ordinary touch help; but a press that is hard to take back or sends something counts only where the finger came down inside the button:
+   abandoning or leaving a game (menu, panel, debrief), Redeploy, sending feedback, deleting a saved replay, showing the tips again, quitting */
+/* RC2 (checkers): a reload or the browser's Back in the middle of a game or lesson would drop it silently (no save and continue yet), so the
+   browser asks "Leave this page?" while a game is in progress with at least one choice made; never on the menus, after the game has ended
+   or in the debrief, or in a replay. Provide Feedback sends in the background and never leaves the page. */
+function leaveGuard() { return !!(G.started && G.info && !G.replay && !G.over && G.lastChosen && $("cover").style.display === "none"); }
+addEventListener("beforeunload", function (e) { if (!leaveGuard()) return; e.preventDefault(); e.returnValue = ""; return ""; });
+var STRICT_BTNS = "#bQuit, #bQuitApp, #suQuit, button[data-send], button[data-del], #sTipsAgain, #dNew, #dRedeploy";
+addEventListener("pointerdown", function (e) { var bd = e.target.closest ? e.target.closest("button") : null; lastDown = { key: ctlKey(bd || (e.target.id === "zScrim" ? e.target : null)), t: Date.now(), x: e.clientX, y: e.clientY, r: bd ? bd.getBoundingClientRect() : null }; }, true);   /* r: where the button was when the finger came down (a panel that moves before the click does not refuse a true press) */
+addEventListener("click", function (e) { if (e.detail === 0 || !e.target.closest) return; var c = e.target.closest("#zoom button, #preview button, #preview input, #zScrim, #prompt button, " + STRICT_BTNS); if (!c) return;
   var opened = c.closest("#zoom") ? (G.zoomAt || 0) : c.closest("#preview") ? (G.pvAt || 0) : 0, ok = lastDown.t >= opened && lastDown.key === ctlKey(c.tagName === "INPUT" ? c.closest("label") || c : c);
   if (c.tagName === "INPUT") ok = lastDown.t >= opened;   // a tick box: the press began inside the preview after it opened
+  if (ok && c.tagName === "BUTTON" && lastDown.x != null) { var br = lastDown.r || c.getBoundingClientRect(); if (lastDown.x < br.left || lastDown.x >= br.right || lastDown.y < br.top || lastDown.y >= br.bottom) ok = false; }   /* v0.21 (tip fault on 791fe46): a phone moves a touch that lands near a button onto it ("touch adjustment"); the press counts only where the finger really came down, inside the button (RC2: the same edge rule as the browser's own hit test: the left and top edges in, the right and bottom edges out) */
   if (ok && c.tagName !== "INPUT") lastDown.key = "";   // one press, one activation: a second (late) click from the same press is refused
   if (!ok) { e.stopPropagation(); e.preventDefault(); if (window.SS_REC) window.SS_REC("blocked late click on " + ctlKey(c)); } }, true);
 document.addEventListener("contextmenu", function (e) { if (e.target && (e.target.tagName === "IMG" || e.target.tagName === "CANVAS")) e.preventDefault(); });   /* v0.21 (lead's phone notes 5): a long press on a card picture never opens the browser's image menu; it is a tap (it opens the reader) */
@@ -1026,10 +1064,10 @@ $("mtrack").onclick = function (e) { var c = e.target.closest("[data-tr]"); if (
   zoom({ name: t.name, cls: t.cls, id: t.id, cap: false, gen: "", sub: t.kind === "inf" ? "Operator" : "Mission Track", lines: String(t.text).split(" / ") }, { caption: (c.dataset.own === "1" ? "Yours. " : "The enemy's. ") + (t.space <= 0 ? "Resolves at H-Hour." : t.space + " round" + (t.space === 1 ? "" : "s") + " to H-Hour.") }); };
 
 /* ================= select, then confirm (discard, readying, COUNTERATTACK) ================= */
-var MULTI = { discard: { verb: "Discard", done: "Keep the rest and draw", max: 99 }, ready_select: { verb: "Ready", done: "Done readying", max: 99 }, counterattack: { verb: "Ready", done: "Ready none", max: 2 },
+var MULTI = { discard: { verb: "Discard", done: "Keep the rest and draw", max: 99 }, counterattack: { verb: "Ready", done: "Ready none", max: 2 },
   flip: { verb: "Flip", done: "Flip none", max: 2, hint: "Tick the PICK box on each of your glowing cards to flip face down, then confirm." }, paralyze: { verb: "Exhaust", done: "Exhaust none", max: 2, hint: "Tick the PICK box on each glowing enemy card to exhaust, then confirm." },
   strike: { verb: "Ready", done: "Ready none", max: 2, hint: "Tick the PICK box on each glowing FIRES card to ready, then confirm." } };
-function isMulti(p) { return !!(p && MULTI[p.kind] && !p.coach); }   /* v0.17: Basic Training asks one card at a time */
+function isMulti(p) { return !!(p && MULTI[p.kind] && !p.coach); }   /* v0.17: Basic Training asks one card at a time. RC2 (Council F1): readying is never a PICK step: the list's buttons (Ready all first) and each card's reader do it, one way */
 function optFor(id) { var pend = G.pend, meta = pend.meta || []; for (var i = 0; i < pend.options.length; i++) { var m = meta[i] || {}; if (m.src === id || m.card === id) return i; } return -1; }
 function finalOpt() { var pend = G.pend, meta = pend.meta || []; for (var i = 0; i < pend.options.length; i++) { var m = meta[i] || {}; if (m.t === "num" && m.n === 0) return i; } return pend.options.length - 1; }
 function multiToggle(id, ix) {
@@ -1061,6 +1099,11 @@ function readyList(pend, M) {
   if (!items.length) return ""; var tot = items.reduce(function (a, x) { return a + x.c * x.pts; }, 0), verb = rep ? "Repair" : "Ready";
   return '<p class="rsup">You have <b>' + sup + "</b> Supply.</p>" + '<div class="rlist">' + ((items.length > 1 || (rep && items[0].pts > 1)) && tot <= sup && !pend.coach ? '<button class="go" id="mAll" data-rep="' + (rep ? 1 : 0) + '">' + verb + " all · " + tot + " Supply</button>" : "") +
     items.map(function (x) { return '<button class="' + (pend.coach ? "go" : "ghost") + ' rone" data-i="' + x.i + '" data-uid="' + esc(x.id) + '"' + (x.c > sup ? " disabled" : "") + ' aria-label="' + esc(verb + " " + x.name + ", " + x.c + " Supply" + (x.dur ? ", Durability " + x.dur.replace(" → ", ", ") + " after" : "")) + '">' + verb + " " + esc(x.name) + " · " + x.c + " Supply" + (x.dur ? ' <small>(' + esc(x.dur) + ")</small>" : "") + "</button>"; }).join("") + "</div>"; }
+/* v0.21 (RC2, the Withdraw trial): in Command the panel lists each card you may withdraw, with what it costs and what comes back; a tap on the card reads it, as always */
+function wdList(pend) { var items = []; (pend.options || []).forEach(function (l, i) { var m = (pend.meta || [])[i] || {}; if (m.t !== "wd") return; var u = findUnit(m.src) || {}, pr = (l.match(/\(([^)]*)\)/) || [])[1] || "", dest = /discard pile/.test(l) ? "to the discard pile" : "to your hand";
+    items.push('<button class="ghost rone" data-i="' + i + '" data-uid="' + esc(m.src || "") + '" aria-label="' + esc("Withdraw " + (u.name || "") + " " + dest + ", " + pr) + '">Withdraw ' + esc(u.hidden ? "face-down " + (u.name || "card") : (u.name || "card")) + " · " + esc(dest) + (pr ? " <small>(" + esc(pr) + ")</small>" : "") + "</button>"); });
+  return items.length && G.wdOpen ? '<div class="wdh"><p class="rsup">Withdraw a card (trial rule):</p><button class="ghost" id="wdT" aria-expanded="true" aria-label="Hide the Withdraw list">HIDE ▴</button></div><div class="rlist">' + items.join("") + "</div>" : ""; }   /* RC2 (Council F1): opened by the WITHDRAW button in the panel's button row, so no Withdraw choice hides behind More while Done deploying shows; opened, the panel grows (listGrow) */
+function wdCount(pend) { return (pend.options || []).filter(function (l, i) { return ((pend.meta || [])[i] || {}).t === "wd"; }).length; }
 function readyAll() { var pend = G.pend, M = maps(); if (!pend || (pend.kind !== "ready_select" && pend.kind !== "ready")) return; var ids = [];
   Object.keys(M.src).forEach(function (id) { if (!(O[id] && O[id].side === "own" && optFor(id) >= 0)) return; var n = pend.kind === "ready" ? Math.max(1, (findUnit(id) || {}).dmg || 1) : 1; for (var k = 0; k < n; k++) ids.push(id); });
   G.multi = null; G.autoQ = { kind: pend.kind, ids: ids }; autoStep(); }   /* each choice is re-read from the list the engine sends back; a card no longer listed is skipped, then Done (No more repairs) */
@@ -1074,7 +1117,7 @@ function autoStep() {
   while (q.ids.length) { var i = optFor(q.ids.shift()); if (i >= 0) return choose(i); }
   G.autoQ = null; choose(finalOpt());
 }
-$("prompt").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; if (b.id === "mAll") return readyAll(); if (b.id === "mGo") multiGo(); if (b.id === "mClr") { G.multi = null; handKey = ""; render(); } });
+$("prompt").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; if (b.id === "wdT") { G.wdOpen = !G.wdOpen; return render(); } if (b.id === "mAll") return readyAll(); if (b.id === "mGo") multiGo(); if (b.id === "mClr") { G.multi = null; handKey = ""; render(); } });
 
 /* ================= drag and drop: hand to table or Mission Track; your card to a target; the marker along the route ================= */
 var drag = null, dragged = false;
@@ -1133,7 +1176,7 @@ function dragTip(d, x, y) { var g = $("dragGhost"), tip = g.querySelector(".dtip
   var M = maps(), pend = G.pend, over = document.elementFromPoint(x, y), onTrack = overTrack(x, y), onHand = !!(over && over.closest && over.closest("#hand,#bot")), mine = d.kind === "card" ? (M.card[d.c.id] || []) : [], o = targetAt(x, y, M.dsts), t = "", ok = false;
   if (!pend) t = "";
   else if (d.kind === "card" && onTrack && !d.canTrack && isCap((G.faces || {})[d.c.name] || d.c)) t = "Only Effect cards and Operators go on the Mission Track";
-  else if (d.kind === "card" && !mine.length) t = ((pend.hand_notes || {})[d.c.name] || "This card cannot be played right now");
+  else if (d.kind === "card" && !mine.length) t = (tableFull() && pend.kind === "deploy" && isCap((G.faces || {})[d.c.name] || d.c) ? "Table full (" + tableFull() + "): withdraw a card or upgrade" : (pend.hand_notes || {})[d.c.name] || "This card cannot be played right now");
   else if (d.kind === "card" && dropOff(x, y, d)) t = "Let go: back to your hand";
   else if (d.kind === "unit" && dropOff(x, y, d)) t = "Let go: cancel";
   else if (d.kind === "unit" && rowMove(d, x, y) >= 0) { ok = true; t = "Let go: " + shortOpt(pend.options[rowMove(d, x, y)]); }
@@ -1197,7 +1240,7 @@ addEventListener("pointerup", function (e) {
   if (d.kind === "card") {
     var mine = M.card[d.c.id] || [], over = document.elementFromPoint(x, y), onTrack = overTrack(x, y), onHand = !!(over && over.closest && over.closest("#hand,#bot"));
     var back = function () { G.sel = null; G.selT = null; handKey = ""; return render(); };
-    if (!mine.length) return back();   // (letting go on the hand or its band was handled by dropOff above)   // v0.21: a card that cannot be played goes back (the line under it said why); a drag never opens the Inspector
+    if (!mine.length) { if (tableFull() && pend.kind === "deploy") feed("Table full (" + tableFull() + "): withdraw a card or upgrade."); return back(); }   // (letting go on the hand or its band was handled by dropOff above)   // v0.21: a card that cannot be played goes back (the line under it said why); a drag never opens the Inspector
     if (onTrack) { var tr = trackOpts(mine); if (tr.length === 1) { $("dragGhost").style.display = "block"; return landOnTrack(tr[0], d); } return back(); }   // only an Effect (or a Reaction, in a reaction prompt) goes on the track
     var o = targetAt(x, y, M.dsts);
     if (o && M.dsts[o.uid]) { var dd = M.dsts[o.uid].filter(function (i) { return mine.indexOf(i) >= 0; }); if (dd.length) { if (dd.length === 1 && (pend.meta[dd[0]] || {}).t !== "attack") return choose(dd[0]); return preview(dd); } }   // onto a card: upgrade it, or aim at it
@@ -1370,7 +1413,7 @@ function choose(i, sure) {
   if (co && !coachReady(G.pend)) { G.cpage[G.pend.n] = 99; }
   if (!co && G.tipNow && G.tipNow.key && G.tipNow.n === G.pend.n) tipSeen(G.tipNow.key);
   if (PREF.confirm && !sure && needsConfirm(i)) { G.confirm = { i: i, n: G.pend.n }; SFX.select && SFX.select(); return render(); }
-  G.confirm = null; var n = G.pend.n; G.lastChosen = { i: i, n: n, label: G.pend.options[i], meta: (G.pend.meta || [])[i] || null }; SFX.click(); G.hits = []; closePreview(); closeInspector(true); G.sel = null; G.selT = null; G.pend = null; G.latestPend = null; G.busy = true; handKey = ""; render();
+  G.confirm = null; var n = G.pend.n; G.lastChosen = { i: i, n: n, label: G.pend.options[i], meta: (G.pend.meta || [])[i] || null }; SFX.click(); G.hits = []; if (G.hgrp) G.hgrp = G.hgrp.own ? null : { cause: G.hgrp.cause, lines: [] };   /* an exchange your choice interrupted (a reaction, a target) keeps its cause for what follows */ closePreview(); closeInspector(true); G.sel = null; G.selT = null; G.pend = null; G.latestPend = null; G.busy = true; handKey = ""; render();
   api("/play/choose", { i: i, n: n }).then(poll, fail);
 }
 function undo() { if (G.busy) return; G.busy = true; G.sel = null; G.selT = null; G.pend = null; closePreview(); render(); api("/play/undo", {}).then(poll, fail); }
@@ -1421,11 +1464,15 @@ function playNext() {
     else if (/^You air-assault/.test(text)) vox("air");
     var isAtk = fx.kind === "attack" && /attack/.test(text) && f.n !== G.lastFx, held = G.heldAtk; G.heldAtk = null;
     sync(f.view, text); feed(text);
-    if (prev && G.info && !G.info.spectate && !G.replay && !/^You /.test(text)) {   // one of your cards was destroyed or damaged by the other side: hold it, and keep it for your next choice
-      var mine0 = {}; prev.you.front.concat(prev.you.rear).forEach(function (u) { mine0[u.uid] = u; }); var now0 = {}; f.view.you.front.concat(f.view.you.rear).forEach(function (u) { now0[u.uid] = u; });
-      var hurt = Object.keys(mine0).some(function (k) { return !now0[k] || (now0[k].dmg || 0) > (mine0[k].dmg || 0); }) || /Your .+ (is destroyed|takes \d+ damage)/.test(text);
-      if (hurt) { var cz = G.cause && G.cause !== text ? G.cause : "", lh = G.hits[G.hits.length - 1]; if (lh && lh.cause === cz) lh.lines.push(text); else G.hits.push({ cause: cz, lines: [text] }); wait = Math.max(wait, 2.4); }
-      else if (/^You lose \d+ Homefront \(.+ lost\)/.test(text) && G.hits.length) G.hits[G.hits.length - 1].lines.push(text);
+    if (prev && G.info && !G.info.spectate && !G.replay) {   /* RC2 (Council F5): "Since your last move" keeps whole exchanges: the line that caused it, then every line that followed, for anything of yours damaged, destroyed, exhausted, revealed or moved, and every Homefront change with its reason */
+      var cz0 = isCause(text, fx), gp = G.hgrp, hfl = /\bHomefront\b/.test(text) && /\b(lose|loses|gain|gains)\b/.test(text) && /\b(You|Your|each side)\b/.test(text);
+      if (/^--- /.test(text)) G.hgrp = null;   // a new round or phase ends the exchange
+      else if (hfl && !(gp && G.hits.indexOf(gp) >= 0 && /lost\)/.test(text))) { G.hits.push({ cause: "", lines: [text] }); wait = Math.max(wait, 2.4); }   // a Homefront change is its own line, with its reason (after a loss in an exchange, it joins that exchange)
+      else {
+        if (/^You (?!lose|gain)/.test(text)) gp = G.hgrp = { cause: text, lines: [], own: true };   // your own move starts its own exchange (not repeated back to you), unless something of yours is then hit in it
+        else if (cz0 || !gp) { gp = G.hgrp = { cause: cz0 ? text : "", lines: cz0 ? [] : [text] }; }
+        else gp.lines.push(text);
+        if (mineTouched(prev, f.view, text) && !(gp.own && !gp.lines.length)) { if (G.hits.indexOf(gp) < 0) G.hits.push(gp); wait = Math.max(wait, 2.4); } }
     }
     if (isCause(text, fx)) G.cause = text;
     if (held) wait = Math.max(wait, attackAnim(held, f.view, ICPT.test(text)) + .25);   // the shot waited for your reaction choice
@@ -1495,7 +1542,7 @@ function segRow(key, label, sub, opts) { return '<div class="row"><span>' + esc(
 function showSettings() { audioInit(); unlock(); SFX.open && SFX.open(); G.retFocus = document.activeElement;
   var el = $("settings"), d = G.setupData || {}, L = window.SS_LOGOS || [], CR = window.SS_CREDITS || [], MU = window.SS_MUSIC || [];
   var rng = function (id, label, v) { return '<div class="row"><span>' + label + '</span><input type="range" id="' + id + '" min="0" max="100" value="' + Math.round(v * 100) + '"></div>'; };
-  el.innerHTML = '<div class="sb"><button class="ghost" id="setX">Close</button><h3 class="t">Settings</h3><p class="hint">Saved on this device. Changes apply at once.</p>' +
+  el.innerHTML = '<div class="sb"><div class="shead"><button class="ghost" id="setX">Close</button></div><h3 class="t">Settings</h3><p class="hint">Saved on this device. Changes apply at once.</p>' +
     "<h4>Display</h4>" + segRow("text", "Text size", "", [[1, "100%"], [1.25, "125%"], [1.5, "150%"], [1.75, "175%"], [2, "200%"]]) +
     segRow("motion", "Reduced motion", "Stills the screen effects. Follows your device setting unless you choose.", [["auto", "Follow device"], ["on", "On"], ["off", "Off"]]) +
     segRow("shake", "Screen shake", "", [[true, "On"], [false, "Off"]]) +
@@ -1509,11 +1556,7 @@ function showSettings() { audioInit(); unlock(); SFX.open && SFX.open(); G.retFo
     segRow("tips", "Tips", "First-time tips, and the one-line hints in the prompt.", [[true, "On"], [false, "Off"]]) + '<div class="row"><span>First-time tips<small>Show each one again, as in your first game.</small></span><button class="ghost" id="sTipsAgain">Show them again</button></div>' +
     segRow("badges", "Attack badges", "The attack value on cards on the table.", [[true, "On"], [false, "Off"]]) +
     "<h4>Accessibility</h4>" + segRow("captions", "Captions for radio calls", "Shows each radio call as text, also when the voices are off.", [[false, "Off"], [true, "On"]]) +
-    '<h4>About</h4><div class="about">' +   // v0.21 (content pack decision 3): no logos until the College approves them beside the disclaimer
-    "<p><b>Shadows &amp; Steel</b>, a force design and concept development card game from the Department of Strategic Wargaming, U.S. Army War College. Battlefield table v0.20" + (d.version ? ", game " + esc(d.version) : "") + ". Cards: " + esc(d.cards || (G.info && G.info.cards) || "") + ".</p>" +
-    "<p><b>Sound</b></p><ul>" + CR.map(function (c) { return "<li>" + esc(c.source) + ": " + esc(c.what) + "</li>"; }).join("") + "</ul>" + (MU.length ? "<p>Music: " + esc(MU.join(", ")) + ".</p>" : "") +
-    (SITE ? '<p><button class="ghost" id="sNotice">Read the playtest notice</button></p>' : "") +
-    "<p><b>Card art</b>: made for the project (Art Pass v6.0 and earlier passes); some cards show Beta 3 art until the next Art Pass.</p></div></div>";
+    "</div>";   /* v0.21 (lead's note): Settings holds settings only; the credits, versions and the notice moved to About */
   el.style.display = "block"; el.scrollTop = 0; try { $("setX").focus({ preventScroll: true }); } catch (x) { }
   $("sMute").onchange = function () { G.muted = this.checked; if (master) master.gain.value = G.muted ? 0 : .9; saveSound(); };
   $("sFx").oninput = function () { G.volFx = this.value / 100; if (sfxBus) sfxBus.gain.value = G.volFx; saveSound(); }; $("sFx").onchange = function () { SFX.thud(); };
@@ -1688,7 +1731,7 @@ function gameNow() {   // what Provide Feedback carries about the game: the one 
     return { record: r, notes: g.notes || [], tutorial: !!(r && r.tutorial), spectate: !!g.spectate, you: g.you, bot: g.bot, terrain: g.terrain, finished: g.finished, winner: g.winner, how: g.how, round: g.round, id: "", saved: g.savedAt }; }); }
 function gameLine(g) { if (!g) return "No game played on this device yet.";
   var what = g.tutorial ? "Basic Training" : g.spectate ? "Watched the bot play itself" : "Play the bot"; var res = g.finished ? (/^Nobody/.test(g.winner) ? "a draw" : (g.winner === "You" ? "you won" : g.winner + " won")) + (g.how ? " (" + g.how + ")" : "") + " in round " + g.round : "not finished, round " + (g.round || 1);
-  return what + ": " + (g.you || "") + " against " + (g.bot || "") + " on " + (g.terrain || "") + ", " + res + "."; }
+  var gr = g.rules || (g.record && g.record.rules), tr = (gr && (+gr.table_cap || +gr.withdraw) ? " " + trialLine(gr) + "." : "") + (gr && +gr.concepts ? " " + BEN_NOTE : ""); return what + ": " + (g.you || "") + " against " + (g.bot || "") + " on " + (g.terrain || "") + ", " + res + "." + tr; }
 function deviceLine() {   // v0.20.2: the kind of device, the browser family and the input, in plain words (no version numbers or other identifying detail)
   var ua = navigator.userAgent || "", mm = function (q) { try { return matchMedia(q).matches; } catch (e) { return false; } }, coarse = mm("(pointer: coarse)"), fine = mm("(any-pointer: fine)"), sd = Math.min(screen.width || innerWidth, screen.height || innerHeight);
   var kind = coarse ? (sd < 600 ? "phone" : "tablet") : "desktop or laptop";
@@ -1742,7 +1785,7 @@ function sendForm(root) {
     } });
 }
 $("bSaveRep").onclick = function () { $("menu").hidden = true; if (!G.info || G.replay) return; saveReplay(null, null); };
-function reset() { G.cpage = {}; G.moment = null; G.momDone = {}; G.nudge = null; G.tipNow = null; tweens = []; clearBoard(); G.hint = null; G.hints = 0; G.view = null; G.latest = null; G.pend = null; G.latestPend = null; G.queue = []; G.playing = false; G.since = 0; G.sel = null; G.over = null; G.overShown = false; G.err = null; G.stand = false; G.standRound = 0; G.hoverDst = null; G.heldAtk = null; G.lastAtk = null; G.explain = ""; G.aar = []; G.aarEv = []; G.aarLast = null; G.why = null; G.histWhy = {}; G.rate = {}; gameId = ""; G.startedAt = new Date().toISOString(); G.stored = false; G.hist = []; G.hits = []; G.cause = ""; $("bQuit").textContent = "Abandon game"; G.multi = null; G.autoQ = null; G.notes = []; G.paused = false; G.replay = null; G.savedReplay = null; G.lastRec = null; G.pgen = (G.pgen || 0) + 1; G.ordersRound = 0; G.shuffled = false; document.body.classList.remove("replaying"); $("debrief").style.display = "none"; $("bQuit").textContent = "Abandon game"; G.waiting = false; G.lastN = 0; G.skip = false; G.started = false; G.busy = false; G.caption = ""; lastHf = {}; handKey = ""; $("feed").innerHTML = ""; closePreview(); }
+function reset() { G.wdOpen = false; G.hgrp = null; G.lastChosen = null; G.cpage = {}; G.moment = null; G.momDone = {}; G.nudge = null; G.tipNow = null; tweens = []; clearBoard(); G.hint = null; G.hints = 0; G.view = null; G.latest = null; G.pend = null; G.latestPend = null; G.queue = []; G.playing = false; G.since = 0; G.sel = null; G.over = null; G.overShown = false; G.err = null; G.stand = false; G.standRound = 0; G.hoverDst = null; G.heldAtk = null; G.lastAtk = null; G.explain = ""; G.aar = []; G.aarEv = []; G.aarLast = null; G.why = null; G.histWhy = {}; G.rate = {}; gameId = ""; G.startedAt = new Date().toISOString(); G.stored = false; G.hist = []; G.hits = []; G.cause = ""; $("bQuit").textContent = "Abandon game"; G.multi = null; G.autoQ = null; G.notes = []; G.paused = false; G.replay = null; G.savedReplay = null; G.lastRec = null; G.pgen = (G.pgen || 0) + 1; G.ordersRound = 0; G.shuffled = false; document.body.classList.remove("replaying"); $("debrief").style.display = "none"; $("bQuit").textContent = "Abandon game"; G.waiting = false; G.lastN = 0; G.skip = false; G.started = false; G.busy = false; G.caption = ""; lastHf = {}; handKey = ""; $("feed").innerHTML = ""; closePreview(); }
 function useBuild(k) {   // card faces and printed values of the build in play (the test build has cards the baseline does not)
   var b = (G.builds || []).filter(function (x) { return x.key === k; })[0]; if (!b || G.buildOn === k) return; G.buildOn = k; G.faces = b.faces || G.faces; G.meta = b.meta || G.meta; G.gloss = b.glossary || G.gloss; G.decklists = b.decklists || G.decklists; handCv = {}; handKey = ""; }
 /* ================= the map: contour lines of the chosen battlefield (setup backdrop and saved-game cover) ================= */
@@ -1767,7 +1810,11 @@ function contourMap(cnv, terrain) {
 var THEORY = { SPEARHEAD: "Shock. Close by round 3, keep attacking, push the enemy off the board.", SPECTRUM: "The long game. The enemy fights blind, late and out of step.",
   BULWARK: "Wants to be attacked. Blunt the blow, hold, counterpunch, win on points.", "KILL CHAIN": "Out-cycle the enemy. Find, strike, confirm, strike again." };
 var KEYCLASS = { SPEARHEAD: "M2", BULWARK: "PROT", "KILL CHAIN": "FIRES", SPECTRUM: "INFO" };
-var SET = { mode: (function () { try { return localStorage.getItem("ss.trained") ? "bot" : "train"; } catch (e) { return "train"; } })(), you: "", bot: "", terrain: "", first: "", concepts: "0", fd: "0", end: "0" };
+/* v0.21 (RC2): the Withdraw trial. The live page has one switch (off by default) with the destination and refund fixed here; test pages offer every setting */
+var TRIAL_LIVE = { withdraw: "3", withdraw_refund: "2" };   /* the lead's ruling (19 Nov): where a withdrawn card goes (3: face-up to the discard pile, face-down to hand) and the refund (2: half of what was paid, rounded down): one line to change */
+var TRIAL_LIVE_NOTE = "At most 10 cards on each side of the table. In Command, spend 1 Lift to withdraw a Ready card (not a PINNED card, and not a Frontline card while in Contact): a face-up card goes to your discard pile and you get back half the Supply you paid for it, rounded down; a face-down card returns to your hand. A withdrawn card cannot come back this round.";
+function trialSettings() { return window.SS_TEST_NAME ? { table_cap: "10", withdraw: SET.wdest || "3", withdraw_refund: SET.wref || "2", withdraw_fix: SET.wfix || "0" } : { table_cap: "10", withdraw: TRIAL_LIVE.withdraw, withdraw_refund: TRIAL_LIVE.withdraw_refund, withdraw_fix: "0" }; }
+var SET = { trial: window.SS_TEST_NAME ? "1" : "0", wdest: "3", wref: "2", wfix: "0", mode: (function () { try { return localStorage.getItem("ss.trained") ? "bot" : "train"; } catch (e) { return "train"; } })(), you: "", bot: "", terrain: "", first: "", concepts: "0", fd: "0", end: "0" };
 function conceptArt(name) {   // the Concept's own painting, or the strongest card of its signature Class that has art
   if (ART["Concept_" + name]) return ART["Concept_" + name];
   var best = null; Object.keys(G.faces || {}).forEach(function (n) { var f = G.faces[n]; if (f.cap && f.cls === KEYCLASS[name] && ART[f.id] && (!best || String(f.gen).length > String(best.gen).length)) best = f; });
@@ -1794,15 +1841,17 @@ function setupBody(d) {
     '</div><p class="hint">' + (tr ? esc(tr.text) : "A battlefield from the two boxes in play, chosen at random.") + "</p></section>" +
     '<details class="more"' + (SET.open ? " open" : "") + '><summary>Rules for this game</summary><div class="opts">' +
     '<div><label>Goes first in round 1</label>' + seg("first", [["", "Random"], ["you", watch ? "South" : "You"], ["bot", watch ? "North" : "The bot"]]) + "</div>" +
-    '<div><label>Concept benefits</label>' + seg("concepts", [["0", "Off while we balance"], ["1", "On"]]) + "</div>" +
+    '<div><label>Concept benefits</label><p class="hint">Held for campaign play.</p></div>' +   /* v0.21 (ruling AS item 12): no switch; the base game is played without them */
     '<div><label>Hand at the end of the round</label>' + seg("fd", [["0", "Keep it"], ["1", "Draw 5 new"]]) + "</div>" +
-    '<div><label>The game ends</label>' + seg("end", [["0", "At Assessment"], ["1", "The instant a condition is met"]]) + "</div></div></details>" +
+    '<div><label>The game ends</label>' + seg("end", [["0", "At Assessment"], ["1", "The instant a condition is met"]]) + "</div>" +
+    (!watch ? (window.SS_TEST_NAME ? '<div><label>Trial rule (test page): table limit of 10 and Withdraw</label>' + seg("trial", [["0", "Off"], ["1", "On"]]) + "</div>" + (SET.trial === "1" ? '<div><label>Withdrawn cards go to</label>' + seg("wdest", [["1", "Hand"], ["2", "Discard pile"], ["3", "Face-up to discard, face-down to hand"]]) + '</div><div><label>Withdraw gives back</label>' + seg("wref", [["0", "Nothing"], ["1", "1 Supply"], ["2", "Half of what you paid"], ["3", "All of it, less its damage"], ["4", "Relief: next deploy costs less"]]) + '</div><div><label>An enemy FIX stops Frontline withdrawals</label>' + seg("wfix", [["0", "Off"], ["1", "On"]]) + "</div>" : "")
+      : '<div><label>Trial rule: table limit of 10 and Withdraw (experimental)</label>' + seg("trial", [["0", "Off"], ["1", "On"]]) + '<p class="hint">' + esc(TRIAL_LIVE_NOTE) + "</p></div>") : "") + "</div></details>" +
     '<div class="go"><button id="pgo" class="big">' + (watch ? "Watch the game" : "Start the game") + '</button><p>' + esc(SET.you) + " against " + esc(SET.bot) + (SET.terrain ? ", " + esc(SET.terrain.toLowerCase()) : ", random ground") + '</p></div><pre id="serr"></pre>';
 }
 /* v0.21 (WP8, spec 5.2; Menu, About and Briefing content pack v0.1, section 3): the Main Menu is one big action and four short ones.
    START BASIC TRAINING is the primary until training is done, then PLAY (with the last setup under it) and TRAINING joins the list.
    Each label's description is its accessible description; only the primary's is printed. */
-function buildTag(d) { return "Battlefield table v0.20" + (d && d.version ? " · game " + d.version : "") + (d && d.cards ? " · " + d.cards : ""); }
+function buildTag(d) { return "Battlefield table v0.21" + (d && d.version ? " · game " + d.version : "") + (d && d.cards ? " · " + d.cards : ""); }
 /* v0.21 (checkers A): the lead edits notices.js by hand, so its data is checked once: lists that are not lists become empty, entries
    without a text id, title and body are dropped, and anything unusable hides the bell; the Main Menu never depends on it */
 (function () { try { var N = window.SS_NOTICES; if (!N || typeof N !== "object" || Array.isArray(N)) { window.SS_NOTICES = null; return; }
@@ -1824,21 +1873,31 @@ function menuBody(el, d) {
   var h = '<div class="splash" aria-hidden="false"><picture><source media="(min-width: 1024px)" type="image/webp" srcset="' + SPLASH_BIG + '.webp"><source media="(min-width: 1024px)" srcset="' + SPLASH_BIG + '.jpg"><img src="' + SPLASH_ART + '" alt="" aria-hidden="true" draggable="false" onerror="splashErr(this)"></picture><i class="scr" aria-hidden="true"></i>' +
     '<h1 class="t">Shadows <span>&amp;</span> Steel<small> 2045</small></h1>' +
     (N ? '<button class="ghost bell" id="nBell" aria-haspopup="dialog" aria-expanded="false" aria-label="' + (unread ? "Notices, " + unread + " new" : "Notices") + '"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6V11a7 7 0 0 0-5.5-6.84V3a1.5 1.5 0 0 0-3 0v1.16A7 7 0 0 0 5 11v5l-2 2v1h18v-1z"/></svg>' + (unread ? '<b class="cnt" aria-hidden="true">' + unread + "</b>" : "") + "</button>" : "") +
-    (wel ? '<div class="wnote" id="wNote" role="note" aria-label="Welcome"><button class="ghost wx" id="wX" aria-label="Close the welcome note">✕</button><div class="wtx" tabindex="0"><p class="wk">Welcome · playtest</p><p>' + md(N.welcome.short) + '</p><p class="wl">You can read this again under the bell, and in About.</p></div><div class="row"><button class="ghost" id="wGot">GOT IT</button></div></div>' : "") + "</div>";
-  h += '<nav class="mm" aria-label="Main Menu">' + item("play", "PLAY", last, true) + '<div class="mlist">' + item("train", "TRAINING", "Basic Training, and more lessons as they come.") +
+    (wel ? '<div class="wnote" id="wNote" role="note" aria-label="Welcome"><button class="ghost wx" id="wX" aria-label="Close the welcome note">✕</button><div class="wtx" tabindex="0"><i class="wsp" aria-hidden="true"></i><p class="wk">Welcome · playtest</p><p class="wm">' + md(N.welcome.short) + '</p><p class="wm2">' + md(N.welcome.tiny || WELCOME_TINY) + '</p><p class="wl">You can read this again under the bell, and in About.</p></div><div class="row"><button class="ghost" id="wGot">GOT IT</button></div></div>' : "") + "</div>";
+  var trained = false; try { trained = !!localStorage.getItem("ss.trained"); } catch (e) { }   /* RC2 (Council F3, guide 6): until Basic Training has been completed once on this device, TRAINING is the gold main action; then PLAY (the same flag today's live page sets) */
+  h += '<nav class="mm" aria-label="Main Menu">' + (trained ? item("play", "PLAY", last, true) : item("train", "TRAINING", "Basic Training: a guided battle of about 15 minutes.", true)) + '<div class="mlist">' + (trained ? item("train", "TRAINING", "Basic Training, and more lessons as they come.") : item("play", "PLAY", "A battle against the bot.")) +
     item("library", "LIBRARY", "Cards, the Field Manual and saved replays.") + item("settings", "SETTINGS", "Text size, sound, motion and controls.") + item("about", "ABOUT", "The game, the film and the team.") + "</div>" +
     ((SITE || LOCAL) ? '<div class="msec">' + (SITE ? '<button class="ghost lk" id="suSend" aria-describedby="md_fb">PROVIDE FEEDBACK</button><span class="sr" id="md_fb">Tell the team what worked and what did not.</span>' : "") + (LOCAL ? '<button class="ghost lk" id="suQuit">QUIT</button>' : "") + "</div>" : "") + "</nav>";
   el.innerHTML = h; splashFit();
 }
 /* the band is about 36% of a phone's height (250 px or more), smaller only if the menu would otherwise need scrolling */
+var WELCOME_TINY = "Thank you for testing. New here? Start with **TRAINING**: a guided battle of about 15 minutes. Please do not share this page's address.";   /* RC2 (Council F4): the welcome note's words when the full note cannot show whole above the title (small phones) */
+/* RC2 (Council F4): on a phone the welcome note sits whole inside the picture band, above the title: its height stops 6 px above the title;
+   if the full words do not fit, the short version shows with GOT IT in the top row (no separate close); if even that cannot fit, its text scrolls */
+function noteFit() { var n = $("wNote"), t = document.querySelector("#suBody .splash h1"); if (!n || !t) return; n.classList.remove("tiny"); n.style.maxHeight = "";
+  if (!(innerWidth < 600 && innerHeight > innerWidth)) return; var room = Math.floor(t.getBoundingClientRect().top - n.getBoundingClientRect().top - 6); 
+  var tx = n.querySelector(".wtx"), over = function () { return tx && tx.scrollHeight > tx.clientHeight + 1; };
+  if (room >= 60) { n.style.maxHeight = room + "px"; if (over()) n.classList.add("tiny"); if (!over()) return; }
+  n.classList.add("tiny"); n.style.maxHeight = "none"; var sp = n.parentNode, th = t.getBoundingClientRect().height;   /* large text: even the short words do not fit; the band grows to hold the note whole above the title (the menu then scrolls, on this first visit only) */
+  sp.style.height = Math.ceil(10 + n.getBoundingClientRect().height + 6 + th + 10) + "px"; }
 function splashFit() { var sp = document.querySelector("#suBody .splash"), mm = document.querySelector("#suBody .mm"); if (!sp || !mm) return; sp.style.height = "";
-  var w = innerWidth, h = innerHeight, cv = $("cover"); if (!(w < 600 && h > w)) return; var want = Math.max(250, Math.round(h * .36)); sp.style.height = want + "px";
-  var over = Math.round(mm.getBoundingClientRect().bottom + cv.scrollTop + 8 - h); if (over > 0) sp.style.height = Math.max(120, want - over) + "px"; }   // PLAY, the four buttons and Provide Feedback fit without scrolling; the build tag below may scroll
+  var w = innerWidth, h = innerHeight, cv = $("cover"); if (!(w < 600 && h > w)) return noteFit(); var want = Math.max(250, Math.round(h * .36)); sp.style.height = want + "px";
+  var over = Math.round(mm.getBoundingClientRect().bottom + cv.scrollTop + 8 - h); if (over > 0) sp.style.height = Math.max(120, want - over) + "px"; noteFit(); }   // PLAY, the four buttons and Provide Feedback fit without scrolling; the build tag below may scroll
 addEventListener("resize", function () { if (G.setupData && (!SET.screen || SET.screen === "menu")) splashFit(); });
 /* notices (game/notices.js, the lead's own file): plain text, **bold** only; nothing from the file is inserted unescaped */
 function md(t) { return esc(t || "").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>"); }
 function mdP(t) { return String(t || "").split(/\n\s*\n/).map(function (p) { return "<p>" + md(p) + "</p>"; }).join(""); }
-function welcomeSeen() { try { return !!localStorage.getItem("ss.welcomeSeen"); } catch (e) { return !!G.welcomeSeen; } }
+function welcomeSeen() { try { return !!(localStorage.getItem("ss.welcomeSeen") || localStorage.getItem("ss.welcomed")); } catch (e) { return !!G.welcomeSeen; } }
 function noticeItems() { var N = window.SS_NOTICES || {}, today = new Date().toISOString().slice(0, 10); return { news: (N.whatsNew || []).slice(), dev: (N.devNotes || []).filter(function (x) { return !x.until || x.until >= today; }) }; }
 function noticesSeen() { try { var raw = localStorage.getItem("ss.noticesSeen"); if (raw === null) { var it = noticeItems(), ids = it.news.concat(it.dev).map(function (x) { return x.id; }); localStorage.setItem("ss.noticesSeen", JSON.stringify(ids)); return ids; } return JSON.parse(raw); } catch (e) { if (!G.noticesSeen) { var it2 = noticeItems(); G.noticesSeen = it2.news.concat(it2.dev).map(function (x) { return x.id; }); } return G.noticesSeen; } }   /* a first visit counts nothing as new: only entries added after it do */
 function noticesUnread() { if (!window.SS_NOTICES) return 0; var it = noticeItems(), seen = noticesSeen(); return it.news.concat(it.dev).filter(function (x) { return seen.indexOf(x.id) < 0; }).length; }
@@ -1868,16 +1927,19 @@ var FILM = "media/hype_540.mp4";
 function aboutBody(el, d) {
   var rm = reducedMotion();
   el.innerHTML = '<article class="about2">' +
-    '<h2 class="mh2">ABOUT SHADOWS &amp; STEEL 2045</h2><p>Shadows &amp; Steel is a card game about force design and concept development. It explores innovation in multi-domain warfare through strategic, competitive play. The game is in playtesting, and your feedback shapes it. Play a battle, then tell the team what you think.</p>' +
+    '<h2 class="mh2">ABOUT SHADOWS &amp; STEEL 2045</h2><h3>THE GAME</h3><p>Shadows &amp; Steel is a card game about force design and concept development. It explores innovation in multi-domain warfare through strategic, competitive play. The game is in playtesting, and your feedback shapes it. Play a battle, then tell the team what you think.</p>' +
     '<h3>THE FILM</h3><div class="film"><video id="abV" preload="none" playsinline controls hidden></video><button class="big" id="abPlay">PLAY VIDEO</button></div><p class="cap">A short film about the game and why it is being built. 2 min 25 s.</p><p class="cap" id="abErr" role="status"></p>' +
     '<p><button class="ghost" id="abOpening" aria-describedby="md_op"' + (rm ? " disabled" : "") + '>WATCH THE OPENING</button> <span class="cap" id="md_op">' + (rm ? "Reduced motion is on, so the opening film is skipped." : "Play the opening film again.") + "</span></p>" +
     (window.SS_NOTICES && window.SS_NOTICES.welcome ? '<h3>WELCOME</h3>' + mdP(window.SS_NOTICES.welcome.full) + '<p><button class="ghost lk" id="wNotice">Read the playtest notice</button></p>' : "") +
-    '<h3>THE TEAM</h3><p class="sub">Beta 3.0 printed edition</p><ul class="team">' + TEAM.map(function (r) { return "<li><b>" + esc(r[0]) + "</b> " + esc(r[1]) + "</li>"; }).join("") + "</ul>" +
+    '<h3>CREDITS</h3><h4 class="sub4">The team</h4><p class="sub">Beta 3.0 printed edition</p><ul class="team">' + TEAM.map(function (r) { return "<li><b>" + esc(r[0]) + "</b> " + esc(r[1]) + "</li>"; }).join("") + "</ul>" +
     '<p>' + "Digital edition: designed and built by the Shadows &amp; Steel digital studio for the project team.</p>" +
+    (function () { var CR = window.SS_CREDITS || [], MU = window.SS_MUSIC || []; return '<h4 class="sub4">Sound and music</h4><ul>' + CR.map(function (c) { return "<li>" + esc(c.source) + ": " + esc(String(c.what).replace(/\b(\d+) musics\b/, "$1 tracks")) + "</li>"; }).join("") + "</ul>" + (MU.length ? "<p>Music: " + esc(MU.join(", ")) + ".</p>" : ""); })() +
+    '<h4 class="sub4">Card art</h4><p>Made for the project (Art Pass v6.0 and earlier passes); some cards show Beta 3 art until the next Art Pass.</p>' +
+    '<h4 class="sub4">Fonts and software</h4><p>Fonts: Rajdhani, Barlow and JetBrains Mono, under the SIL Open Font License.</p><p>Software: three.js (MIT License) and Pyodide (Mozilla Public License 2.0).</p>' +
     '<h3>FEEDBACK</h3><p>Questions and ideas reach the whole team at:</p><p><a href="mailto:ShadowsAndSteel@armywarcollege.edu">ShadowsAndSteel@armywarcollege.edu</a></p><p>Or use Provide Feedback after a game.</p>' +
     '<h3>NOT AN OFFICIAL PRODUCT</h3><p>' + "Shadows &amp; Steel is an unofficial educational game. The views in it are the designers' and do not reflect the official policy or position of the U.S. Army War College, the Department of the Army, the Department of Defense or the U.S. Government. Doctrine is quoted from publicly released publications for teaching purposes, and no endorsement is implied.</p>" +
     (window.SS_NOTICES && window.SS_NOTICES.welcome ? "" : '<h3>PLAYTEST NOTICE</h3><p><button class="ghost lk" id="wNotice">Read the playtest notice again</button></p>') +
-    '<h3>BUILD AND LICENCES</h3><p>Build ' + esc(buildTag(d)) + "</p><p>Fonts: Rajdhani, Barlow and JetBrains Mono, under the SIL Open Font License.</p><p>Software: three.js (MIT License) and Pyodide (Mozilla Public License 2.0).</p></article>";
+    '<h3>THIS BUILD</h3><p>' + esc(buildTag(d)) + (d.training && d.training.version ? " · Basic Training v" + esc(d.training.version) : "") + (d.decks ? " · " + esc(d.decks) : "") + "</p></article>";
 }
 function aboutFilm() { var v = $("abV"), b = $("abPlay"), er = $("abErr"); if (!v) return; er.textContent = "";
   var vol = function (on) { try { if (musBus) musBus.gain.value = on ? (G.volMus == null ? 1 : G.volMus) : 0; } catch (x) { } };   // the menu music pauses while the film plays
@@ -1921,7 +1983,8 @@ $("cover").addEventListener("click", function (e) {
     return setupBody(d); }
   if (b.id === "pgo") { audioInit(); unlock(); b.disabled = true; b.textContent = "Setting up…";
     if (SND && AC && !G.muted) { G.battleMus = true; setMood("approach", true); }   // v0.19.3: the battle music starts with the battle, on this tap (a phone allows a new track only from a tap)
-    api("/play/start", SET.mode === "train" ? { tutorial: "basic" } : { build: "", spectate: SET.mode === "watch" ? "1" : "", you: SET.you, bot: SET.bot, terrain: SET.terrain, first: SET.first, concepts: SET.concepts, forced_discard: SET.fd, instant_end: SET.end })
+    var trialOn = SET.mode === "bot" && SET.trial === "1", tset = trialOn ? trialSettings() : {}; if (trialOn) try { if (window.SS_REC) window.SS_REC("trial rules on: " + JSON.stringify(tset)); } catch (x) { }
+    api("/play/start", SET.mode === "train" ? { tutorial: "basic" } : Object.assign(tset, { build: "", seed: SET.seed || "", spectate: SET.mode === "watch" ? "1" : "", you: SET.you, bot: SET.bot, terrain: SET.terrain, first: SET.first, concepts: "0", forced_discard: SET.fd, instant_end: SET.end }))
       .then(function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); }, function (e) { b.disabled = false; b.textContent = "Start the game"; $("serr").textContent = e.message; }); }
 });
 addEventListener("keydown", function (e) { if (e.key !== "Escape" || !G.setupData || $("cover").style.display === "none" || !SET.screen || SET.screen === "menu") return;   /* v0.21 (checkers): Esc goes back one screen from Play, Training, Library and About too */
@@ -2018,8 +2081,11 @@ function playReplay(rec, opts) {
     G.faces = body.faces || G.faces || {}; G.meta = body.meta || G.meta || {}; G.bases = body.bases || G.bases || {}; handCv = {}; handKey = "";
     G.info = body.info; G.lastN = fr.length; G.since = fr.length; G.latest = fr.length ? fr[fr.length - 1].view : null; G.latestPend = null; G.queue = fr.slice(); G.started = true;
     MUS.on = true; $("bot").style.visibility = ""; document.body.classList.add("replaying"); $("bQuit").textContent = R0(opts); playNext();
+    if (benOn(G.latest)) feed(BEN_NOTE);   /* v0.21 (RC1 item d): a game recorded with Concept benefits on plays as recorded, and says so */
   });
 }
+var BEN_NOTE = "Recorded with Concept benefits on, as the rules allowed then. New games are played without them: they are held for campaign play.";
+function benOn(v) { var b = v && v.you && v.you.benefit; return !!b && !/switched off/i.test(b); }
 function R0(opts) { return opts && opts.standalone ? "Stop the replay" : "Exit replay"; }
 function replayJump(i) {   // to the start of a round
   var R = G.replay; if (!R) return; var fr = R.body.frames; i = Math.max(0, Math.min(fr.length - 1, i));
@@ -2072,7 +2138,7 @@ function showDebrief() {
   var m = { you: G.info.you, bot: G.info.bot, names: nm, spectate: spect, winner: o.winner, how: o.how, finished: true, rounds: o.round };
   var rows = (G.aar || []).slice(); if (G.aarLast) rows.push(G.aarLast);
   el.innerHTML = '<div class="db"><p class="dbk ' + kc + '">' + esc(key) + "</p><h2>" + esc(resultLine(m).replace(/ \((you|bot)\)/g, "")) + "</h2>" +
-    '<p class="dbs">' + esc(overHow(o)) + ". Final Homefront: " + esc(nm[0]) + " " + o.you_hf + ", " + esc(nm[1]) + " " + o.bot_hf + ".</p>" +
+    '<p class="dbs">' + esc(overHow(o)) + ". Final Homefront: " + esc(nm[0]) + " " + o.you_hf + ", " + esc(nm[1]) + " " + o.bot_hf + ".</p>" + (trialLine() ? '<p class="dbs dtr">' + esc(trialLine()) + ".</p>" : "") +
     (rows.length > 1 ? '<div class="dbc"><p class="dbl">Homefront by round</p><canvas id="dbC"></canvas></div>' : "") +
     '<div class="dbt"><p class="dbl">Turning points</p><ol>' + (turningPoints().map(function (e) { return "<li><b>Round " + e.round + "</b> " + esc(e.text) + "</li>"; }).join("") || "<li>None recorded.</li>") + "</ol></div>" +
     '<div class="dba">' + (R ? '<button class="big" id="dAgain">Watch again</button>' : '<button class="big" id="dRedeploy">Redeploy</button>' + (SITE ? '<button id="dFeedback">✉ Provide Feedback</button>' : "") + '<button class="ghost" id="dSave">Save replay</button>') + '<button class="ghost" id="dAAR">After-action review</button><button class="ghost" id="dLog">Battle log</button>' +

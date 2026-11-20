@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
-<script>window.SS_TEST_NAME = "prototype 2026-11-19";</script>
+<script>window.SS_TEST_NAME = "rc2 2026-11-20";</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Shadows &amp; Steel: Test (prototype)</title>
+<title>Shadows &amp; Steel: Test (rc2)</title>
 <link rel="icon" href="data:,">
 <link rel="preload" href="fonts/Barlow-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/BlackOpsOne-Regular.woff2" as="font" type="font/woff2" crossorigin>
@@ -146,8 +146,8 @@ button.opt{display:block;width:100%;text-align:left;font-family:Barlow,system-ui
 .su .splash .bell{position:absolute;top:10px;right:10px;width:46px;height:46px;min-height:46px;padding:0;display:flex;align-items:center;justify-content:center;background:rgba(17,29,31,.92);border:1px solid #E7EDEE;box-shadow:0 0 0 2px rgba(6,9,8,.7);color:#E8C77B;clip-path:none}
 .su .splash .bell .cnt{position:absolute;top:-1px;right:-1px;min-width:18px;height:18px;padding:0 4px;background:var(--amber);color:#14110a;font:700 12px/18px var(--f-title);text-align:center}
 .su .splash .wnote{position:absolute;z-index:3;left:10px;right:64px;top:10px;max-height:calc(100% - 20px);display:flex;flex-direction:column;overflow:hidden;padding:10px 12px 8px;background:rgba(14,20,22,.96);border:1px solid rgba(181,193,194,.45);border-left:3px solid var(--amber);font-size:calc(14.5px * var(--ts));line-height:1.4}
-.su .splash .wnote p{margin:4px 0}.su .splash .wnote .wk{margin:0 34px 4px 0;color:var(--amber);font:600 calc(12px * var(--ts))/1.2 var(--f-mono,monospace);letter-spacing:.1em;text-transform:uppercase}.su .splash .wnote .wl{color:#B5C1C2;font-size:calc(13px * var(--ts))}
-.su .splash .wnote .wtx{flex:1 1 auto;min-height:0;overflow-y:auto;touch-action:pan-y}.su .splash .wnote .row{flex:none;justify-content:flex-end;margin-top:4px}.su .splash .wnote button{min-height:44px}.su .splash .wnote .wx{position:absolute;top:4px;right:4px;width:44px;padding:0}
+.su .splash .wnote p{margin:4px 0}.su .splash .wnote .wk{margin:0 0 4px 0;color:var(--amber);font:600 calc(12px * var(--ts))/1.2 var(--f-mono,monospace);letter-spacing:.1em;text-transform:uppercase}.su .splash .wnote .wl{color:#B5C1C2;font-size:calc(13px * var(--ts))}
+.su .splash .wnote .wtx{flex:1 1 auto;min-height:0;overflow-y:auto;touch-action:pan-y}.su .splash .wnote .row{flex:none;justify-content:flex-end;margin-top:4px}.su .splash .wnote button{min-height:44px}.su .splash .wnote .wx{position:absolute;top:4px;right:4px;width:44px;padding:0}.su .splash .wnote .wsp{float:right;width:44px;height:44px;margin:-6px -8px 0 4px}.su .splash .wnote .wm2{display:none}.su .splash .wnote.tiny .wm{display:none}.su .splash .wnote.tiny .wm2{display:block}.su .splash .wnote.tiny .wl,.su .splash .wnote.tiny .wx{display:none}.su .splash .wnote.tiny .wsp{width:92px;height:40px}.su .splash .wnote.tiny .row{position:absolute;top:4px;right:4px;margin:0}   /* RC2 (Council F4): the close X has its own corner (the text flows around it); on a small phone the short words, with GOT IT in that corner */
 @media not ((orientation:portrait) and (max-width:599px)){
   .su .splash{position:static;margin:0 0 18px;height:auto;overflow:visible;background:none}
   .su .splash img{position:fixed;inset:0;z-index:-2}.su .splash .scr{position:fixed;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(10,14,13,.96) 0,rgba(10,14,13,.92) 55%,rgba(10,14,13,.45) 80%,rgba(10,14,13,.6) 100%)}
@@ -222,7 +222,7 @@ button.big:disabled{opacity:.6}
 .dbl{margin:14px 0 6px;font-weight:600;font-size:calc(13px * var(--ts));color:#d6caa8}.dbc canvas{display:block;width:100%;height:150px}
 .dbt ol{margin:0;padding-left:18px;font-size:calc(13.5px * var(--ts));line-height:1.4}.dbt li{margin:2px 0}.dbt b{color:#d6caa8;font-weight:600;margin-right:4px}
 .dba{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.dbm{margin:10px 0 0;color:var(--teal);font-size:calc(13px * var(--ts))}.dbm button{margin-left:6px;padding:5px 9px}
-#menu{min-width:220px}#menu .mh{margin:6px 2px 0;font-size:calc(12px * var(--ts));color:var(--dim)}#menu .mh:first-child{margin-top:0}
+#menu{min-width:220px}#menu .mh{margin:6px 2px 0;font-size:calc(12px * var(--ts));color:var(--dim)}#menu .mh:first-child{margin-top:0}#menu{max-height:calc(100vh - 12px);max-height:calc(100dvh - 12px);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}   /* RC2: on a 360x640 phone the in-game menu is taller than the screen; it scrolls, so Settings and Abandon game can be reached */
 .replaying #bNote,.replaying #bSaveRep,.replaying #bRec,.replaying #bSkip{display:none}
 .rbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}.rbar button{padding:7px 10px;font-family:Barlow,system-ui,sans-serif;text-transform:none;letter-spacing:0;font-weight:600;font-size:calc(13px * var(--ts))}
 .rtag{font:400 calc(12px * var(--ts)) "Black Ops One",Impact,sans-serif;color:#1a1408;background:var(--amber);padding:4px 7px;letter-spacing:.06em}
@@ -244,7 +244,7 @@ button:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline
 .stat button.piles{pointer-events:auto;font:inherit;color:var(--dim);background:rgba(10,14,13,.6);border:1px solid var(--line);padding:2px 7px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}.stat button.piles:hover,.stat button.piles:focus-visible{border-color:var(--amber);outline:none}
 #zPick{min-width:200px}
 #piles{position:fixed;inset:0;z-index:7;background:rgba(6,9,8,.97);overflow-y:auto;touch-action:pan-y;display:none;padding:14px}
-#piles .pb{max-width:900px;margin:0 auto}#piles #pilesX{position:sticky;top:0;float:right;z-index:1}
+#piles .pb{max-width:900px;margin:0 auto}#piles #pilesX{float:none}
 #piles h3{margin:2px 0 4px}#piles h4{margin:16px 0 2px;font-family:"Black Ops One",Impact,sans-serif;font-weight:400;font-size:calc(15px * var(--ts));color:#d6caa8}#piles h4 b{color:var(--amber);margin-left:6px;font-weight:400}
 #piles h5{margin:10px 0 4px;font-size:calc(12.5px * var(--ts));color:var(--ink);font-weight:600}#piles .pd{margin:0 0 6px;color:var(--dim);font-size:calc(12.5px * var(--ts));max-width:62ch}#piles .pe{color:var(--dim);font-size:calc(12.5px * var(--ts));margin:2px 0}
 #piles .pt{display:flex;flex-wrap:wrap;gap:6px}#piles .pt button{position:relative;padding:0;border:0;background:none;cursor:pointer;border-radius:5px}#piles .pt img{height:118px;width:auto;border-radius:5px;display:block;box-shadow:0 3px 8px rgba(0,0,0,.6)}
@@ -263,12 +263,12 @@ html.rm *{animation-duration:.01ms!important;transition:none!important}
 #capt{position:fixed;left:50%;top:calc(78px * var(--ui));transform:translateX(-50%);z-index:4;pointer-events:none;max-width:min(92vw,560px);text-align:center;font-size:calc(15px * var(--ts));line-height:1.3;color:#f4efe0;background:rgba(10,14,13,.88);border-left:3px solid var(--teal);padding:5px 12px;display:none}
 #capt b{font-family:"Black Ops One",Impact,sans-serif;font-weight:400;color:var(--teal);margin-right:7px;letter-spacing:.06em}
 #settings{position:fixed;inset:0;z-index:10;background:#111612;overflow-y:auto;touch-action:pan-y;display:none;padding:16px}
-#settings .sb{max-width:760px;margin:0 auto}#settings h3{margin:4px 0 2px;font-size:calc(22px * var(--ts))}#settings #setX{position:sticky;top:0;float:right;z-index:1}
+#settings .sb{max-width:760px;margin:0 auto}#settings h3{margin:4px 0 2px;font-size:calc(22px * var(--ts))}#settings #setX{float:none}
 #settings h4{margin:20px 0 8px;font:400 calc(16px * var(--ts)) "Black Ops One",Impact,sans-serif;color:var(--khaki);letter-spacing:.04em;border-bottom:1px solid var(--line);padding-bottom:4px}
 #settings .row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin:10px 0}
 #settings .row>span{font-size:calc(14px * var(--ts));color:var(--ink);min-width:170px;flex:1}#settings .row>span small{display:block;color:var(--dim);font-size:calc(12.5px * var(--ts))}
 #settings .seg2 button{font-family:Barlow,system-ui,sans-serif;font-weight:600;text-transform:none;letter-spacing:0;font-size:calc(14px * var(--ts));padding:9px 13px}
-#settings input[type=range]{width:min(320px,60vw);accent-color:#e0a85a}#settings label.ck{font-size:calc(14px * var(--ts))}
+#settings input[type=range]{width:min(320px,60vw);accent-color:#e0a85a}#settings input[type=range]{height:44px;margin:0;padding:0;background:transparent;cursor:pointer}#settings label.ck{display:inline-flex;align-items:center;gap:8px;min-height:44px;min-width:44px;padding:0 10px;box-sizing:border-box;cursor:pointer}#settings label.ck input{width:20px;height:20px;margin:0}   /* RC2 (checkers): each sound control has a 44 px touch area; the slider track stays slim */#settings label.ck{font-size:calc(14px * var(--ts))}
 #settings .about p{margin:6px 0;color:var(--dim);font-size:calc(13px * var(--ts));line-height:1.45}#settings .about b{color:var(--ink);font-weight:600}
 #settings .about ul{margin:4px 0 0;padding-left:18px;color:var(--dim);font-size:calc(13px * var(--ts));line-height:1.45}
 .logos{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px 26px;margin:22px 0 4px;padding:14px 0 0;border-top:1px solid var(--line)}
@@ -548,11 +548,14 @@ button.opt,#prompt button.opt{font:400 calc(15px * var(--ts))/1.3 var(--f-body);
 #preview .pvmore{position:static;align-self:flex-end;margin:2px 16px 4px}
 #prompt .pwrap{display:flex;flex-direction:column}#prompt .pmore{position:static;align-self:flex-end;margin:2px 2px 0}
 img,canvas{-webkit-touch-callout:none;-webkit-user-drag:none;-webkit-user-select:none;user-select:none}/* v0.21 (checkers; lead's look-and-feel pass): with the hand open on a phone, the hand shows the top of each card (cost, type, name, picture) and the panel shrinks to the instruction and its buttons, so your own half of the table stays in view while you deploy */
-.ph #hand.open .strip{height:112px;overflow-y:hidden;align-items:flex-start}.ph:not(.tut) #bot:has(#hand.open) #prompt{height:auto!important}.ph:not(.tut) #bot:has(#hand.open) #prompt .pbody>:is(.hits,p.h,.why,.hintb){display:none!important}.ph:not(.tut) #bot:has(#hand.open) #prompt .pbody{max-height:none!important;flex:0 1 auto}.ph:not(.tut) #bot:has(#hand.open) #prompt .pmore{position:absolute;right:2px;bottom:0;margin:0}
+.ph #hand.open .strip{height:112px;overflow-y:hidden;align-items:flex-start}.ph:not(.tut) #bot:has(#hand.open) #prompt{height:auto!important}.ph:not(.tut) #bot:has(#hand.open) #prompt .pbody>:is(.hits,p.h,.why,.hintb,.ftip){display:none!important}.ph:not(.tut) #bot:has(#hand.open) #prompt .pbody{max-height:none!important;flex:0 1 auto}.ph:not(.tut) #bot:has(#hand.open) #prompt .pmore{position:absolute;right:2px;bottom:0;margin:0}
 .ph #top #foe .sbtn{display:none}.ph #top #foe{padding-right:104px}   /* v0.21 (lead's phone notes): one More for both sides, on your row; the enemy row stays clear of the flag and menu buttons */
 #prompt .rsup{margin:4px 0;font-weight:600}#prompt .rlist{display:flex;flex-direction:column;gap:6px;margin:4px 0 8px}#prompt .rlist button{min-height:44px;height:auto;text-align:left;justify-content:flex-start;white-space:normal;overflow-wrap:anywhere;line-height:1.25;padding-top:6px;padding-bottom:6px}
 #piles .stat.mine .hf i u{background:var(--blue)}
 @media (max-width:380px){.ph #top #foe .who small{display:none}}
+.shead{position:sticky;top:-16px;z-index:2;display:flex;justify-content:flex-end;margin:-16px -16px 8px;padding:16px 16px 6px;background:#111612;box-shadow:0 6px 8px -6px rgba(0,0,0,.6)}#piles .shead{top:-14px;margin:-14px -14px 8px;padding:14px 14px 6px;background:#0a0d0c}   /* a header bar the sheet scrolls under: Close never lies over a control */
+.su .about2 .sub4{margin:14px 0 4px;font:700 calc(14px * var(--ts))/1.2 var(--f-title);letter-spacing:.08em;color:#E7EDEE;text-transform:uppercase}
+#prompt .wdh{display:flex;align-items:center;justify-content:space-between;gap:8px}#prompt .wdh button{min-height:44px;flex:none}.stat .c-tbl.full b{color:var(--amber)}.ph body.trial #top .stat .who small,.ph body.trial #me .stat .who small,.ph body.trial #top .stat .hf i,.ph body.trial #me .stat .hf i{display:none}.ph.bigtext body.trial #top .stat .c-tbl .s,.ph.bigtext body.trial #me .stat .c-tbl .s{display:none}.ph.bigtext body.trial #top .stat,.ph.bigtext body.trial #me .stat{gap:4px 6px}#hand .rdy.full{background:#3a4346;color:#E7EDEE}
 #rowband{position:fixed;inset:0;pointer-events:none;z-index:6}#rowband div{position:absolute;border:2px dashed rgba(138,185,209,.7);background:rgba(138,185,209,.08)}#rowband div.hov{border-style:solid;border-color:var(--action);background:rgba(216,182,106,.16)}#rowband span{position:absolute;left:6px;top:4px;padding:2px 8px;background:#111D1F;color:#E7EDEE;font:700 calc(13px * min(var(--ts),1.4))/1.2 var(--f-title);letter-spacing:.06em;text-transform:uppercase}#rowband div.hov span{color:var(--action)}
 #prompt .pfoot.cmp{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;padding:4px 0 0!important;margin-top:0!important}#prompt .pfoot.cmp>.btns,#prompt .pfoot.cmp .pmore{margin-top:0}#prompt .pfoot.cmp>.btns{flex:0 0 auto;flex-wrap:nowrap;justify-content:flex-start;margin-top:4px;gap:6px}#prompt .pfoot.cmp>.btns>button{flex:0 0 auto;min-height:44px;padding:0 14px;white-space:nowrap;font-size:calc(15px * min(var(--ts),1.4))}#prompt .pfoot.cmp .pmore{flex:none;margin:4px 0 0 auto;min-height:44px;padding:0 14px}#prompt .pfoot.cmp .fk{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--amber);font:600 calc(12px * min(var(--ts),1.4))/1.2 var(--f-mono,monospace);letter-spacing:.08em;text-transform:uppercase}#prompt .pfoot.cmp .fk+.pmore{margin-left:0}.ph #prompt .coach .ct{font-size:calc(18px * min(var(--ts),1.4));line-height:1.15}
 .ph body.dragging #hand{opacity:1}.ph body.dragging #hand .hhandle{opacity:.5}
