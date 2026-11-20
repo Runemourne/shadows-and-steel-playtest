@@ -240,7 +240,7 @@ button.big:disabled{opacity:.6}
 button:focus-visible,summary:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 @media (max-height:520px) and (min-width:600px){#hand{height:60px}#hand img{height:58px}#bot{flex-direction:row;align-items:flex-end;gap:8px}#prompt{flex:1;order:2;max-height:46vh}#hand{order:1}#me{order:3;max-width:max(150px,26vw)}}
 @media (min-width:900px) and (min-height:521px){#hand{height:calc(150px * var(--ui))}#hand img{height:calc(144px * var(--ui));margin:0 -8px}#prompt{max-width:calc(760px * var(--ts));align-self:center;width:100%}}
-#prompt .hits .hit1{margin-top:4px}#prompt .hits .cz{display:block;color:var(--ink)}#prompt .hits .out{display:block;color:#ffcfbf;padding-left:10px;border-left:2px solid var(--red)}
+#prompt .hits.all{max-height:40vh;overflow-y:auto;overscroll-behavior:contain}#prompt .hits .hall{display:flex;min-height:44px;margin-top:6px;width:100%;justify-content:flex-start}#prompt .hits .hit1{margin-top:4px}#prompt .hits .cz{display:block;color:var(--ink)}#prompt .hits .out{display:block;color:#ffcfbf;padding-left:10px;border-left:2px solid var(--red)}
 .stat button.piles{pointer-events:auto;font:inherit;color:var(--dim);background:rgba(10,14,13,.6);border:1px solid var(--line);padding:2px 7px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}.stat button.piles:hover,.stat button.piles:focus-visible{border-color:var(--amber);outline:none}
 #zPick{min-width:200px}
 #piles{position:fixed;inset:0;z-index:7;background:rgba(6,9,8,.97);overflow-y:auto;touch-action:pan-y;display:none;padding:14px}
