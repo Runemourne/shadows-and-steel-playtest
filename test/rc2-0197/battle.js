@@ -655,20 +655,27 @@ function listGrow(el) { return panelFit(el); }
    and the instruction keeps its two lines. Measured each time the panel is drawn and when the layout changes. */
 function panelFit(el) { if (!el || isDesk()) return; var cap = +el.dataset.cap; if (!cap || !isPh()) return;
   var body = el.querySelector(".pbody"), ft = el.querySelector(".pfoot"); if (!body) return;
-  if (document.querySelector("#bot #hand.open") && !document.documentElement.classList.contains("tut")) { if (ft) { ft.style.maxHeight = ""; ft.classList.remove("fscroll"); } el.dataset.grown = ""; el.style.height = el.style.maxHeight = cap + "px"; return; }   /* the slim panel while the hand is open sizes itself (height auto) */
+  var open = !!document.querySelector("#bot #hand.open") && !document.documentElement.classList.contains("tut");   /* RC2.3b: with the hand open the slim panel (height auto, riding above the strip) was still capped at the usual height, so at large text its instruction and buttons were squeezed. It now grows too, upward only: its bottom stays above the hand strip (the hand is never covered) and its top stays below the top band */
   el.style.height = el.style.maxHeight = cap + "px"; body.style.maxHeight = ""; body.dataset.mh = ""; body.style.flexBasis = ""; body.classList.remove("trim"); if (ft) { ft.style.maxHeight = "none"; ft.classList.remove("fscroll"); }
   var q = function (e) { return e.getBoundingClientRect(); }, bq = q(body), pm = el.querySelector(".pmore"), pmH = pm && pm.offsetHeight ? pm.offsetHeight + 2 : 0, footH = ft ? ft.scrollHeight + (parseFloat(getComputedStyle(ft).marginTop) || 0) : 0;
   var chrome = el.offsetHeight - body.clientHeight - pmH - (ft ? ft.offsetHeight : 0); if (chrome < 0) chrome = 16;
   var lst = body.querySelector(".rlist"), lead = body.querySelector(".coach") || body.querySelector(".instr") || body.firstElementChild, need0 = 0, min0 = 0;
   if (lead) { var lr = q(lead), lh = parseFloat(getComputedStyle(lead).lineHeight) || 20 * PREF.text, top = lr.top - bq.top + body.scrollTop; need0 = Math.ceil(top + Math.min(lr.height, (lead.classList.contains("coach") ? 6 : 2) * lh + 2)); min0 = Math.ceil(top + Math.min(lr.height, 2 * lh + 2)); }
   if (lst) { var lb = Math.ceil(q(lst).bottom - bq.top + body.scrollTop) + 8; need0 = Math.max(need0, lb); }
-  var pill = body.scrollHeight > need0 + 12 ? Math.round(30 * Math.min(1.4, PREF.text)) + 6 : 0, lim = Math.floor(H * .62), need = chrome + need0 + pill + footH, hh = Math.max(cap, Math.min(lim, need));
+  var pill = body.scrollHeight > need0 + 12 ? Math.round(30 * Math.min(1.4, PREF.text)) + 6 : 0, lim = Math.floor(H * .62), need = chrome + need0 + pill + footH;
+  if (open) {   /* the room between the top band and where the panel's bottom sits above the hand strip; measured from layout, not from the panel's current (possibly still moving) place */
+    try { panelClear(); } catch (e) { } var tb = $("top") ? $("top").getBoundingClientRect().bottom : 0, tm = new DOMMatrixReadOnly(getComputedStyle(el).transform === "none" ? undefined : getComputedStyle(el).transform), shift = parseFloat(getComputedStyle($("bot")).getPropertyValue("--stripH")) || 0;
+    var bottomOpen = q(el).bottom - (tm.m42 || 0) - shift; lim = Math.max(Math.min(cap, Math.floor(bottomOpen - tb - 6)), Math.min(lim, Math.floor(bottomOpen - tb - 6))); }
+  var hh = Math.max(cap, Math.min(lim, need));
   if (need > lim) {   /* even 62% cannot hold it all: the ending buttons stay whole in the foot and the list scrolls above them, with the instruction's first two lines first */
-    var ins = body.querySelector(".instr"), rs = body.querySelector(".rsup") || lst; if (lst && ins && rs && (rs.compareDocumentPosition(ins) & 4)) { body.insertBefore(ins, body.firstChild); if (!G.instrOpen) { ins.classList.add("clamp2"); ins.setAttribute("title", "Tap to read it all"); } }   /* its first two lines (a tap shows it all), so the list's first button still shows */
-    var lh2 = ins ? (parseFloat(getComputedStyle(ins).lineHeight) || 20 * PREF.text) : 20 * PREF.text, bodyMin = Math.ceil(2 * lh2 + 8 + (lst ? 50 * Math.min(1.4, PREF.text) : 0)), roomF = lim - chrome - bodyMin - Math.round(30 * Math.min(1.4, PREF.text)) - 6;
+    var ins = body.querySelector(".instr"), rs = body.querySelector(".rsup") || lst; if (lst && ins && rs && (rs.compareDocumentPosition(ins) & 4)) body.insertBefore(ins, body.firstChild);
+    if (ins && !G.instrOpen) { ins.classList.add("clamp2"); ins.setAttribute("title", "Tap to read it all"); }   /* its first two lines (a tap shows it all), so the list's first button and every choice still show */
+    var lh2 = ins ? (parseFloat(getComputedStyle(ins).lineHeight) || 20 * PREF.text) : 20 * PREF.text, insEnd = ins ? Math.ceil(q(ins).bottom - q(body).top + body.scrollTop) : 0, more2 = body.scrollHeight > insEnd + 12,
+      bodyMin = Math.ceil(2 * lh2 + 8 + (lst ? 50 * Math.min(1.4, PREF.text) : 0)), roomF = lim - chrome - bodyMin - (more2 ? Math.round(30 * Math.min(1.4, PREF.text)) + 6 : 0);   /* the More cue's row only when text or a list follows the instruction */
     if (ft && footH > roomF) { ft.style.maxHeight = Math.max(52, roomF) + "px"; ft.classList.add("fscroll"); } else if (ft) ft.style.maxHeight = "";   /* only a foot taller than the rest of the panel scrolls (with its amber edge) */
     hh = lim; }
   else if (ft) ft.style.maxHeight = "";
+  if (open) hh = Math.min(hh, lim);   /* with the hand open the panel never rises over the top band, even below its usual height */
   el.dataset.grown = hh > cap ? "1" : ""; el.style.height = el.style.maxHeight = hh + "px"; }
 /* v0.21 (craft notes): no sliced lines. A scrolling box that has more than it shows is trimmed so its last visible line of text (or row, chip
    or button) is whole; the "More" pill sits in the space below it. Measured when the box is drawn, at its top. */
