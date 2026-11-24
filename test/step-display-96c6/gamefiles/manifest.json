@@ -1,0 +1,39 @@
+{
+ "files": [
+  "SS_Merged_Cards_v0.17.2.csv",
+  "SS_Merged_Decks_v0.17.2.csv",
+  "basic_training.json",
+  "browser_play.py",
+  "merged_engine.py"
+ ],
+ "cards": "SS_Merged_Cards_v0.17.2.csv",
+ "decks": "SS_Merged_Decks_v0.17.2.csv",
+ "builds": [
+  {
+   "key": "merged",
+   "cards": "SS_Merged_Cards_v0.17.2.csv",
+   "decks": "SS_Merged_Decks_v0.17.2.csv"
+  }
+ ],
+ "built": "24 Nov 2026, 4:36 PM EST",
+ "engine": "03. Beta 3.5 (Current Development)/L. Merged Baseline (3.5 + Gemini)/merged_engine.py @ b13c99e",
+ "sha256": {
+  "SS_Merged_Cards_v0.17.2.csv": "481f4add46c541c91be0738c9f40eb0fc649733c5c97b51aba353abd8c184946",
+  "SS_Merged_Decks_v0.17.2.csv": "14cf2673123ecae909af1dc10fd67b8e33db2be4515fec5eaa55f2e054431a1b",
+  "basic_training.json": "ff24d7b26b2336b3711fc40b1fabe43a5ff9904629ecafd21c97e3875bf61fc4",
+  "browser_play.py": "d70665aed2447e4d00d1b2c1ef15b50f194230b67807c1e1f7a506a8358a3de5",
+  "merged_engine.py": "5ad9ce5d4e8ab241ba6386b2b7c40a06fd88b33de2050271e8a28bfee629835c"
+ },
+ "step_page": {
+  "label": "TEST PAGE \u00b7 Step display \u00b7 printed rules on: one Reaction to each action, and the game is decided only at Check for the end \u00b7 engine 5ad9ce5d (commit b13c99e) \u00b7 cards and decks v0.17.2 \u00b7 staged 24 Nov 2026, 4:36 PM EST",
+  "as_printed": true,
+  "engine": {
+   "path": "03. Beta 3.5 (Current Development)/L. Merged Baseline (3.5 + Gemini)/merged_engine.py",
+   "sha256": "5ad9ce5d4e8ab241ba6386b2b7c40a06fd88b33de2050271e8a28bfee629835c",
+   "commit": "b13c99e",
+   "branch_head": "5bf7887"
+  },
+  "cards": "SS_Merged_Cards_v0.17.2.csv",
+  "decks": "SS_Merged_Decks_v0.17.2.csv"
+ }
+}
