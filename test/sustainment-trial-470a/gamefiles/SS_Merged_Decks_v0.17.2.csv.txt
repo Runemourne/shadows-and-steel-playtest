@@ -1,0 +1,93 @@
+﻿Deck,Box,Part,Card,Copies
+SPEARHEAD,Crimson Reign,Initial Entry,JUGGERNAUT,2
+SPEARHEAD,Crimson Reign,Initial Entry,VELITES,2
+SPEARHEAD,Crimson Reign,Initial Entry,REDLEG,1
+SPEARHEAD,Crimson Reign,Initial Entry,FLYSWATTER,1
+SPEARHEAD,Crimson Reign,Initial Entry,ROUGH RIDER,2
+SPEARHEAD,Crimson Reign,Initial Entry,MOVEMENT TO CONTACT,1
+SPEARHEAD,Crimson Reign,Main Force,CATAPHRACT,3
+SPEARHEAD,Crimson Reign,Main Force,MYRMIDON,1
+SPEARHEAD,Crimson Reign,Main Force,WARLORD,1
+SPEARHEAD,Crimson Reign,Main Force,RIPCORD,2
+SPEARHEAD,Crimson Reign,Main Force,NIGHT TALON,2
+SPEARHEAD,Crimson Reign,Main Force,ARMING STATION,2
+SPEARHEAD,Crimson Reign,Main Force,RED BALL,1
+SPEARHEAD,Crimson Reign,Main Force,LONGKNIFE HQ,1
+SPEARHEAD,Crimson Reign,Main Force,BREAKTHROUGH,3
+SPEARHEAD,Crimson Reign,Main Force,MOVEMENT TO CONTACT,1
+SPEARHEAD,Crimson Reign,Main Force,SEAD STRIKE,1
+SPEARHEAD,Crimson Reign,Main Force,AIR ASSAULT,1
+SPECTRUM,Stormwatch,Initial Entry,AUGUR,2
+SPECTRUM,Stormwatch,Initial Entry,GHOSTVOICE,2
+SPECTRUM,Stormwatch,Initial Entry,NAVIGATION WARFARE,2
+SPECTRUM,Stormwatch,Initial Entry,SHIELDWALL,1
+SPECTRUM,Stormwatch,Initial Entry,VELITES,1
+SPECTRUM,Stormwatch,Main Force,POLTERGEIST,2
+SPECTRUM,Stormwatch,Main Force,PUPPETEER,2
+SPECTRUM,Stormwatch,Main Force,THE SILENT,1
+SPECTRUM,Stormwatch,Main Force,GHOST ARMY,2
+SPECTRUM,Stormwatch,Main Force,STRATEGIC NARRATIVE,1
+SPECTRUM,Stormwatch,Main Force,ELECTRONIC ATTACK,1
+SPECTRUM,Stormwatch,Main Force,PSYOP CAMPAIGN,2
+SPECTRUM,Stormwatch,Main Force,GRID COLLAPSE,1
+BULWARK,Stormwatch,Initial Entry,VELITES,2
+BULWARK,Stormwatch,Initial Entry,DEFENSIVE CYBERSPACE OPERATIONS,1
+BULWARK,Stormwatch,Initial Entry,SHIELDWALL,1
+BULWARK,Stormwatch,Initial Entry,FLYSWATTER,1
+BULWARK,Stormwatch,Initial Entry,REDLEG,2
+BULWARK,Stormwatch,Initial Entry,BATTLE POSITION,1
+BULWARK,Stormwatch,Initial Entry,FINAL PROTECTIVE FIRES,1
+BULWARK,Stormwatch,Main Force,BREAKWATER,1
+BULWARK,Stormwatch,Main Force,RIPCORD,1
+BULWARK,Stormwatch,Main Force,MYRMIDON,2
+BULWARK,Stormwatch,Main Force,DRUMFIRE,2
+BULWARK,Stormwatch,Main Force,SUNLANCE,1
+BULWARK,Stormwatch,Main Force,CITADEL,1
+BULWARK,Stormwatch,Main Force,ARMING STATION,1
+BULWARK,Stormwatch,Main Force,LONGKNIFE HQ,1
+BULWARK,Stormwatch,Main Force,HARD KILL,1
+BULWARK,Stormwatch,Main Force,ORBITAL DROP,1
+BULWARK,Stormwatch,Main Force,COUNTERATTACK,2
+BULWARK,Stormwatch,Main Force,FINAL PROTECTIVE FIRES,1
+BULWARK,Stormwatch,Main Force,DEFENSIVE CYBERSPACE OPERATIONS,1
+BULWARK,Stormwatch,Main Force,DEFENSE IN DEPTH,1
+KILL CHAIN,Crimson Reign,Initial Entry,STEEL RAIN,2
+KILL CHAIN,Crimson Reign,Initial Entry,REDLEG,1
+KILL CHAIN,Crimson Reign,Initial Entry,GREY KITE,2
+KILL CHAIN,Crimson Reign,Initial Entry,SHIELDWALL,1
+KILL CHAIN,Crimson Reign,Initial Entry,FLYSWATTER,1
+KILL CHAIN,Crimson Reign,Initial Entry,SCATTERABLE MINES,1
+KILL CHAIN,Crimson Reign,Initial Entry,INTEL FUSION,1
+KILL CHAIN,Crimson Reign,Main Force,STEEL RAIN,1
+KILL CHAIN,Crimson Reign,Main Force,BLACK SAIL,3
+KILL CHAIN,Crimson Reign,Main Force,DRUMFIRE,1
+KILL CHAIN,Crimson Reign,Main Force,BLACK FALCON,1
+KILL CHAIN,Crimson Reign,Main Force,HIGH WATCH,2
+KILL CHAIN,Crimson Reign,Main Force,MOTE SWARM,1
+KILL CHAIN,Crimson Reign,Main Force,VELITES,1
+KILL CHAIN,Crimson Reign,Main Force,PROSECUTOR,1
+KILL CHAIN,Crimson Reign,Main Force,RED BALL,1
+KILL CHAIN,Crimson Reign,Main Force,LONGKNIFE HQ,1
+KILL CHAIN,Crimson Reign,Main Force,GLIDE STRIKE,1
+KILL CHAIN,Crimson Reign,Main Force,CONVERGENCE,1
+KILL CHAIN,Crimson Reign,Main Force,MARITIME STRIKE,1
+KILL CHAIN,Crimson Reign,Main Force,DYNAMIC TARGETING,2
+KILL CHAIN,Crimson Reign,Main Force,SCATTERABLE MINES,1
+SPEARHEAD,Crimson Reign,Initial Entry,PELTAST,1
+SPEARHEAD,Crimson Reign,Main Force,REAVERS,1
+KILL CHAIN,Crimson Reign,Initial Entry,JAEGER,1
+KILL CHAIN,Crimson Reign,Main Force,EYE IN THE SKY,1
+BULWARK,Stormwatch,Initial Entry,TRENCHER,1
+BULWARK,Stormwatch,Main Force,CITADEL,1
+BULWARK,Stormwatch,Main Force,REDOUBT,1
+SPECTRUM,Stormwatch,Initial Entry,WIRETAP,1
+SPECTRUM,Stormwatch,Initial Entry,STATIC NET,1
+SPECTRUM,Stormwatch,Main Force,COLLAPSE OF WILL,1
+SPECTRUM,Stormwatch,Main Force,WAR WEARINESS,1
+SPECTRUM,Stormwatch,Main Force,LISTENING POST,1
+SPECTRUM,Stormwatch,Main Force,SYSTEMS CASCADE,1
+BULWARK,Stormwatch,Main Force,WRENCH,1
+SPECTRUM,Stormwatch,Main Force,LONGKNIFE HQ,1
+SPECTRUM,Stormwatch,Main Force,TACTICAL WITHDRAWAL,1
+SPECTRUM,Stormwatch,Main Force,GRAY ZONE,1
+SPECTRUM,Stormwatch,Main Force,STALL,1
