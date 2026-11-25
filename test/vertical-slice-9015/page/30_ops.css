@@ -51,3 +51,11 @@
 .s7test #s7ops .s7foot{padding-bottom:calc(34px + env(safe-area-inset-bottom,0px))}
 .s7test #s7-deb{padding-bottom:34px}
 .s7test #debrief{padding-bottom:40px}
+/* package 12: the PLAY choice (CAMPAIGN or SKIRMISH), two tiles in the same column as the operation's list */
+#s7ops .s7play{max-width:600px}
+#s7ops .s7c{align-items:center;padding:16px}
+#s7ops .s7c .s7mb b{font-size:calc(24px * var(--tsz,1))}
+#s7ops .s7c .s7mb span{color:var(--ss-color-text-secondary,#B5C1C2)}
+/* package 12: in a mission's after-action review, the page's own small print (the sub-line, chart and turning-point labels, the list,
+   the note and the buttons) reads at 16 px at least; an ordinary game's Debrief is left as the page draws it */
+#debrief.s7mdb .dbs,#debrief.s7mdb .dbl,#debrief.s7mdb .dbt ol,#debrief.s7mdb .dbm,#debrief.s7mdb button{font-size:calc(16px * var(--ts,1))}
