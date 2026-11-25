@@ -70,6 +70,46 @@ ROUND_STEPS = (   # the fifteen printed sub-steps of a round, in the rulebook's 
     dict(number=14, phase="Assessment", section="3.4", in_phase=4, name="The cost of war", each_player=False),
     dict(number=15, phase="Assessment", section="3.4", in_phase=5, name="Check for the end", each_player=False),
 )
+# Sprint 7: each step as a player reads it, in the lead's terms (drafts entries J item 3, L and M) and the rulebooks' words.
+# title: the step's name; stage: the step a player sees it under; about: what happens in it; together: both players do it together.
+STEP_WORDS = {
+    1: ("Draw", "Draw", True,
+        "Discard any cards you do not want, then draw until you have 5, from your Initial Entry deck until it is empty."),
+    2: ("Reveal", "Force Posture", True,
+        "You may reveal any of your Hidden Capabilities by paying their Deployment Cost."),
+    3: ("Deploy and upgrade", "Force Posture", True,
+        "Spend 1 Lift for each card you deploy or upgrade, and pay its cost in Supply from your Bases."),
+    4: ("Arrange", "Maneuver", False,
+        "Arrange your cards between the Frontline and the Rear Area, within your Zone's Frontline limit."),
+    5: ("Move", "Maneuver", False,
+        "Move your Force Marker 1 Zone toward the enemy, 1 Zone toward home, or stay; you never pass the enemy marker."),
+    6: ("Shaping", "Shaping", False,
+        "Each card on the Mission Track moves 1 space toward H-Hour; cards that reach H-Hour resolve, and no one may react to them."),
+    7: ("Action turns", "Action turns", False,
+        "Starting with the Active Player, each player takes one action or passes; the phase ends when both pass in a row."),
+    8: ("Replenish", "Sustainment", True,
+        "Each player gains ISR, cards with a CONVOY line add Supply, each Base restocks, and the Bases ready."),
+    9: ("Ready", "Sustainment", False,
+        "Each player may pay an exhausted card's Ready cost in Supply to ready it; an AIR card left exhausted goes to the discard pile, "
+        "with no Homefront loss."),
+    10: ("Recover", "Sustainment", False,
+         "Each player may pay 2 Supply from its Bases to remove 1 damage from one of its cards, as many times as it can pay."),
+    11: ("Frontline contest", "Assessment", True,
+         "If the markers are in Contact, the side with more Frontline Strength wins; the loser loses 1 Homefront and retreats 1 Zone, "
+         "more against ROUT, and a side pushed past its home edge gives the enemy Supremacy."),
+    12: ("Holding the center", "Assessment", True,
+         "If only one Force Marker has reached or passed the middle Zone of the route, the other player loses 1 Homefront."),
+    13: ("Concept and Condition effects", "Assessment", True,
+         "Concept benefits and Conditions on a Mission Track that work at Assessment take effect now; most cost the enemy Homefront."),
+    14: ("The cost of war", "Assessment", True,
+         "Each player loses 1 Homefront."),
+    15: ("Check for the end", "Assessment", True,
+         "If a side has met a win condition (Homefront collapse, Devastation or Supremacy), or this is the last round, the game ends "
+         "and is decided as printed; if not, the other player becomes the Active Player."),
+}
+for printed_step in ROUND_STEPS:
+    title, stage, together, about = STEP_WORDS[printed_step["number"]]
+    printed_step.update(title=title, stage=stage, together=together, about=about)
 CLASS_KEY = {"Movement & Maneuver": "M2", "Fires": "FIRES", "Protection": "PROT", "Intelligence": "INTEL", "Information": "INFO", "Command & Control": "C2", "Sustainment": "SUST", "Joint": "JOINT"}
 CLASS_NAME = {"M2": "Movement & Maneuver", "FIRES": "Fires", "PROT": "Protection", "INTEL": "Intelligence", "INFO": "Information", "C2": "Command & Control", "SUST": "Sustainment", "JOINT": "Joint"}
 BASE_TYPES = {"Hub": dict(stock=15, restock=1, surv=4, alone=2, dur=8, conc=0, hf=3, access=("SPACE", "MARITIME", "CYBER")),
@@ -264,8 +304,33 @@ class Player:
 class Over(Exception): pass
 
 
+SCENARIO_KEYS = dict(game=("first", "last", "sides"), side=("homefront", "isr", "bases", "marker", "frontline", "rear"),
+                     base=("supply", "damage", "devastated"))
+def refuse_unknown(what, given, allowed):
+    unknown = sorted(set(given) - set(allowed))
+    if unknown: raise ValueError("The scenario's %s has keys the engine does not know: %s." % (what, ", ".join(unknown)))
+def whole_number(what, value, lowest, highest):
+    """A scenario's number, refused in plain words unless it is a whole number from lowest to highest."""
+    if isinstance(value, bool) or not isinstance(value, int) or not lowest <= value <= highest:
+        raise ValueError("The scenario's %s must be a whole number from %d to %d, not %r." % (what, lowest, highest, value))
+    return value
+def checked_scenario(scenario):
+    """A mission's starting situation (the Sprint 7 contract, section 3). A key the engine does not know is refused, never ignored."""
+    scenario = dict(scenario or {}); refuse_unknown("game", scenario, SCENARIO_KEYS["game"])
+    if scenario.get("first") not in (None, 0, 1): raise ValueError("The scenario's first Active Player must be seat 0 or 1.")
+    if scenario.get("first") is None: scenario.pop("first", None)
+    if len(scenario.get("sides", [])) > 2: raise ValueError("The scenario has more than two sides.")
+    for side in scenario.get("sides", []):
+        refuse_unknown("side", side, SCENARIO_KEYS["side"])
+        if len(side.get("bases", [])) > 2: raise ValueError("A side of the scenario has more than two Bases.")
+        for base in side.get("bases", []):
+            refuse_unknown("Base", base, SCENARIO_KEYS["base"])
+            if base.get("devastated") not in (None, True, False): raise ValueError("A Base's devastated must be true or false.")
+    return scenario
+
+
 class Game:
-    def __init__(s, a, b, cards, terrain=None, seed=0, first=None, rules=None, log=False):
+    def __init__(s, a, b, cards, terrain=None, seed=0, first=None, rules=None, log=False, scenario=None):
         s.R = dict(RULES); s.R.update(rules or {}); s.rng = random.Random(seed); s.cards = cards
         s.rngs = s.new_rngs(seed) if s.R.get("rng_split", 0) else None   # trial rng_split: separate dice (None = the one stream, as released)
         s.terrain = terrain or "OPEN PLAIN"; T = TERRAIN[s.terrain]
@@ -275,7 +340,53 @@ class Game:
         s.P = [Player(0, a, cards, s.R, s.rs("deck", 0), 0), Player(1, b, cards, s.R, s.rs("deck", 1), 1 if same else 0)]   # rng_split: each player's own shuffle dice
         s.Z = s.R["zones"]; s.pos = [1, s.Z]; s.round = 0; s.first = s.rng.randrange(2) if first is None else first
         s.log = [] if log else None; s.why = [{}, {}]; s.info = 0; s.on_event = None; s.on_decide = None; s.fx = None; s.meta = []; s.endq = []; s.human = None; s.human_pid = None; s.winner = None; s.how = ""; s.phase = "Set up"; s.stats = dict(attacks=0, kills=0, supported=0, effects=0, reactions=0, hidden=0)
-        s.P[s.first].isr += 1; s.add_supply(s.P[1 - s.first], 1); s.evl = []
+        s.result = None; s.scenario = checked_scenario(scenario); s.first = s.scenario.get("first", s.first)
+        s.give_the_start_bonus(); s.evl = []; s.set_up_the_scenario()
+    # ------------------------------------------------------------ Sprint 7: the start bonus and a mission's starting situation
+    def give_the_start_bonus(s):
+        """Rule start_bonus: 0 (as released) the first player gains 1 ISR and the second 1 Supply; 1 (Rulebook 3.6.5, section 4, and
+        the lead's original rule, drafts entries H, I and K) the second player draws 1 more card and the first gets nothing; 2 none."""
+        if s.R.get("start_bonus", 0) == 0: s.P[s.first].isr += 1; s.add_supply(s.P[1 - s.first], 1)
+    def start_card(s, player):   # start_bonus 1: the second player's one more card, drawn with its first hand in round 1
+        second = player is s.P[1 - s.first] and s.round == 1
+        return 1 if second and s.R.get("start_bonus", 0) == 1 else 0
+    def set_up_the_scenario(s):
+        """A mission's starting situation (the Sprint 7 contract, section 3), applied after the start bonus."""
+        if "last" in s.scenario: s.R["last"] = whole_number("last round", s.scenario["last"], 1, 99)
+        for player, side in zip(s.P, s.scenario.get("sides", [])): s.set_up_side(player, side)
+    def set_up_side(s, player, side):
+        if "homefront" in side: player.hf = whole_number("Homefront", side["homefront"], 1, s.R["hf"])
+        if "isr" in side: player.isr = whole_number("ISR", side["isr"], 0, s.R["isr_cap"])
+        states = list(zip(player.bases, side.get("bases", [])))
+        for base, state in states:   # Bases that start devastated first, their Supply moving as in play; then the numbers as stated
+            if state.get("devastated"): s.devastate_at_start(player, base)
+        for base, state in states: s.set_up_base(base, state)
+        if "marker" in side: s.place_marker(player, whole_number("Force Marker's Zone", side["marker"], 1, s.Z))
+        for row, key in (("F", "frontline"), ("R", "rear")):
+            for name in side.get(key, []): s.put_on_the_table(player, name, row)
+    def devastate_at_start(s, player, base):   # as in play: Supply over what a devastated Base holds moves to the other Base
+        other = next(other for other in player.bases if other is not base); base.dev = True; base.dmg = base.t()["dur"]
+        extra = max(0, base.sup - base.stock()); base.sup = min(base.sup, base.stock()); other.sup = min(other.stock(), other.sup + extra)
+    def set_up_base(s, base, state):
+        if "supply" in state and whole_number("Supply", state["supply"], 0, 999) > base.stock():
+            words = "a devastated Base holds" if base.dev else "it holds"
+            raise ValueError("%s cannot start with %d Supply: %s at most %d." % (base.name, state["supply"], words, base.stock()))
+        if "supply" in state: base.sup = state["supply"]
+        if "damage" in state and base.dev: raise ValueError("%s starts devastated: give it no damage as well." % base.name)
+        if "damage" in state: base.dmg = whole_number("damage on %s" % base.name, state["damage"], 0, base.t()["dur"] - 1)
+    def place_marker(s, player, zone):
+        others = s.pos[1 - player.i]; ahead = zone <= others if player.i == 0 else zone >= others
+        if not 1 <= zone <= s.Z or not ahead: raise ValueError("A Force Marker cannot start in Zone %d: it would leave the route or pass the enemy marker." % zone)
+        s.pos[player.i] = zone
+    def put_on_the_table(s, player, name, row):
+        """A card that starts on the table: face up, Ready and undamaged; a copy is taken from the side's decks if one is there."""
+        card = s.cards.get(name)
+        if card is None or not card.cap: raise ValueError("%s is not a Capability in the card file." % name)
+        if row == "F" and len(player.front()) >= s.R["front_limit"]: raise ValueError("%s: the Frontline is full." % name)
+        for pile in (player.ie, player.mf):
+            copy_in_deck = next((other for other in pile if other.name == name), None)
+            if copy_in_deck is not None: pile.remove(copy_in_deck); break
+        player.units.append(Unit(card, row))
     # ------------------------------------------------------------ helpers
     def new_rngs(s, x): return dict(deck=[random.Random("%r deck %d" % (x, i)) for i in (0, 1)], bot=random.Random("%r bot" % x), la=random.Random("%r la" % x))   # rng_split: one stream per purpose
     def rs(s, what, i=None):   # the dice for one purpose: the one stream (rng_split 0, as released) or that purpose's own
@@ -389,13 +500,16 @@ class Game:
         for b in sorted(p.bases, key=lambda b: b.kind != "Staging Base"):
             t = max(0, min(n, b.stock() - b.sup)); b.sup += t; n -= t
     def gain_isr(s, p, n): p.isr = max(0, min(s.R["isr_cap"], p.isr + n))
-    def lose_hf(s, p, n, why=""):
+    def lose_hf(s, p, n, why="", told=None):   # told: the line said in place of the usual one (rule as_printed's wording)
         if n <= 0: return
         if s.cond(p, "E_DCO") and not why.endswith(" lost") and not why.endswith("devastated") and why not in ("lost the Frontline contest", "the enemy holds the centre", "reshuffle", ""): n -= 1
         if n <= 0: return
         k = "cards lost" if why.endswith(" lost") else ("Base devastated" if why.endswith("devastated") else (why if why in ("lost the Frontline contest", "the enemy holds the centre", "reshuffle") else "enemy Effects and abilities"))
         s.why[p.i][k] = s.why[p.i].get(k, 0) + n
-        p.hf -= n; s.say(s.who(p), "loses %d Homefront%s (now %d)." % (n, " (" + why + ")" if why else "", p.hf)); s.tick(p)
+        p.hf -= n
+        if told: s.say(told)
+        else: s.say(s.who(p), "loses %d Homefront%s (now %d)." % (n, " (" + why + ")" if why else "", p.hf))
+        s.tick(p)
         if p.hf <= 0: s.end(s.opp(p), "Homefront collapse")
     def tick(s, p):
         if p.hf <= s.R["tick_hi"] and "hi" not in p.ticks:
@@ -903,7 +1017,8 @@ class Game:
                 if killed and u in p.units and ((front and u.k("OVERRUN") and not u.over) or u.k("RAMPAGE")): u.ex = False; u.over = True; s.say(c.name, "overruns and readies.")
                 if killed and over > 0 and p.fl.get("spill"):
                     tg = [x for x in o.rear() if not x.hidden]
-                    if tg: x = max(tg, key=s.unit_value); s.say("BREAKTHROUGH: %d damage spills onto %s." % (over, x.c.name)); s.hit_unit(o, x, over)
+                    most_worth = lambda: max(tg, key=s.unit_value)
+                    if tg: x = s.chosen_or(p, "Excess Hits spill to a Rear card: which one?", tg, most_worth); s.say("BREAKTHROUGH: %d damage spills onto %s." % (over, x.c.name)); s.hit_unit(o, x, over)
         if not r["cancel"] and c.cls == "FIRES" and u in p.units and u.ex and not getattr(u, "rt", False) and any(x.k("RETARGET") for x in p.units) and (killed or (kind == "b" and hits > 0)): u.ex = False; u.rt = True; s.say("KILL WEB: re-attack,", c.name, "readies.")
         if not r["cancel"] and c.cls == "FIRES" and s.cond(p, "E_DYNTGT") and (killed or (kind == "b" and hits > 0)): s.gain_isr(p, 2); s.say("DYNAMIC TARGETING: kill confirmed, +2 ISR.")
         if (r["cancel"] or hits == 0) and o.ben == "BULWARK" and kind == "u" and getattr(t, "row", "") == "F": s.gain_isr(o, 1); s.add_supply(o, 1)
@@ -942,6 +1057,107 @@ class Game:
     def best_enemy(s, p, n=1, pred=lambda u: True, rear_ok=True):
         o = s.opp(p); c = [u for u in o.units if not u.hidden and u.c.cap and pred(u) and (rear_ok or u.row == "F")]
         return sorted(c, key=lambda u: -(s.unit_value(u) + (1 if not u.ex else 0)))[:n]
+    # Sprint 7: an Effect's targets. Rule hits_frontline 1: an Effect that deals Hits respects the Frontline (Rulebook 3.6.5, 9.1;
+    # backlog F11). Rule person_targets 1: a person chooses its targets and its printed choices (3.6.5, 12; backlog F12).
+    PASSES_THE_FRONTLINE = ("ignoring Frontline protection", "DEEP FIRES", "Rear card")   # a card's own line that says otherwise
+    def deals_hits(s, card): return any(word in card.text() for word in ("DAMAGE", "ATK "))
+    def frontline_protects(s, player, card):
+        """3.6.5, 9.1: while the enemy has any Frontline cards, attacks and Effects that deal Hits must target one of them. It guards
+        the enemy's cards only: a line that names a Base says where it lands ("cards that say so bypass protection"; 1.2, a card
+        overrides the book), so the Base targets below never ask it (the Studio Lead's call, 25 Nov)."""
+        if not s.R.get("hits_frontline", 0) or not s.deals_hits(card): return False
+        if any(words in card.text() for words in s.PASSES_THE_FRONTLINE): return False
+        return bool(s.opp(player).front())
+    def person_targets(s, player):
+        if s.is_human(player): return bool(s.R.get("person_targets", 0))
+        return False
+    def targets_for(s, card):   # what resolve() calls in place of best_enemy: the same order for the bot
+        def targets(player, count=1, pred=lambda unit: True, rear_ok=True): return s.effect_targets(player, card, count, pred, rear_ok)
+        return targets
+    def legal_targets(s, player, card, pred, rear_ok=True):   # the enemy cards it may target, in the bot's order
+        pool = s.best_enemy(player, len(s.opp(player).units), pred, rear_ok)
+        if s.frontline_protects(player, card): pool = [unit for unit in pool if unit.row == "F"]
+        return pool
+    def effect_targets(s, player, card, count, pred, rear_ok):
+        pool = s.legal_targets(player, card, pred, rear_ok)
+        if s.person_targets(player): return s.person_picks(player, card, count, pool)
+        return pool[:count]
+    ONLY_HITS_A_CARD = {"E_FIREMISSION": lambda unit: not unit.c.air}   # an Order whose whole effect is Hits on 1 enemy card
+    def no_legal_target(s, player, card):
+        """An Order that would be paid for and then do nothing: its whole effect hits an enemy card, and none may be targeted
+        (face-down cards cannot be targeted; while the Frontline protects, only Frontline cards may)."""
+        key = next(iter(card.keys), None); pred = s.ONLY_HITS_A_CARD.get(key)
+        return pred is not None and not s.legal_targets(player, card, pred)
+    def target_label(s, target):
+        if isinstance(target, Base): return "%s (Base, %d of %d damage)" % (target.name, target.dmg, target.t()["dur"])
+        row = "Frontline" if target.row == "F" else "Rear Area"
+        return "%s (%s, %d of %d damage)" % (target.c.name, row, target.dmg, target.c.dur)
+    def person_picks(s, player, card, count, pool):
+        """A person chooses up to count targets, one at a time; "Done" is offered only where the card says "up to"."""
+        chosen = []; pool = list(pool); up_to = "up to" in card.text()
+        while pool and len(chosen) < count:
+            options = [(1, s.target_label(unit), unit) for unit in pool] + ([(0, "Done", None)] if up_to and chosen else [])
+            of_how_many = " (%d of %s%d)" % (len(chosen) + 1, "up to " if up_to else "", count)
+            prompt = "%s: choose its target%s." % (card.name, "" if count == 1 else of_how_many)
+            unit = s.decide(player, "target", prompt, options)
+            if unit is None: break
+            chosen.append(unit); pool.remove(unit)
+        return chosen
+    def target_base(s, player, card):
+        """The enemy Base an Effect's line names: a person chooses; the bot takes the nearest to falling. Never blocked by the Frontline."""
+        standing = [base for base in sorted(s.opp(player).bases, key=lambda base: base.t()["dur"] - base.dmg) if not base.dev]
+        if not standing: return None
+        if not s.person_targets(player) or len(standing) == 1: return standing[0]
+        options = [(1, s.target_label(base), base) for base in standing]
+        return s.decide(player, "target", "%s: which enemy Base does it hit?" % card.name, options)
+    def glide_as_chosen(s, player, card):
+        """A person takes one of the card's two printed choices (its "OR"), then chooses the targets."""
+        bases_open = any(not base.dev for base in s.opp(player).bases)
+        button = lambda line: line.replace("OR ", "", 1).replace("At H-Hour: ", "", 1)
+        options = ([(1, button(card.l[1]), "base")] if bases_open else []) + [(1, button(card.l[2]), "units")]
+        if s.decide(player, "effect_choice", "%s: choose one of its two effects." % card.name, options) == "base":
+            base = s.target_base(player, card); s.strike(player, 4, base, base=True, dmg=True); base.sup = max(0, base.sup - 2); return
+        left = 5
+        for unit in s.effect_targets(player, card, 3, lambda unit: True, True):
+            hits = min(left, unit.c.dur - unit.dmg); left -= hits; s.strike(player, hits, unit, dmg=True)
+    def strike_as_chosen(s, player, card, attack, prec=0):
+        """One target, a Base or a LAND or MARITIME unit, as the card's line offers: a person chooses from all of them at once."""
+        enemy = s.opp(player); pool = s.best_enemy(player, len(enemy.units), lambda unit: not unit.c.air)
+        bases = [base for base in enemy.bases if not base.dev]
+        if s.frontline_protects(player, card): pool = [unit for unit in pool if unit.row == "F"]
+        options = [(1, s.target_label(target), target) for target in bases + pool]
+        target = s.decide(player, "target", "%s: choose its target." % card.name, options)
+        if target is None: return
+        s.strike(player, attack, target, prec=prec, base=isinstance(target, Base))
+        if isinstance(target, Base): target.sup = max(0, target.sup - 2)
+    def chosen_or(s, player, prompt, pool, bot_pick):
+        """One of pool: a person chooses (rule person_targets, behind is_human); the bot takes bot_pick(), as released."""
+        if not s.person_targets(player) or len(pool) < 2: return bot_pick()
+        return s.decide(player, "target", prompt, [(1, s.target_label(item), item) for item in pool])
+    def degrade_chosen_base(s, player, source, amount):   # "DEGRADE n Base Supply": a person chooses the enemy Base
+        bases = s.opp(player).bases; fullest = lambda: max(bases, key=lambda base: base.sup)
+        base = s.chosen_or(player, "%s: which enemy Base loses %d Supply?" % (source, amount), bases, fullest)
+        base.sup = max(0, base.sup - amount)
+    def air_assault_by_a_person(s, player, card_played, pool, room):
+        """Deploying from hand by an Effect: a person chooses up to room cards and, for each, the Frontline or the Rear Area."""
+        chosen = []
+        while len(chosen) < room:
+            left = [card for card in dict.fromkeys(pool) if pool.count(card) > [pick for pick, _ in chosen].count(card)]
+            if not left: break
+            options = [(card.cost, "Air-assault %s" % card.name, card) for card in left] + [(0, "Done", None)]
+            prompt = "%s: deploy up to %d more Generation I or II units from your hand." % (card_played.name, room - len(chosen))
+            card = s.decide(player, "air_assault", prompt, options)
+            if card is None: break
+            rows = [(1, "Frontline", "F")] if len(player.front()) + sum(row == "F" for _, row in chosen) < s.R["front_limit"] else []
+            row = s.decide(player, "air_assault", "%s: deploy it to which row?" % card.name, rows + [(0, "Rear Area", "R")])
+            chosen.append((card, row))
+        return chosen
+    def mission_target(s, player, operator, pool):   # an Operator's mission target at H-Hour (backlog F12); the bot as released
+        if not s.person_targets(player): return max(pool, key=lambda unit: s.unit_value(unit) + unit.dmg)
+        enemy = s.opp(player)
+        label = lambda unit: s.hidden_label(enemy, unit) if unit.hidden else s.target_label(unit)
+        options = [(1, label(unit), unit) for unit in pool]
+        return s.decide(player, "target", "%s: which enemy card does its mission strike?" % operator.name, options)
     def effect_value(s, p, c):
         o = s.opp(p); k = next(iter(c.keys)); E = lambda n=1, **kw: s.best_enemy(p, n, **kw); ready_e = [u for u in o.units if not u.ex and not u.hidden and u.c.cap]
         myex = [u for u in p.units if u.ex and not u.hidden]; v = {
@@ -988,12 +1204,18 @@ class Game:
         opts = []
         for c in dict.fromkeys(p.hand):
             if c.cap or c.sub == "Reaction" or p.sup() < c.cost + (int(c.req[-1]) if c.req[:1] == ["PULSE"] else 0) * 0 or p.isr < c.isr or not s.req_ok(p, c): continue
-            if c.sub in ("Plan", "Condition") and any(t["c"].name == c.name for t in p.track): continue
+            if s.one_copy_only(c) and any(t["c"].name == c.name for t in p.track): continue
+            if s.person_targets(p) and s.no_legal_target(p, c): continue   # a person is never offered a card that would do nothing
             v = s.effect_value(p, c)
             if v < 0 and not s.is_human(p): continue
             verb = "Play" if c.sub == "Order" else "Start"
             opts.append((v - 0.25 * c.cost - 0.2 * c.isr, "%s %s (%s%s): %s" % (verb, c.name, c.cost_text(), ", waits %d round%s" % (c.timer, "s" if c.timer > 1 else "") if c.sub == "Plan" else (", lasts %d rounds" % c.timer if c.sub == "Condition" else ""), c.l[0]), ("effect", c)))
         return opts
+    def one_copy_only(s, card):
+        """Only one copy of it may wait on your Mission Track. As released, a Plan or a Condition; with rule plan_copies 1, a
+        Condition only (Rulebook 3.6.5, section 13; the lead, drafts entry J item 5; backlog F16)."""
+        if card.sub == "Condition": return True
+        return card.sub == "Plan" and not s.R.get("plan_copies", 0)
     def play_effect(s, p, c):
         o = s.opp(p); s.pay(p, c.cost); p.isr -= c.isr; p.hand.remove(c); s.stats["effects"] += 1
         if c.req[:1] == ["PULSE"]:
@@ -1021,11 +1243,11 @@ class Game:
             hits = a if dmg else max(0, a - max(0, s.tsurv(o, t, True) - prec)); s.hit_base(o, t, hits); return
         hits = a if dmg else max(0, a - max(0, s.tsurv(o, t) - prec)); s.say(t.c.name, "takes %d damage." % hits) if hits else s.say("No damage to", t.c.name + "."); s.hit_unit(o, t, hits)
     def resolve(s, p, c):
-        o = s.opp(p); k = next(iter(c.keys)); E = s.best_enemy
-        base = lambda: next((b for b in sorted(o.bases, key=lambda b: (b.t()["dur"] - b.dmg)) if not b.dev), None)
+        o = s.opp(p); k = next(iter(c.keys)); E = s.targets_for(c)
+        base = lambda: s.target_base(p, c)
         if k == "E_AIRASSAULT":
             pool = sorted([x for x in p.hand if x.cap and x.gi < 3 and not s.wd_blocked(p, x)], key=lambda x: -x.cost); room = min(2, max(0, s.table_room(p)))   # trial table_cap (AW): only into free places
-            if s.R.get("table_cap", 0) and s.is_human(p):   # trial (rules audit M1): a person picks which, up to the free places
+            if s.R.get("table_cap", 0) and s.is_human(p) and not s.person_targets(p):   # trial (rules audit M1): a person picks which, up to the free places
                 pick = []
                 while len(pick) < room:
                     left = [x for x in pool if x not in pick or pool.count(x) > pick.count(x)]
@@ -1035,7 +1257,11 @@ class Game:
                     pick.append(x)
             else: pick = pool[:room]
             if s.R.get("table_cap", 0) and len(pool) > len(pick) and room < 2: s.say("The table is full: AIR ASSAULT deploys only %d." % len(pick))
-            for x in pick: p.hand.remove(x); p.units.append(Unit(x, "F" if len(p.front()) < s.R["front_limit"] else "R")); s.say(s.who(p), "air-assaults", x.name, "into play.")
+            rows = None
+            if s.person_targets(p): rows = s.air_assault_by_a_person(p, c, pool, room); pick = [card for card, _ in rows]
+            for place, x in enumerate(pick):
+                row = rows[place][1] if rows else ("F" if len(p.front()) < s.R["front_limit"] else "R")
+                p.hand.remove(x); p.units.append(Unit(x, row)); s.say(s.who(p), "air-assaults", x.name, "into play.")
             if not s.contact(): s.pos[p.i] += 1 if p.i == 0 else -1
         elif k == "E_MTC":
             if s.dist() > 0: s.pos[p.i] += 1 if p.i == 0 else -1; s.say(s.who(p), "moves to contact: advances 1 Zone." + (" The forces are in Contact." if s.contact() else ""))
@@ -1043,7 +1269,10 @@ class Game:
             if s.contact() and s.R.get("mtc_shock", 0): p.fl["shock"] = p.fl.get("shock", 0) + 1
         elif k == "E_BREAK": p.fl["fatk"] = p.fl.get("fatk", 0) + 1; p.fl["rout"] = 1; p.fl["spill"] = 1; p.fl["noobs"] = 1; p.fl["str"] = p.fl.get("str", 0) + s.R["break_str"]
         elif k == "E_FIREMISSION":
-            for t in E(p, 1, pred=lambda u: not u.c.air): s.strike(p, 5, t, prec=1 if p.cls_units("INTEL") else 0)
+            targets = E(p, 1, pred=lambda u: not u.c.air)
+            if not targets and s.R.get("hits_frontline", 0): s.say("%s has no legal target." % c.name)
+            for t in targets: s.strike(p, 5, t, prec=1 if p.cls_units("INTEL") else 0)
+        elif k == "E_GLIDE" and s.person_targets(p): s.glide_as_chosen(p, c)
         elif k == "E_GLIDE":
             b = base(); tg = E(p, 3)
             if b and (len(tg) < 2 or b.t()["dur"] - b.dmg <= 4): s.strike(p, 4, b, base=True, dmg=True); b.sup = max(0, b.sup - 2)
@@ -1063,7 +1292,8 @@ class Game:
             if o.hand: x = max(o.hand, key=lambda x: x.cost + x.isr); o.hand.remove(x); o.discard.append(x); s.say(s.who(o), "must discard", x.name + ".")
             o.fl["zero_conc"] = 1; s.gain_isr(p, 4)
         elif k == "E_GRID":
-            s.gain_isr(o, -4); b = max(o.bases, key=lambda b: b.sup); b.sup = max(0, b.sup - 4)
+            if s.person_targets(p): s.gain_isr(o, -4); s.degrade_chosen_base(p, c.name, 4)
+            else: s.gain_isr(o, -4); b = max(o.bases, key=lambda b: b.sup); b.sup = max(0, b.sup - 4)
             for t in E(p, 2, pred=lambda u: not u.ex): t.ex = True
             s.lose_hf(o, 2, c.name)
         elif k == "E_FRAGO":
@@ -1102,8 +1332,10 @@ class Game:
             s.draw(p, 2)
         elif k == "E_SEAD":
             for t in E(p, 1, pred=lambda u: u.c.tags & {"DEFENSE", "AIR-DEFENSE", "SENSOR"}): s.strike(p, 4, t, dmg=True)
-            b = next((b for b in o.bases if not b.ex), None)
+            ready_bases = [base for base in o.bases if not base.ex]
+            b = s.chosen_or(p, "%s: exhaust which enemy Base?" % c.name, ready_bases, lambda: next(iter(ready_bases), None))
             if b: b.ex = True
+        elif k == "E_CRUISE" and s.person_targets(p): s.strike_as_chosen(p, c, 6, prec=2)
         elif k == "E_CRUISE":
             b = base(); tg = E(p, 1, pred=lambda u: not u.c.air)
             if b and (not tg or b.t()["dur"] - b.dmg <= 4 or b.kind == "Staging Base"): s.strike(p, 6, b, prec=2, base=True); b.sup = max(0, b.sup - 2)
@@ -1111,7 +1343,9 @@ class Game:
         elif k == "E_CONVERGE":
             s.gain_isr(o, -3)
             ce = s.R.get("conv_ex", 0)   # 0 = every enemy unit (printed through v0.12); n = up to n, strongest first
-            for u in (o.units if not ce else sorted([x for x in o.units if not x.ex and not x.hidden], key=lambda x: -x.c.atk)[:ce]): u.ex = True
+            ready_units = sorted([x for x in o.units if not x.ex and not x.hidden], key=lambda x: -x.c.atk)
+            if ce and s.person_targets(p): ready_units = s.person_picks(p, c, ce, ready_units)
+            for u in (o.units if not ce else ready_units[:ce]): u.ex = True
             b = base()
             if b: s.strike(p, 4, b, base=True, dmg=True)
             s.lose_hf(o, 2, c.name)
@@ -1304,10 +1538,15 @@ class Game:
             elif et: et[0]["t"] += 1; s.say(s.who(o) + "'s", et[0]["c"].name, "is delayed 1 round.")
             elif mt: mt[0]["t"] -= 1; s.say(mt[0]["c"].name, "is advanced 1 round.")
         elif k == "A_HIJACK":
-            p.isr -= 1; d = max([x for x in o.units if not x.hidden and (x.c.tags & {"DRONE", "ROBOT"}) and x.c.atk], key=lambda x: x.c.atk); tg = [x for x in o.units if x is not d and not x.hidden and x.c.cap] or [d]
-            t = max(tg, key=s.unit_value); s.say(d.c.name, "is hijacked and fires on", t.c.name + "."); d.ex = True; s.hit_unit(o, t, d.c.atk)
+            drones = [x for x in o.units if not x.hidden and (x.c.tags & {"DRONE", "ROBOT"}) and x.c.atk]
+            strongest = lambda: max(drones, key=lambda drone: drone.c.atk)
+            p.isr -= 1; d = s.chosen_or(p, "%s: take control of which enemy DRONE or ROBOT?" % u.c.name, drones, strongest)
+            tg = [x for x in o.units if x is not d and not x.hidden and x.c.cap] or [d]
+            most_worth = lambda: max(tg, key=s.unit_value)
+            t = s.chosen_or(p, "%s deals its ATK to which enemy card?" % d.c.name, tg, most_worth); s.say(d.c.name, "is hijacked and fires on", t.c.name + "."); d.ex = True; s.hit_unit(o, t, d.c.atk)
         elif k == "A_MALWARE":
-            p.isr -= 1; b = max(o.bases, key=lambda b: b.sup); b.sup = max(0, b.sup - 2)
+            if s.person_targets(p): p.isr -= 1; s.degrade_chosen_base(p, u.c.name, 2)
+            else: p.isr -= 1; b = max(o.bases, key=lambda b: b.sup); b.sup = max(0, b.sup - 2)
             if u.c.keys.get("CYBER"): s.raid(p, u.c.keys["CYBER"], u.c.name)
             else: s.lose_hf(o, u.c.keys["A_MALWARE"], u.c.name)
         elif k == "A_SITREP":
@@ -1400,11 +1639,16 @@ class Game:
             if x is None: break
             player.hand.remove(x); player.discard.append(x); discarded += 1
         for c in ([c for c in player.hand if c.cap and c.gi > 1 and c.cost > player.sup() >= s.keep_price(player, c)] if s.R.get("bot_sust", 0) and not s.is_human(player) else []): s.ev(player, "BOT:KEEP UPGRADE:" + c.name)   # rule 8: kept, where the old rule would discard it
-        kept = len(player.hand); s.draw(player, max(0, s.R["hand"] + (1 if player.concept == "NEXUS" else 0) - len(player.hand)))
+        kept = len(player.hand); s.draw(player, max(0, s.R["hand"] + (1 if player.concept == "NEXUS" else 0) + s.start_card(player) - len(player.hand)))
         s.tell_account(s.open_step or {}, "%s: discarded %d; drew %d." % (player.name, discarded, len(player.hand) - kept))
+    def draw_together(s, order):
+        """Rule command_together 1 (the lead, drafts entries J item 3 and L (d)): both players draw, the Active Player first, before
+        either does Force Posture; then each does Force Posture (reveal, deploy, upgrade), the Active Player first."""
+        s.phase = "Command"
+        for player in order: s.discard_and_draw(player); player.drew_in_round = s.round
     def command(s, p):
         R = s.R; o = s.opp(p); s.phase = "Command"
-        s.discard_and_draw(p)
+        if getattr(p, "drew_in_round", 0) != s.round: s.discard_and_draw(p)
         p.lift = sum(1 if b.dev else 2 for b in p.bases) + sum(u.k("LIFT") for u in p.units if not u.hidden) + (R["lift_round"] - 4 if R.get("lift_round", 0) else 0); fl = getattr(p, "fl_next", 0); p.fl_next = 0; used = [False]; pused = [False]   # Patch 15: LIFT (FARP's THROUGHPUT)
         def discount():  # FORWARD STOCKS (old), DELIVER on a card in play, PREPOSITIONED STOCKS on the Mission Track: the first deploy or upgrade of the phase
             if used[0]: return 0
@@ -1534,9 +1778,7 @@ class Game:
     def operations(s):
         s.phase = "Operations"; order = [s.P[s.first], s.P[1 - s.first]]
         s.step_begins(6)   # placed before BLACKOUT, which runs before the Mission Track today (provisional: where BLACKOUT belongs is a rules question)
-        for p in order:
-            bo = max([u.k("BLACKOUT") for u in p.units if not u.hidden] + [0])
-            if bo: o = s.opp(p); o.isr = max(0, o.isr - bo); s.say(s.who(p) + "'s BLACKOUT: the enemy loses %d ISR." % bo)
+        if not s.R.get("ops_start_after_track", 0): s.start_of_operations_abilities(order)
         s.one_act(None, hh=True)   # Sprint 4 sust_onereact: H-Hour, where no one may react
         for p in order:
             for t in list(p.track):
@@ -1550,7 +1792,7 @@ class Game:
                     op = t.get("op", "INF_PSYOP"); o = s.opp(p); s.ev(p, "H:" + op)
                     if op == "INF_HIT":
                         tg = [x for x in o.units if x.c.cap and (s.R.get("op_anydomain", 1) or "LAND" in x.c.tags)]
-                        if tg: x = max(tg, key=lambda x: s.unit_value(x) + x.dmg); s.say(c.name, "strikes", x.c.name if not x.hidden else "a Hidden card", "for %d damage." % t["n"]); s.hit_unit(o, x, t["n"])
+                        if tg: x = s.mission_target(p, c, tg); s.say(c.name, "strikes", x.c.name if not x.hidden else "a Hidden card", "for %d damage." % t["n"]); s.hit_unit(o, x, t["n"])
                     elif op == "INF_INTEL": s.gain_isr(p, t["n"]); s.draw(p, 1); s.say(c.name, "reports in: +%d ISR and a card." % t["n"])
                     elif op == "INF_REVEAL":
                         s.gain_isr(p, 2)
@@ -1564,11 +1806,20 @@ class Game:
                     continue
                 s.say("H-Hour:", s.who(p) + "'s", c.name, ("resolves." if t["kind"] == "op" else "ends.")); s.ev(p, "H:" + next(iter(c.keys)))
                 (p.ash if c.expend else p.discard).append(c); s.resolve(p, c); s.grayzone(p, c)
+        if s.R.get("ops_start_after_track", 0): s.start_of_operations_abilities(order)
         s.one_end()
         s.step_begins(7); passes = 0; i = 0; guard = 0
         while passes < 2 and guard < 80:
             guard += 1; p = order[i % 2]; i += 1
             passes = 0 if s.take_action(p) else passes + 1
+    def start_of_operations_abilities(s, order):
+        """BLACKOUT, "at the start of each Operations phase". As released, before the Mission Tracks move; with rule
+        ops_start_after_track 1, after both tracks have moved (Rulebook 3.6.5, section 12; backlog F14)."""
+        for player in order:
+            blackout = max([unit.k("BLACKOUT") for unit in player.units if not unit.hidden] + [0])
+            if not blackout: continue
+            enemy = s.opp(player); enemy.isr = max(0, enemy.isr - blackout)
+            s.say(s.who(player) + "'s BLACKOUT: the enemy loses %d ISR." % blackout)
     def sustainment(s):
         s.phase = "Sustainment"; R = s.R; fs = s.tr("sust_fs"); r0 = set(u.uid for q in s.P for u in q.units if not u.ex) if fs else ()   # trial FORWARD SUPPORT: who was Ready at the start of Sustainment
         s.step_begins(8)
@@ -1668,10 +1919,13 @@ class Game:
                     s.pay(l, cd.cost); l.isr -= cd.isr; l.hand.remove(cd); l.discard.append(cd); s.ev(l, "E_STALL"); s.stats["reactions"] += 1; halted = True
                     s.say(s.who(l), "plays STALL: the enemy's win is cancelled, and it holds its ground.")
                 if halted: pass
-                elif room == 0 and s.R["supremacy"]: s.say(s.who(l), "is pushed off the home edge."); s.end(w, "Supremacy: the enemy was driven off its home edge", not s.as_printed())
+                elif s.pushed_off(room, n) and s.R["supremacy"]:
+                    if room == 0: s.say(s.who(l), "is pushed off the home edge.")
+                    s.end(w, "Supremacy: the enemy was driven off its home edge", not s.as_printed())
                 if not halted:
-                    n = min(n, room); s.pos[l.i] += -n if l.i == 0 else n
+                    wanted = n; n = min(n, room); s.pos[l.i] += -n if l.i == 0 else n
                     retreat = "has no Zone left to retreat into." if s.as_printed() and room == 0 else "retreats %d Zone%s." % (n, "" if n == 1 else "s")
+                    if 0 < room < wanted and s.R.get("push_off_edge", 0): retreat = s.driven_off_words(wanted, room)
                     s.say(s.who(w), "wins the contest.", s.who(l), retreat); s.lose_hf(l, s.R["contest_hf"], "lost the Frontline contest")
                 else: n = 0
                 if n: s.pursue(w, l)
@@ -1691,6 +1945,12 @@ class Game:
             for u in p.units: u.pin = False   # PIN ends with the round; the card is still exhausted, and readies at the next Recovery as usual
             if s.R["forced_discard"] and p.hand: p.discard += p.hand; p.hand = []
         if s.R["forced_discard"]: s.say("Both players discard their hands.")
+    def driven_off_words(s, wanted, room):   # push_off_edge: the one line for a retreat longer than the Zones left
+        return "must retreat %d Zone%s and has %d: it is driven off its home edge." % (wanted, "" if wanted == 1 else "s", room)
+    def pushed_off(s, room, retreat):
+        """The loser of the contest leaves the Terrain. As released, only from its own home Zone; with rule push_off_edge 1, also
+        when it must retreat more Zones than it has left (Rulebook 3.6.5, section 10; the lead, drafts entry J item 4; backlog F15)."""
+        return room == 0 or (bool(s.R.get("push_off_edge", 0)) and retreat > room)
     def check_for_the_end_as_released(s):
         """Assessment, step 5, as released (rule as_printed 0): a win met in steps 1 to 4 has already ended the game."""
         first, second = s.P; wins = {q[0].i for q in s.endq if q[1].startswith("Devastation")}
@@ -1720,6 +1980,7 @@ class Game:
         if not any(met) and s.round < s.R["last"]: return s.tell_the_check("No win condition met; play goes on.")
         winner, words = s.result_as_printed(met)
         s.tell_the_check("%s. %s. %s." % (weighed, s.spoken(winner, "win", "wins") if winner else "A draw", words))
+        s.result = s.result_as_data(met, winner)
         s.end(winner, "%s (%s)" % (words, weighed), True)
     def result_as_printed(s, met):
         """Who wins at the check for the end, and the result's words (section 1, with the lead's names for equal Homefront)."""
@@ -1732,6 +1993,50 @@ class Game:
         if not qualified: return None, "Protraction: equal Homefront after round %d, %s" % (s.round, score)
         if last_round: return None, "Protraction: both sides qualify on equal Homefront, %s, in round %d" % (score, s.round)
         return None, "Stalemate: both sides qualify on equal Homefront, %s" % score
+    # Sprint 7: the result as data, and in plain words from no side's point of view (the contract, section 2)
+    MET_CODE = {"Homefront collapse": "homefront", "Devastation": "devastation", "Supremacy": "supremacy"}
+    def result_as_data(s, met, winner):
+        codes = [[s.MET_CODE[name] for name in met[player.i]] for player in s.P]; kind = s.result_kind(met)
+        if kind in ("decisive", "pyrrhic"): reason = codes[winner.i][0]
+        else: reason = "points" if kind == "points" or not any(met) else None
+        names = s.neutral_names()
+        return dict(kind=kind, winner=None if winner is None else winner.i, reason=reason, met=codes, round=s.round,
+                    homefront=[player.hf for player in s.P], names=names, words=s.result_words(kind, winner, codes, names))
+    def result_kind(s, met):
+        qualified = [player for player in s.P if met[player.i]]; equal = s.P[0].hf == s.P[1].hf
+        if len(qualified) == 1: return "decisive"
+        if not equal: return "pyrrhic" if qualified else "points"
+        if not qualified or s.round >= s.R["last"]: return "protraction"
+        return "stalemate"
+    def neutral_names(s):   # each side by its Concept; "(south)" and "(north)" when both play the same one, as the page names them
+        concepts = [player.concept for player in s.P]
+        if concepts[0] != concepts[1]: return concepts
+        return [concepts[0] + " (south)", concepts[1] + " (north)"]
+    def what_was_met(s, codes, names):
+        """What each win condition met says about the other side: whose Homefront fell, whose Bases, who was driven off."""
+        facts = []
+        for seat in (0, 1):
+            enemy = s.P[1 - seat]; enemy_name = names[1 - seat]
+            if "homefront" in codes[seat]: facts.append(s.homefront_fell(enemy_name, enemy.hf))
+            if "devastation" in codes[seat]: facts.append("both Bases of %s were devastated" % enemy_name)
+            if "supremacy" in codes[seat]: facts.append("%s was driven off its home edge" % enemy_name)
+        return "; ".join(facts)
+    def homefront_fell(s, name, homefront):   # the real number, as the comparison and `homefront` give it
+        if homefront < 0: return "%s's Homefront fell below 0 (to %d)" % (name, homefront)
+        return "%s's Homefront fell to %d" % (name, homefront)
+    def result_words(s, kind, winner, codes, names):
+        homefront = [player.hf for player in s.P]; score = "%d to %d" % (max(homefront), min(homefront))
+        facts = s.what_was_met(codes, names); facts = facts[0].upper() + facts[1:] + "." if facts else ""
+        if kind == "decisive":
+            loser = names[1 - winner.i]
+            return "%s wins a decisive victory. %s %s met no win condition." % (names[winner.i], facts, loser)
+        if kind == "pyrrhic":
+            return "%s wins a Pyrrhic victory. %s Both sides met a win condition; %s has more Homefront, %s." % (names[winner.i], facts, names[winner.i], score)
+        if kind == "points":
+            return "%s wins on Homefront after round %d. Neither side met a win condition; %s has more Homefront, %s." % (names[winner.i], s.round, names[winner.i], score)
+        if kind == "stalemate": return "The game is a Stalemate. %s Both sides met a win condition on equal Homefront, %s." % (facts, score)
+        if facts: return "The game is a Protraction. %s Both sides met a win condition on equal Homefront, %s, in round %d." % (facts, score, s.round)
+        return "The game is a Protraction. Neither side met a win condition, and Homefront is equal, %s, after round %d." % (score, s.round)
     def decisive(s, words):   # the lead (drafts entry E): a win by a win condition against a side that met none
         name, _, detail = words.partition(": ")
         return "%s: a decisive victory%s" % (name, "; " + detail if detail else "")
@@ -1745,9 +2050,19 @@ class Game:
         if s.R["centre"]:
             c = (s.Z + 1) / 2.0; ha, hb = s.pos[0] >= c, s.pos[1] <= c
             if ha != hb:
-                w = s.P[0] if ha else s.P[1]; s.say(s.who(w), "holds the centre of the route.")
+                w = s.P[0] if ha else s.P[1]
+                if s.as_printed(): s.the_center_as_printed(w); return
+                s.say(s.who(w), "holds the centre of the route.")
                 if s.cond(s.opp(w), "E_NARR"): s.say("STRATEGIC NARRATIVE: no Homefront is lost for the centre.")
                 else: s.lose_hf(s.opp(w), s.R["centre"], "the enemy holds the centre")
+    def the_center_as_printed(s, holder):
+        """Step 12's line with rule as_printed: who loses, and whose Force Marker alone has reached the center (American spelling)."""
+        other = s.opp(holder); lost = s.R["centre"]
+        if s.cond(other, "E_NARR"):
+            narrative = next(entry["c"].name for entry in other.track if "E_NARR" in entry["c"].keys)
+            return s.say("%s loses no Homefront for the center: its %s is in effect." % (s.who(other), narrative))
+        told = "%s loses %d Homefront: only %s's Force Marker has reached the center." % (s.who(other), lost, s.who(holder))
+        s.lose_hf(other, lost, "the enemy holds the centre", told=told)
     def concepts_and_conditions(s):
         """Assessment, step 3: the Concepts and Conditions that work at Assessment."""
         s.step_begins(13)
@@ -1761,6 +2076,7 @@ class Game:
             for p in s.P: s.draw(p, 0)
             while True:
                 s.round += 1; s.say("--- Round %d. %s is the Active Player. ---" % (s.round, s.P[s.first].name)); order = [s.P[s.first], s.P[1 - s.first]]
+                if s.R.get("command_together", 0): s.draw_together(order)
                 for p in order: s.command(p)
                 for p in order: s.phase = "Command"; s.arrange(p); s.maneuver(p)
                 s.operations(); s.sustainment(); s.assessment(); s.first = 1 - s.first

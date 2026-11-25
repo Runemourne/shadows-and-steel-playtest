@@ -1,0 +1,136 @@
+{
+  "id": "thunder_gate",
+  "version": "0.1",
+  "scenario_keys": "Each mission's scenario uses the keys of Sprint_7_Engine_Contract_v0.1, section 3. The player is seat 0; Zone 1 is the player's own end, Zone 5 the enemy's.",
+  "name": "OPERATION THUNDER GATE",
+  "tagline": "One armored run through the pass, and the cost of holding it.",
+  "intro": "You command SPEARHEAD. The enemy holds MOUNTAIN PASS, the only road through the hills to the capital. Take the pass in one armored run, then hold it.",
+  "missions": [
+    {
+      "id": "m1",
+      "number": 1,
+      "title": "THE RUN",
+      "place": "MOUNTAIN PASS, from the near entrance to the far exit",
+      "you": "SPEARHEAD",
+      "bot": "SPECTRUM",
+      "terrain": "MOUNTAIN PASS",
+      "first": "random",
+      "scenario": {},
+      "handicap": "",
+      "order": {
+        "situation": "Enemy SPECTRUM forces defend MOUNTAIN PASS with jamming, deception and decoys. They trade ground for time and drain our Homefront and ISR. Their Hub and Staging Base lie beyond the far exit. Our Bases are full; our Force Marker is in Zone 1.",
+        "mission": "SPEARHEAD attacks through MOUNTAIN PASS on a narrow front from round 1 and drives enemy forces off their home edge (Supremacy) by the end of round 8, to open the road to the capital.",
+        "execution": "A penetration in three phases. Close: reach Contact by round 3. Break: win the Frontline contest each Assessment with a full Frontline. Pursue: advance every round the enemy falls back. Main effort is the Frontline. Strike enemy Bases only when the Frontline is secure.",
+        "sustainment": "The Staging Base carries the force: it adds 5 Supply a round, the Hub 1. Each working Base gives 2 Lift. Enemy effects can reach both Bases; protect them. If both are devastated, the enemy meets its Devastation win condition. Recover Frontline cards first.",
+        "command": "The commander moves with the Frontline; the Hub is the main command post, the Staging Base the alternate. Signal: expect jamming on every net; report the far exit clear when the enemy is driven off its home edge."
+      },
+      "intent": "Open the road to the capital before the enemy can wear us down, so that at the end state the enemy is driven off its home edge, the pass is open, and at least one of our Bases still works.",
+      "learn": {
+        "text": "A penetration is a form of maneuver in which a force attacks on a narrow front; destroying the continuity of a defense enables the enemy's isolation and defeat in detail.",
+        "source": "FM 3-90, Tactics (May 2023), para 2-36"
+      },
+      "endings": {
+        "decisive": "The pass is ours and the enemy is broken. The road to the capital is open.",
+        "pyrrhic": "The pass is ours, but the enemy met a win condition of its own. The road to the capital is open, and the force that opened it has almost nothing behind it.",
+        "points": "Neither side broke. After eight rounds our Homefront stands higher, and the enemy gives up the pass: taken on the count, not by force.",
+        "stalemate": "Both forces broke in the same hour, and neither holds the pass. The attack must be made again.",
+        "protraction": "Eight rounds, and neither side can finish it. The pass stays contested; the attack must be made again.",
+        "defeat_decisive": "The attack stalled in the pass and was broken there, with nothing gained. Withdraw, refit and attack again.",
+        "defeat_pyrrhic": "The enemy holds the pass, but it paid as heavily as we did. Refit and attack again.",
+        "defeat_points": "Neither side broke, and after eight rounds the enemy's Homefront stands higher. The pass stays closed.",
+        "draw": "The fighting stops with no result. The pass stays in enemy hands; the attack must be made again."
+      },
+      "next": "Mission 2, THE CREST: the force that took the pass must now hold it."
+    },
+    {
+      "id": "m2",
+      "number": 2,
+      "title": "THE CREST",
+      "place": "MOUNTAIN PASS, the crest",
+      "you": "SPEARHEAD",
+      "bot": "BULWARK",
+      "terrain": "MOUNTAIN PASS",
+      "first": "bot",
+      "scenario": {
+        "first": 1,
+        "last": 6,
+        "sides": [
+          {
+            "bases": [
+              {
+                "supply": 6
+              },
+              {
+                "supply": 0,
+                "devastated": true
+              }
+            ],
+            "marker": 3
+          },
+          {
+            "marker": 5,
+            "homefront": 10
+          }
+        ]
+      },
+      "handicap": "",
+      "order": {
+        "situation": "We hold the crest of MOUNTAIN PASS, cut off. A heavier enemy BULWARK force masses at the far exit to retake it. Losing the pass left its Homefront at 10: it cannot afford a long fight. Relief follows round 6. BULWARK moves first.",
+        "mission": "SPEARHEAD retains the crest of MOUNTAIN PASS (Zone 3) from round 1 until the battle ends after round 6, to keep the pass open for the relief force.",
+        "execution": "A defense of key terrain. Hold Zone 3: while only we hold the center, the enemy loses 1 Homefront each Assessment. Win the Frontline contest; do not trade ground. Main effort: the Frontline. Priority of fires: enemy cards that can strike the Hub.",
+        "sustainment": "The Hub holds 6 Supply. Enemy fires devastated our Staging Base: it holds at most 5 Supply, adds 1 a round and gives 1 Lift; the Hub adds 1. Alone, the Hub's Survivability is 2. If devastated, the enemy meets its Devastation win condition.",
+        "command": "The commander stays on the crest with the Frontline; the Hub is the main command post. Signal: the Hub carries the force's links to higher; expect the enemy to hunt them."
+      },
+      "intent": "Keep the pass open for the relief force by outlasting a counterattack the enemy cannot afford to prolong, so that at the end state, after round 6, we still hold the crest, the Hub still works, and the enemy's Homefront stands below ours.",
+      "learn": {
+        "text": "The culminating point is where a force can no longer continue its form of operations, offense or defense, often for lack of support. Operational reach, how far and how long a force can fight, rests in part on sustainment.",
+        "source": "ADP 3-0, Operations (March 2025), paras 4-20 and 4-21"
+      },
+      "endings": {
+        "decisive": "The enemy's counterattack broke against the crest without devastating the Hub. The relief force passes through a pass we still hold.",
+        "pyrrhic": "We won, but the enemy met a win condition of its own. The pass was kept; the force that kept it is spent.",
+        "points": "Neither side broke. At the end of round 6 our Homefront stands higher: the enemy could not afford the fight, and the relief force finds us still in the pass.",
+        "stalemate": "Both sides broke in the same hour. The relief force arrives to a pass that belongs to no one.",
+        "protraction": "At the end of round 6 both sides are spent and level. The relief force arrives to a crest still contested.",
+        "defeat_decisive": "The force is broken and the pass is closed behind us. The run bought nothing that could be kept.",
+        "defeat_pyrrhic": "The enemy's counterattack retook the crest, but it paid as heavily as we did. The pass is closed, and the enemy has little left to hold it.",
+        "defeat_points": "Neither side broke, but at the end of round 6 the enemy's Homefront stands higher. Its counterattack outlasted us; the relief force turns back.",
+        "draw": "The fighting stops with no result. The relief force arrives to a crest that neither side can claim."
+      },
+      "next": "The operation is over."
+    }
+  ],
+  "copy": {
+    "menu_title": "OPERATION",
+    "menu_line": "THUNDER GATE: two missions on MOUNTAIN PASS.",
+    "list_heading": "OPERATION THUNDER GATE",
+    "locked": "Opens when the mission before it has been fought.",
+    "brief_button": "START THE MISSION",
+    "debrief_heading": "AFTER-ACTION REVIEW",
+    "again": "FIGHT IT AGAIN",
+    "onward": "NEXT MISSION",
+    "result_names": {
+      "decisive": "Decisive victory",
+      "pyrrhic": "Pyrrhic victory",
+      "points": "Victory on Homefront",
+      "stalemate": "Stalemate",
+      "protraction": "Protraction",
+      "defeat_decisive": "Decisive defeat",
+      "defeat_pyrrhic": "Defeat, Pyrrhic for the enemy",
+      "defeat_points": "Defeat on Homefront",
+      "draw": "Draw"
+    },
+    "labels": {
+      "situation": "SITUATION",
+      "mission": "MISSION",
+      "execution": "EXECUTION",
+      "sustainment": "SUSTAINMENT",
+      "command": "COMMAND AND SIGNAL",
+      "intent": "COMMANDER'S INTENT",
+      "you": "YOU",
+      "bot": "ENEMY",
+      "close": "CLOSE",
+      "learn": "DOCTRINE IN PRACTICE"
+    }
+  }
+}

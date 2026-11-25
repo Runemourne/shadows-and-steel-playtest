@@ -1,0 +1,45 @@
+/* Sprint 7 package 6: card and H-Hour moments (owner: the moments lane). Composition only; colours from the page's tokens where they exist. */
+/* the card moment: an opaque panel between the top bar and the prompt panel's buttons */
+#ssm{position:fixed;z-index:5;display:flex;gap:10px;box-sizing:border-box;padding:8px 10px;background:#0c1210;border:1px solid var(--amber,#e0a85a);
+  box-shadow:0 8px 30px rgba(0,0,0,.7);color:#eef2ec;font-family:Barlow,system-ui,sans-serif;pointer-events:none;overflow:hidden}
+#ssm[hidden]{display:none}
+#ssm.in{animation:ssmIn .18s ease-out}@keyframes ssmIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#ssm.foe{border-color:#c9a27a}#ssm.own{border-color:#7fb6d8}#ssm.hot{box-shadow:0 0 0 2px var(--amber,#e0a85a),0 8px 30px rgba(0,0,0,.7)}
+#ssm img{flex:0 0 auto;align-self:center;border-radius:6px;max-width:44%;object-fit:contain}
+#ssm .tx{flex:1 1 auto;min-width:0;min-height:0;display:flex;flex-direction:column;gap:2px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}#ssm .tx>*{flex:0 0 auto}
+#ssm .hd{font-size:calc(13px * var(--ts,1));line-height:1.2}#ssm .who{font-size:calc(13px * var(--ts,1));letter-spacing:.08em;text-transform:uppercase;color:var(--amber,#e0a85a);font-weight:700}
+#ssm.own .who{color:#9fd0ee}
+#ssm .nm{font-family:var(--f-title,"Black Ops One",Impact,sans-serif);font-size:calc(19px * var(--ts,1));line-height:1.1;color:#fff;overflow-wrap:anywhere}
+#ssm .lab{font-size:calc(13px * var(--ts,1));text-transform:uppercase;letter-spacing:.06em;color:#d8d2bd;font-weight:600}
+#ssm .ln{margin-top:2px;font-size:calc(16px * var(--ts,1));line-height:1.3;background:#18201d;border-left:3px solid var(--amber,#e0a85a);padding:4px 7px}
+#ssm .ln p{margin:0 0 3px}#ssm .ln b{color:#ffd9a0}
+#ssm .sbar{height:5px;background:#26302c;flex:0 0 auto}#ssm .sbar i{display:block;height:100%;background:var(--amber,#e0a85a);transform-origin:left center}
+#ssm.tap .sbar{display:none}
+#ssm .hint{font-size:calc(12px * var(--ts,1));color:#aab5ae;flex:0 0 auto}#ssm.short .hint{display:none}#ssm.short img{max-width:28%}
+#ssm.frozen{border-style:dashed}#ssm.frozen .hint::after{content:" · kept while you hold"}
+/* the table marks: lines, rings, numbers, the H-Hour stinger; under the top bar and the prompt panel */
+#ssmFx{position:fixed;inset:0;z-index:2;pointer-events:none}
+#ssmFx svg{position:absolute;inset:0;overflow:visible}
+#ssmFx line{stroke-width:3;stroke-linecap:round}
+#ssmFx line.atk{stroke:#ffd27a;stroke-dasharray:10 6}#ssmFx line.eff{stroke:#9fe0cf;stroke-dasharray:4 5}
+#ssmFx line.mv{animation:ssmDash .6s linear infinite}@keyframes ssmDash{to{stroke-dashoffset:-16}}
+.ssmTag{position:fixed;transform:translate(-50%,-50%);white-space:nowrap;padding:2px 7px;background:#0c1210;border:1px solid #6d7a73;color:#fff;
+  font-family:var(--f-mono,monospace);font-weight:700;font-size:calc(16px * var(--ts,1));pointer-events:none}
+.ssmTag.sDmg{color:#ffd9a0;border-color:#e0a85a;font-size:calc(17px * var(--ts,1))}.ssmTag.sMiss{color:#9fd0ee;border-color:#7fb6d8}
+.ssmTag.sTg{font-size:calc(12px * var(--ts,1));color:#ffd27a;border-color:#ffd27a}.ssmTag.sSrc{font-size:calc(12px * var(--ts,1));color:#9fe0cf;border-color:#9fe0cf}
+.ssmRing{position:fixed;width:44px;height:44px;margin:-22px 0 0 -22px;border:3px solid #ffd27a;border-radius:50%;pointer-events:none}
+.ssmRing.fl{animation:ssmRing .5s ease-out forwards}@keyframes ssmRing{0%{transform:scale(.4);background:rgba(255,226,160,.55)}100%{transform:scale(1.6);background:rgba(255,226,160,0);opacity:.2}}
+.ssmSting{position:fixed;padding:6px 10px;background:#0c1210;border:2px solid var(--amber,#e0a85a);color:var(--amber,#e0a85a);font-family:var(--f-title,Impact,sans-serif);
+  font-size:calc(20px * var(--ts,1));letter-spacing:.12em;pointer-events:none;z-index:5}
+html:not(.rm) .ssmSting{animation:ssmSting .35s ease-out}@keyframes ssmSting{from{transform:translateX(-10px);opacity:0}to{transform:none;opacity:1}}
+/* LAST CARD: 100 x 44 (at least), in the hand's handle bar, left of its arrow */
+#ssmLast{position:fixed;z-index:5;width:100px;height:44px;min-height:44px;padding:0;margin:0;box-sizing:border-box;background:#0c1210;border:1px solid var(--amber,#e0a85a);color:#ffd9a0;
+  font-family:Barlow,system-ui,sans-serif;font-weight:700;font-size:13px;line-height:1.15;letter-spacing:.06em;white-space:nowrap;clip-path:none}
+#ssmLast[hidden]{display:none}#ssmLast:disabled{opacity:.45}#ssmLast:focus-visible{outline:3px solid var(--amber,#e0a85a);outline-offset:2px}
+#ssmEarlier{margin:6px 0;font-size:calc(14px * var(--ts,1))}#ssmEarlier button{margin:4px 6px 0 0;min-height:44px;padding:4px 10px}
+/* Reduced motion: the banner stands still (battle.js clears it after two seconds) */
+html.rm #banner.on{animation:none!important;opacity:1}
+html.rm #ssm,html.rm .ssmRing,html.rm .ssmTag,html.rm #ssmFx line{animation:none!important}
+/* a line too long for the panel: it scrolls inside it, with a cue, and the moment waits until the end has been reached */
+#ssm.scroll{pointer-events:auto}#ssm .more{display:none;flex:0 0 auto;font-size:calc(13px * var(--ts,1));font-weight:700;color:#ffd9a0}#ssm.scroll .more{display:block;position:sticky;bottom:0;background:#0c1210}
+#ssm.noimg img{display:none!important}

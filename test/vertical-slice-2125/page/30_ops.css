@@ -1,0 +1,53 @@
+/* Sprint 7, package 7: the operation's screens (owner: the operation's screens lane). Composition only; colours and type from
+   tokens.css (Digital Studio Style Guide v0.2). Text scales with the page's own text size (--tsz). */
+#s7ops{position:fixed;inset:0;z-index:12;display:flex;flex-direction:column;background:var(--ss-color-background,#0C1215);color:var(--ss-color-text-primary,#E8EDE8);
+  font-family:var(--ss-type-body-family);font-size:calc(18px * var(--tsz,1));line-height:1.45;touch-action:pan-y}
+#s7ops[hidden]{display:none}
+#s7ops .s7scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+#s7ops .s7in{max-width:720px;margin:0 auto;padding:12px 16px 20px}
+#s7ops p{margin:0 0 10px;overflow-wrap:anywhere}
+#s7ops button,#s7-deb button{min-height:44px;min-width:44px;font-family:var(--ss-type-control-family);font-weight:700;font-size:calc(20px * var(--tsz,1));line-height:1.15;letter-spacing:.03em;white-space:normal;overflow-wrap:anywhere}
+#s7ops .s7back{display:inline-flex;align-items:center;margin:0 0 10px;padding:8px 12px;text-align:left}
+#s7ops .s7t{font-family:var(--ss-type-section-family);font-weight:700;font-size:calc(30px * var(--tsz,1));line-height:1.1;margin:0 0 8px;letter-spacing:.02em;overflow-wrap:anywhere}
+#s7ops .s7tag{color:var(--ss-color-text-secondary,#B5C1C2);font-weight:600}
+#s7ops .s7ms{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+#s7ops .s7m{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;padding:12px;border:1px solid var(--ss-color-control-boundary,#75858D);background:rgba(232,237,232,.04);color:var(--ss-color-text-primary);
+  font-family:var(--ss-type-body-family);font-weight:400;font-size:calc(18px * var(--tsz,1));text-transform:none;letter-spacing:0}
+#s7ops .s7m.ready{border:2px solid var(--ss-color-action,#D8B66A)}
+#s7ops .s7m.locked{color:var(--ss-color-disabled-text,#A4AEAE);border-style:dashed}
+#s7ops .s7n{flex:0 0 auto;font-family:var(--ss-type-counter-family);font-weight:600;font-size:calc(26px * var(--tsz,1));line-height:1;min-width:1.2em}
+#s7ops .s7mb{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px}
+#s7ops .s7mb b{font-family:var(--ss-type-control-family);font-weight:700;font-size:calc(22px * var(--tsz,1));letter-spacing:.03em}
+#s7ops .s7st{font-weight:600}#s7ops .s7m.done .s7st{color:var(--ss-color-text-secondary,#B5C1C2)}
+#s7ops .s7go{flex:0 0 auto;font-style:normal;color:var(--ss-color-action);font-size:calc(22px * var(--tsz,1))}
+.s7f .fr,#s7ops .fr{color:var(--ss-color-friendly,#8AB9D1);margin-right:12px;display:inline-block}#s7ops .ho{color:var(--ss-color-hostile,#E89A8C);display:inline-block}
+#s7ops .fr i,#s7ops .ho i{font-style:normal}#s7ops .fr small,#s7ops .ho small{font-size:calc(16px * var(--tsz,1));letter-spacing:.06em}
+#s7ops .s7oh{border-bottom:1px solid var(--ss-color-control-boundary);padding-bottom:8px;margin-bottom:12px}
+#s7ops .s7oh p:first-child{font-family:var(--ss-type-control-family);font-weight:700;letter-spacing:.06em;color:var(--ss-color-text-secondary);margin-bottom:4px}
+#s7ops .s7hc{display:flex;gap:10px;align-items:flex-start;border:3px solid var(--ss-color-caution,#E8C77B);background:rgba(232,199,123,.1);padding:12px;margin:0 0 14px}
+#s7ops .s7hc i{font-style:normal;color:var(--ss-color-caution);font-size:calc(24px * var(--tsz,1));line-height:1}#s7ops .s7hc p{margin:0;font-weight:600}
+#s7ops .s7o{list-style:none;margin:0;padding:0}
+#s7ops h3,#s7-deb h3{font-family:var(--ss-type-control-family);font-weight:700;font-size:calc(20px * var(--tsz,1));letter-spacing:.05em;margin:14px 0 6px}
+#s7ops .s7int,#s7-deb .s7int{border-left:4px solid var(--ss-color-action,#D8B66A);background:rgba(216,182,106,.08);padding:4px 12px 2px;margin:14px 0}
+#s7ops .s7int h3,#s7-deb .s7int h3{margin-top:6px}
+#s7ops .s7learn{margin:14px 0 0;padding:0 0 0 12px;border-left:2px solid var(--ss-color-control-boundary);color:var(--ss-color-text-secondary)}#s7ops .s7learn blockquote{margin:0}#s7ops .s7learn h3{margin-top:0;color:var(--ss-color-text-primary)}
+#s7ops .s7learn cite{display:block;font-style:normal;font-size:calc(16px * var(--tsz,1))}
+#s7ops .s7foot{flex:0 0 auto;padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--ss-color-control-boundary);background:var(--ss-color-background)}
+#s7ops .s7foot button{display:block;width:100%;max-width:720px;margin:0 auto;padding:8px 12px}
+#s7ops .s7start:disabled{opacity:.6}
+#s7-deb{margin:0 0 16px;padding:0 0 12px;border-bottom:1px solid var(--line,rgba(232,226,207,.28));font-family:var(--ss-type-body-family);font-size:calc(18px * var(--tsz,1));line-height:1.45;color:var(--ss-color-text-primary,#E8EDE8)}
+#s7-deb p{margin:0 0 8px;overflow-wrap:anywhere}
+#s7-deb .s7dh{font-family:var(--ss-type-control-family);font-weight:700;letter-spacing:.06em;color:var(--ss-color-text-secondary,#B5C1C2)}
+#s7-deb .s7dk{font-family:var(--ss-type-section-family);font-weight:700;font-size:calc(30px * var(--tsz,1));line-height:1.1;margin:0 0 8px}
+#s7-deb .s7w{color:var(--ss-color-text-secondary,#B5C1C2);font-size:calc(16px * var(--tsz,1))}
+#s7-deb .s7next{font-weight:600}
+#s7-deb .s7db{display:flex;flex-wrap:wrap;gap:8px}#s7-deb .s7db button{flex:1 1 180px;padding:8px 12px}
+@media (min-width:700px){#s7-deb .s7cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}#s7-deb .s7cmp .s7int{margin-top:0}}
+#s7ops h4{font-family:var(--ss-type-control-family);font-weight:700;font-size:calc(18px * var(--tsz,1));letter-spacing:.05em;margin:6px 0 4px}
+#s7ops .s7o .s7int{margin:6px 0 12px}
+#s7-result .s7r-intent{margin:4px 0 0;font-family:var(--ss-type-body-family);font-size:calc(16px * var(--tsz,1));line-height:1.4;color:var(--ss-color-text-secondary,#B5C1C2)}
+#s7-deb.s7after{border-bottom:0;margin:12px 0 16px}
+/* a test page's label sits in the bottom-left corner (about 26 px tall): the start button and the Debrief's buttons stay clear of it */
+.s7test #s7ops .s7foot{padding-bottom:calc(34px + env(safe-area-inset-bottom,0px))}
+.s7test #s7-deb{padding-bottom:34px}
+.s7test #debrief{padding-bottom:40px}

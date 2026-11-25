@@ -52,7 +52,7 @@ function stepParts(dt) {
     p.s.position.addScaledVector(p.v, dt); if (p.drag) p.v.multiplyScalar(Math.max(0, 1 - p.drag * dt)); var sc = p.s0 + (p.s1 - p.s0) * k; p.s.scale.set(sc, sc, 1); p.s.material.opacity = p.a * (1 - k) * (k < .1 ? k * 10 : 1); }
 }
 function groundFlash(x, z, size, color, dur) { var m = groundPlane(TX.glow, size, size, x, .5, z, { blending: THREE.AdditiveBlending, color: color, fog: false }); tween(dur, function (k) { m.material.opacity = 1 - k; var s = 1 + k * .6; m.scale.set(s, s, 1); }, function () { scene.remove(m); m.geometry.dispose(); m.material.dispose(); }); }
-function flashScreen(a) { if (G.calm) return; var f = $("flash"); f.style.transition = "none"; f.style.opacity = a; requestAnimationFrame(function () { f.style.transition = "opacity .5s"; f.style.opacity = 0; }); }
+function flashScreen(a) { if (G.calm || window.SSMoments) return; var f = $("flash"); f.style.transition = "none"; f.style.opacity = a; requestAnimationFrame(function () { f.style.transition = "opacity .5s"; f.style.opacity = 0; }); }
 
 /* ================= sound: synthesized, no files ================= */
 var AC = null, master = null, sfxBus = null, musBus = null, voxBus = null, ambBus = null, noiseBuf = null, silentEl = null;
@@ -269,7 +269,7 @@ function impact(p, pw) {
 
 /* ================= camera ================= */
 function placeTrack(tb, botPx) {   // the Mission Track sits between the bars (scaled down when the prompt is tall); the feed beside it on wide screens
-  tb = tb == null ? ($("top").offsetHeight || 0) : tb; botPx = botPx == null ? (FR ? H - FR.B : 0) : botPx;
+  tb = (tb == null ? ($("top").offsetHeight || 0) : tb) + (W < 600 ? feedLine() - 4 : 0); botPx = botPx == null ? (FR ? H - FR.B : 0) : botPx;
   var mt = $("mtrack"), avail = H - tb - Math.max(botPx, H <= 520 && W >= 600 ? 74 : $("bot").offsetHeight) - 12;   /* v0.20.2: never down over the dock */ mt.style.top = Math.round(tb + 6 + avail / 2) + "px";
   mt.style.transform = "translateY(-50%)"; var mh = mt.offsetHeight, k = mh > avail && avail > 40 ? Math.max(.4, avail / mh) : 1; mt.style.transformOrigin = "left center"; mt.style.transform = "translateY(-50%)" + (k < 1 ? " scale(" + k.toFixed(3) + ")" : "");   // the Mission Track fits between the bars
   var wide = W >= 900 && H > 520; mt.style.left = wide ? "22px" : "";   // v0.19.2: on a desktop or laptop, in from the screen edge
@@ -329,7 +329,7 @@ function keepBars() { ["top", "me"].forEach(function (id) { var e = $(id), h = e
     ft.style.maxHeight = Math.round(Math.max(48, need > cap - one ? cap - 24 : cap - one)) + "px"; }   // v0.21: the pinned buttons may take all but one line of the body, and on the smallest screens the whole panel: no choice is ever cut off
   if (pr && !(pr.querySelector(".pbody") || {}).scrollTop) requestAnimationFrame(function () { unslice(pr.querySelector(".pbody"), pr.classList.contains("more") || pr.querySelector(".pfoot .pmore") ? 0 : 28); promptCue(); });
   document.documentElement.classList.toggle("tight", (W < 420 && PREF.text >= 1.5) || (H < 420 && W < 600)); }   // narrow and large text: Undo and Hint become icons (their names stay as labels)   // v0.21: the pinned buttons may take all but one line of the body, so no choice is ever cut off
-function feedLine() { return W < 900 ? Math.round(12 * PREF.text * 1.25 + 12) : 0; }   // on narrow screens the feed shows one line over the table's top edge: that line is kept free
+function feedLine() { var r = feedRows(); return W < 900 ? Math.round(r * (12 * PREF.text * 1.25 + 8) + (r - 1) * 3 + 4) : 0; }   /* Sprint 7 table lane: room for the phone's two or three event lines */   // on narrow screens the feed shows one line over the table's top edge: that line is kept free
 function topEdge(feed) {   // below the top bar, below the menu buttons where they reach down over the table and, with feed, below the feed's one line (narrow screens)
   var tb = $("top").offsetHeight || 0, tl = Math.max($("bWin").getBoundingClientRect().bottom, $("bMenu").getBoundingClientRect().bottom), T = Math.max(tb, tl ? tl + 4 : 0);
   if (feed) T = Math.max(T, tb - 6 + feedLine());
@@ -473,7 +473,7 @@ function hud() {
   var v = G.view; if (!v) return; winTrack();
   $("foe").innerHTML = stat(v.bot, 0); $("you").innerHTML = stat(v.you, 1);
   var mt = "<em>MISSION TRACK</em>" + trackCol(v.bot, 0) + '<hr>' + trackCol(v.you, 1); if ($("mtrack").dataset.h !== mt) { $("mtrack").innerHTML = mt; $("mtrack").dataset.h = mt; }
-  $("phase").innerHTML = '<span class="pm"><span class="rl">Round ' + v.round + " of " + v.last + '</span><span class="rs">R' + v.round + "/" + v.last + "</span> · " + esc(G.stepNow && G.stepNow.round === v.round ? G.stepNow.phase : v.phase) + (v.contact ? '<span class="ctS"> · IN CONTACT</span>' : "") + "</span><small>" + (v.contact ? '<i class="sep"> · </i>IN CONTACT' : "") + '<i class="sep"> · </i>' + esc(v.terrain) + "</small>"; $("phase").title = "Round " + v.round + " of " + v.last + " · " + v.phase + (v.contact ? " · IN CONTACT" : "") + " · " + v.terrain;   // v0.21 (checkers): Contact first, so on a phone's two fixed lines it is never the part cut off
+  $("phase").innerHTML = '<span class="pm"><span class="rl">Round ' + v.round + " of " + v.last + '</span><span class="rs">R' + v.round + "/" + v.last + "</span> · " + esc(G.stepNow && G.stepNow.round === v.round ? (W < 600 && H <= 520 ? stepStage(G.stepNow) : G.stepNow.phase) : v.phase) + (v.contact ? '<span class="ctS"> · IN CONTACT</span>' : "") + "</span><small>" + (v.contact ? '<i class="sep"> · </i>IN CONTACT' : "") + '<i class="sep"> · </i>' + esc(v.terrain) + "</small>"; $("phase").title = "Round " + v.round + " of " + v.last + " · " + v.phase + (v.contact ? " · IN CONTACT" : "") + " · " + v.terrain;   // v0.21 (checkers): Contact first, so on a phone's two fixed lines it is never the part cut off
   var h = ""; for (var z = v.Z; z >= 1; z--) { var c = (v.Z + 1) / 2 === z, k = v.you.marker === z && v.bot.marker === z; h += '<div class="' + (k ? "k" : c ? "c" : "") + '">' + (v.bot.marker === z ? '<span class="f">▼</span>' : "") + (v.you.marker === z ? '<span class="o">▲</span>' : "") + "</div>"; }
   var ct = v.contact ? '<p class="ctst" title="Frontline contest at Assessment: higher Frontline Strength wins; on a tie, more different Classes in the Frontline wins.">CONTEST<b class="f">' + v.bot.strength + '</b><i>vs</i><b class="o">' + v.you.strength + "</b><em>" + (v.you.strength > v.bot.strength ? "you lead" : v.you.strength < v.bot.strength ? "you trail by " + (v.bot.strength - v.you.strength) : "tied") + "</em></p>" : "";
   $("route").innerHTML = ct + "<span>ENEMY</span>" + h + "<span>YOU</span>"; $("route").classList.toggle("live", !!(G.pend && !G.playing && G.pend.kind === "maneuver"));
@@ -545,7 +545,7 @@ function drawerAuto() {
   var want = !!(live && !(G.sel && (O[G.sel] || Object.keys(maps().dsts).length)) && !ownActs && (ready || (p && isMulti(p) && p.kind === "discard")));
   var sp = spotNow(), list = !sp ? [] : Array.isArray(sp) ? sp : [sp];
   if (list.indexOf("hand") >= 0) want = true; else if (list.some(function (x) { return /front|rear|bases|route|mtrack/.test(x); })) want = false;
-  if (G.drawerUser && p && G.drawerUser.n === p.n) want = G.drawerUser.open;
+  if (G.drawerUser && p && G.drawerUser.n === p.n) want = G.drawerUser.open; if (p && isPh() && H <= 520 && /^(target|reaction)$/.test(p.kind) && (p.options || []).some(function (o) { return String(o).length > 26; })) want = false;
   if (drag && drag.on) want = false;
   var was = h.classList.contains("open"); h.classList.toggle("open", want);
   var pk = ""; if (hb && !want && isPh()) { var ims = h.querySelectorAll(".strip img[data-card]"), k7 = Math.min(7, ims.length); for (var q = 0; q < k7; q++) pk += '<img draggable="false" src="' + ims[q].src + '" alt="" class="' + (ims[q].classList.contains("can") ? "r" : ims[q].classList.contains("cant") ? "d" : "") + '">'; pk = pk ? '<span class="pk" aria-hidden="true">' + pk + "</span>" : ""; }   // v0.21 (Council M2b, spec 2.2): tucked, the top of each card peeks out of the handle (cost and Class colour), so you see what you hold
@@ -598,7 +598,7 @@ function prompt() {
   if (G.err) h = "<p><b>The game stopped on an error. Please pass this text to Claude.</b></p><pre style='white-space:pre-wrap;font-size:calc(12px * var(--ts))'>" + esc(G.err) + "</pre>";
   else if (G.moment) h = momentBox();
   else if (G.over && !G.playing && !G.queue.length && G.info && G.info.tutorial && !G.replay) h = coachEnd();
-  else if (G.over && !G.playing && !G.queue.length) h = '<p class="t" style="font-size:calc(16px * var(--ts));color:var(--amber)">' + (/^Nobody/.test(G.over.winner) ? "A draw" : esc(G.over.winner) + (G.over.winner === "You" ? " win" : " wins")) + " in round " + G.over.round + '</p><p class="h">' + esc(overHow(G.over)) + '.</p><div class="btns"><button id="pDebrief">Debrief</button>' + (SITE && !G.replay ? '<button id="pSend">✉ Provide Feedback</button>' : "") + (G.replay ? '<button class="ghost" id="rExit">' + (G.replay.standalone ? "Stop" : "Exit replay") + "</button>" : '<button class="ghost" id="pNew">Exit to the Main Menu</button>') + "</div>";
+  else if (G.over && !G.playing && !G.queue.length) h = (G.over.result ? s7Result(G.over, false) : '<p class="t" style="font-size:calc(16px * var(--ts));color:var(--amber)">' + (/^Nobody/.test(G.over.winner) ? "A draw" : esc(G.over.winner) + (G.over.winner === "You" ? " win" : " wins")) + " in round " + G.over.round + '</p><p class="h">' + esc(overHow(G.over)) + '.</p>') + '<div class="btns"><button id="pDebrief">Debrief</button>' + (SITE && !G.replay ? '<button id="pSend">✉ Provide Feedback</button>' : "") + (G.replay ? '<button class="ghost" id="rExit">' + (G.replay.standalone ? "Stop" : "Exit replay") + "</button>" : '<button class="ghost" id="pNew">Exit to the Main Menu</button>') + "</div>";
   else if (G.replay) h = "<p>" + esc(G.caption || "…") + "</p>" + (G.why && G.whyAt === G.shownN && G.info && G.info.spectate ? '<p class="why">' + esc(whyLine(G.why)) + "</p>" : "") + replayBar();
   else if (G.busy) h = "<p class='h'>Working…</p>";
   else if (pend && !G.playing && G.confirm && G.confirm.n === pend.n) h = '<div class="cf"><p>' + esc(pend.options[G.confirm.i]) + '?</p><p class="h">Once the bot answers, this cannot be taken back. (Settings: Ask before moves you cannot take back.)</p><div class="btns"><button class="go" id="cfYes">Confirm</button><button class="ghost" id="cfNo">Back</button></div></div>';
@@ -620,10 +620,10 @@ function prompt() {
       h += hintBox(pend);
       if (pend.kind === "reaction") { var all = M.free.slice(); Object.keys(M.card).concat(Object.keys(M.src)).forEach(function (k) { (M.card[k] || M.src[k] || []).forEach(function (i) { if (all.indexOf(i) < 0) all.push(i); }); }); all.sort(function (a, b) { return a - b; }); M.free = all; }   // v0.21: in a reaction prompt every answer has its own button too
       var long = M.free.filter(function (i) { return pend.options[i].length > 26; }), shortO = M.free.filter(function (i) { return pend.options[i].length <= 26; });
-      h += long.map(function (i) { return btn(i, pend.options[i]); }).join("") + '<div class="btns' + (lst ? " lstfoot" : "") + '">' + shortO.map(function (i) { return btn(i, pend.options[i], /^(Pass|Done|Do not|No\b|Keep|Leave|Stay)/.test(pend.options[i]) ? "ghost" : pend.kind === "maneuver" ? "go" : ""); }).join("") + (wdN && !G.wdOpen ? '<button class="ghost" id="wdT" aria-expanded="false" aria-label="Withdraw a card: ' + wdN + ' can go">WITHDRAW ▸</button>' : "") + (G.canUndo ? '<button class="ghost" id="pUndo" aria-label="Undo"><span class="ic">↶</span><span class="tx"> Undo</span></button>' : "") + (hintable(pend) && !(pend.coach && !pend.coach.free) && !(G.hint && G.hint.n === pend.n) ? '<button class="ghost" id="pHint" aria-label="Hint"><span class="ic">?</span><span class="tx">Hint</span></button>' : "") + "</div>";
+      h += (lst ? long.map(function (i) { return btn(i, pend.options[i]); }).join("") : "") + '<div class="btns' + (lst ? " lstfoot" : "") + '">' + (lst ? "" : long.map(function (i) { return btn(i, pend.options[i], "opt s7ans"); }).join("")) + shortO.map(function (i) { return btn(i, pend.options[i], /^(Pass|Done|Do not|No\b|Keep|Leave|Stay)/.test(pend.options[i]) ? "ghost" : pend.kind === "maneuver" ? "go" : ""); }).join("") + (wdN && !G.wdOpen ? '<button class="ghost" id="wdT" aria-expanded="false" aria-label="Withdraw a card: ' + wdN + ' can go">WITHDRAW ▸</button>' : "") + (G.canUndo ? '<button class="ghost" id="pUndo" aria-label="Undo"><span class="ic">↶</span><span class="tx"> Undo</span></button>' : "") + (hintable(pend) && !(pend.coach && !pend.coach.free) && !(G.hint && G.hint.n === pend.n) ? '<button class="ghost" id="pHint" aria-label="Hint"><span class="ic">?</span><span class="tx">Hint</span></button>' : "") + "</div>";
       var notes = pend.notes || []; if (notes.length) h += '<p class="why">' + (notes.length === 1 || pend.kind !== "action" ? notes.map(esc).join("<br>") : notes.length + " of your cards cannot act right now. Tap one to see why.") + "</p>";
     }
-  } else h = "<p" + (G.info && G.info.spectate ? "" : " class='h'") + ">" + esc(G.caption || "…") + "</p>" + (G.explain && G.explainAt === G.shownN ? '<p class="why" style="color:#8fc8ff">' + esc(G.explain) + "</p>" : "") + (G.why && G.whyAt === G.shownN && G.info && G.info.spectate ? '<p class="why">' + esc(whyLine(G.why)) + "</p>" : "") + '<div class="btns">' + (G.stepHold ? '<button id="pNextStep">Next step ▸ ' + esc(G.stepHold.fx.name) + "</button>" : "") + (G.why && G.info && G.info.spectate ? '<button class="ghost" id="pWhy">Why?</button>' : "") + '<button class="ghost" id="pPause">' + (G.paused ? "▶ Resume" : "❚❚ Pause") + "</button>" + (G.paused ? '<button class="ghost" id="pStep">Next event</button>' : "") + '<button class="ghost" id="pNote">✎ Add note</button></div>';
+  } else if (G.stepHold) h = stepHoldBox(); else h = "<p" + (G.info && G.info.spectate ? "" : " class='h'") + ">" + esc(G.caption || "…") + "</p>" + (G.explain && G.explainAt === G.shownN ? '<p class="why" style="color:#8fc8ff">' + esc(G.explain) + "</p>" : "") + (G.why && G.whyAt === G.shownN && G.info && G.info.spectate ? '<p class="why">' + esc(whyLine(G.why)) + "</p>" : "") + '<div class="btns">' + (G.why && G.info && G.info.spectate ? '<button class="ghost" id="pWhy">Why?</button>' : "") + '<button class="ghost" id="pPause">' + (G.paused ? "▶ Resume" : "❚❚ Pause") + "</button>" + (G.paused ? '<button class="ghost" id="pStep">Next event</button>' : "") + '<button class="ghost" id="pNote">✎ Add note</button></div>';
   setPrompt(el, h, true);   // v0.20.1: a capped prompt shows each new message from its top
 }
 /* v0.20.2 (fix pass on the table fit): the panel is a scrolling body over a pinned footer. The footer holds the panel's last row of buttons
@@ -665,9 +665,9 @@ function panelFit(el) { if (!el || isDesk()) return; var cap = +el.dataset.cap; 
   if (lst) { var lb = Math.ceil(q(lst).bottom - bq.top + body.scrollTop) + 8; need0 = Math.max(need0, lb); }
   var pill = body.scrollHeight > need0 + 12 ? Math.round(30 * Math.min(1.4, PREF.text)) + 6 : 0, lim = Math.floor(H * .62), need = chrome + need0 + pill + footH;
   if (open) {   /* the room between the top band and where the panel's bottom sits above the hand strip; measured from layout, not from the panel's current (possibly still moving) place */
-    try { panelClear(); } catch (e) { } var tb = $("top") ? $("top").getBoundingClientRect().bottom : 0, tm = new DOMMatrixReadOnly(getComputedStyle(el).transform === "none" ? undefined : getComputedStyle(el).transform), shift = parseFloat(getComputedStyle($("bot")).getPropertyValue("--stripH")) || 0;
+    try { panelClear(); } catch (e) { } var tb = Math.max($("top") ? $("top").getBoundingClientRect().bottom : 0, feedBottom()), tm = new DOMMatrixReadOnly(getComputedStyle(el).transform === "none" ? undefined : getComputedStyle(el).transform), shift = parseFloat(getComputedStyle($("bot")).getPropertyValue("--stripH")) || 0;
     var bottomOpen = q(el).bottom - (tm.m42 || 0) - shift; lim = Math.max(Math.min(cap, Math.floor(bottomOpen - tb - 6)), Math.min(lim, Math.floor(bottomOpen - tb - 6))); }
-  var hh = Math.max(cap, Math.min(lim, need));
+  var hh = G.pend && /^(arrange|maneuver)$/.test(G.pend.kind) ? cap : Math.max(cap, Math.min(lim, need));   /* Arrange and Move: the panel stays below the table, so your rows stay in view (More shows the rest) */
   if (need > lim) {   /* even 62% cannot hold it all: the ending buttons stay whole in the foot and the list scrolls above them, with the instruction's first two lines first */
     var ins = body.querySelector(".instr"), rs = body.querySelector(".rsup") || lst; if (lst && ins && rs && (rs.compareDocumentPosition(ins) & 4)) body.insertBefore(ins, body.firstChild);
     if (ins && !G.instrOpen) { ins.classList.add("clamp2"); ins.setAttribute("title", "Tap to read it all"); }   /* its first two lines (a tap shows it all), so the list's first button and every choice still show */
@@ -711,21 +711,54 @@ function overHow(o) { var how = String((o && o.how) || ""); if (G.info && G.info
   if (/^Devastation/.test(how)) return won ? "Devastation: both enemy Bases destroyed" : lost ? "Devastation: both your Bases destroyed" : how;
   if (/^Homefront collapse/.test(how)) return won ? "Homefront collapse: the enemy's Homefront fell to 0" : lost ? "Homefront collapse: your Homefront fell to 0" : how;
   return how; }
-/* ===== Sprint 6 package 3b: the printed steps of the round (test page) ===== */
+/* ===== Sprint 7 package 5: the steps of the round in the game's own terms (test page; the table lane) ===== */
 var STEPT = document.getElementById("stepT");   // kept by reference: on a short screen it lives inside the round line, which hud() redraws
-function stepWho(s) { if (!s) return ""; if (s.player == null) return "Both"; return s.player_name || ((G.info && G.info.names) || ["You", "The bot"])[s.player] || ""; }
+var ACT_STEP = 7;   // the engine's step in which the players take turns (by its number, never its name): the line names the side acting now
+function stepNames() { return (G.info && G.info.names) || ["You", "The bot"]; }
+function stepSpect() { return !!((G.info && G.info.spectate) || G.replay); }
+function stepActive(r) {   // the round's Active Player: the side that began the round's first step; else from who went first, turn about
+  var a = (G.stepAct || {})[r]; if (a != null) return a;
+  var nm = stepNames(), f = G.info ? nm.indexOf(G.info.first) : 0; if (f < 0) f = 0; return (f + Math.max(1, r || 1) - 1) % 2; }
+function stepStage(s) { return s ? (s.stage || s.phase || "") : ""; }
+function stepHead(s) { if (!s) return ""; var st = stepStage(s), ti = s.title || s.name || ""; return st && ti && ti !== st ? st + ": " + ti : (st || ti); }
+function stepSideI(s) {   // whose step, as a seat (0 or 1), or -1 for both sides together
+  if (!s) return -1; if (s.together) return -1; if (s.player != null) return s.player;
+  if (s.number === ACT_STEP && G.stepTurn && G.stepTurn.r === s.round) return G.stepTurn.p;
+  return stepActive(s.round); }
+function stepSide(s) { var i = stepSideI(s); return i < 0 ? "Both sides" : stepNames()[i] || ""; }
+function stepPart(s) {   // inside a step both sides do together: whose part is being played now
+  if (!s || !s.together || s.player == null) return ""; var n = stepNames()[s.player] || "";
+  return s.player === 0 && !stepSpect() ? "you" : n === "The bot" ? "the bot" : n; }
+function stepText(s) { return stepHead(s) + " · " + stepSide(s); }   // "Both sides" with no note after it (whose part shows in the step list)
+function stepLogText(s) { return "Round " + s.round + " · " + stepText(s); }
 function stepKey(s) { return s.number + (s.player == null ? "" : ":" + s.player); }
 function stepNow(s) {   // the step the game is in: from a step frame, a question (pending.step) or the end (over.step)
   if (!s || !s.number) return; var was = G.stepNow; G.stepNow = s;
-  if (!was || was.round !== s.round) G.stepDone = {};
+  if (!was || was.round !== s.round) { G.stepDone = {}; }
+  G.stageSeen = G.stageSeen || {}; (G.stageSeen[s.round] = G.stageSeen[s.round] || {})[stepStage(s)] = 1;
+  G.stepAct = G.stepAct || {}; if (s.player != null && G.stepAct[s.round] == null && s.number === ((G.info && G.info.round_steps || [])[0] || { number: 1 }).number) G.stepAct[s.round] = s.player;
   if (!was || stepKey(was) !== stepKey(s) || was.round !== s.round) { G.stepDone[stepKey(s)] = 1; G.stepChg = true; } }
-function stepSeen(f) {   // each frame as it is played: a step heading moves the tracker; a heading straight after another marks the first one empty
-  var fx = f.fx || {}; if (fx.kind !== "step") { G.stepLast = null; return; }
+function stepAsked(p) {   // a question to the person: its step is the person's, and in the turns the side acting is the person's (or, for a reaction, the other side's)
+  if (!p || !p.step) return; stepNow(p.step); G.stepAskedK = G.stepAskedK || {}; G.stepAskedK[p.step.round + ":" + stepKey(p.step)] = 1;
+  if (p.step.number === ACT_STEP && !p.step.together) G.stepTurn = { r: p.step.round, p: p.kind === "reaction" ? 1 : 0 }; }
+function stepSpeaker(text) {   // the side a log line begins with ("You ...", "Your ...", "The bot ...", a Concept's name), or -1
+  var nm = stepNames(), tx = String(text || "").replace(/^H-Hour: /, "");
+  if (/ fires [A-Z0-9]|react/i.test(tx)) return -1;   // a reaction is made in the other side's turn
+  if (tx.indexOf(nm[0]) === 0 || (nm[0] === "You" && /^Your /.test(tx))) return 0; if (tx.indexOf(nm[1]) === 0) return 1; return -1; }
+function stepSeen(f, text) {   // each frame as it is played, before it joins the log
+  var fx = f.fx || {}, nm = stepNames();
+  if (!/^step/.test(fx.kind || "")) { G.stepAns = false; G.stepLast = null;
+    var s0 = G.stepNow, sp = stepSpeaker(text); if (s0 && s0.number === ACT_STEP && sp >= 0) G.stepTurn = { r: s0.round, p: sp };
+    return; }
+  if (fx.kind !== "step") { G.stepQuiet = G.stepView != null && stepSum(f.view) === G.stepView; return; }
   if (G.stepLast) { var ch = tableDiff(G.stepLast.view, f.view), say = ch.length ? "Not in the log: " + ch.join("; ") + "." : "Nothing happened in this step.", i = G.stepLast.hi;
     if (G.hist[i] != null) G.hist[i] = G.hist[i] + " " + say; if (G.stepLast.el) G.stepLast.el.textContent += " · " + say; }
-  stepNow(fx); G.stepLast = { hi: G.hist.length - 1, el: null, view: f.view }; }
+  var pv = G.stepNow; G.stepSaid = false;
+  if (pv && !stepSpect() && pv.player === 0 && pv.round === fx.round && !(G.info && G.info.tutorial) && !((G.stepAskedK || {})[pv.round + ":" + stepKey(pv)]) && stepKey(pv) !== stepKey(fx)) {   // your own step passed with nothing for you to decide: say so
+    var line = "▸ " + stepHead(pv) + " · You: nothing to decide this time."; G.hist.push(line); G.stepSaid = true; (window.SS_SILENT = window.SS_SILENT || []).push(pv.round + ":" + stepKey(pv)); }
+  stepNow(fx); G.stepLast = { hi: G.hist.length, el: null, view: f.view }; G.stepView = stepSum(f.view); }
 function tableDiff(a, b) {   // a step with no line in the log: what changed on the open table between its start and the next step (only what your seat sees)
-  var out = [], nm = (G.info && G.info.names) || ["You", "The bot"]; if (!a || !b) return out;
+  var out = [], nm = stepNames(); if (!a || !b) return out;
   ["you", "bot"].forEach(function (k, i) { var x = a[k], y = b[k]; if (!x || !y) return; var bits = [], was = {};
     (x.front || []).concat(x.rear || []).forEach(function (u) { was[u.uid] = u; });
     var ready = [], rep = [];
@@ -734,58 +767,93 @@ function tableDiff(a, b) {   // a step with no line in the log: what changed on 
     [["hf", "Homefront"], ["isr", "ISR"], ["sup", "Supply"]].forEach(function (q) { if (x[q[0]] != null && x[q[0]] !== y[q[0]]) bits.push(q[1] + " " + x[q[0]] + " to " + y[q[0]]); });
     if (bits.length) out.push(nm[i] + ": " + bits.join(", ")); });
   return out; }
-function stepLine(s) { return s.phase + " " + s.in_phase + ": " + s.name + " · " + stepWho(s); }
-function stepFeed(text, fx) {   // the log: a heading where each step begins; an account as its own line
-  var d = document.createElement("div");
-  if (fx.kind === "step") { d.className = "stp"; d.textContent = "Step " + fx.in_phase + ": " + fx.name + " · " + stepWho(fx); if (G.stepLast) G.stepLast.el = d; (window.SS_STEPSEEN = window.SS_STEPSEEN || []).push(fx.round + ":" + stepKey(fx)); }
-  else { d.className = "acct"; d.textContent = "▸ " + text; (window.SS_ACCTSEEN = window.SS_ACCTSEEN || []).push(text); }
-  $("feed").appendChild(d);
-  while ($("feed").children.length > (H < 700 || W < 600 ? 2 : 4)) $("feed").removeChild($("feed").firstChild); setTimeout(function () { d.style.opacity = .3; }, 6000); }
-function stepTrack() {   // the tracker line under the round line
+function feedBottom() { var ds = Array.prototype.filter.call($("feed").children, function (d) { return getComputedStyle(d).display !== "none"; }); return ds.length && isPh() ? ds[ds.length - 1].getBoundingClientRect().bottom + 2 : 0; }   // the event lines' foot, which the panel stays below
+function feedKeep() { return W < 600 ? (H <= 520 ? 2 : 3) : (H < 700 ? 2 : 4); }   // how many event lines the phone shows above the table
+function feedRows() { return W < 600 ? (PREF.text >= 1.5 && H <= 520 ? 1 : feedKeep()) : 1; }
+function stepFeedLine(text, cls) { var d = document.createElement("div"); d.className = cls; d.textContent = text; $("feed").appendChild(d);
+  while ($("feed").children.length > feedKeep()) $("feed").removeChild($("feed").firstChild); setTimeout(function () { d.style.opacity = .55; }, 6000); return d; }
+function stepFeed(text, fx) {   // the event line: a step's heading stays on the step line and in the Battle Log; an account shows only when the table changed
+  if (fx.kind === "step") { (window.SS_STEPSEEN = window.SS_STEPSEEN || []).push(fx.round + ":" + stepKey(fx)); }
+  else { if (!G.stepQuiet) stepFeedLine("▸ " + text, "acct"); (window.SS_ACCTSEEN = window.SS_ACCTSEEN || []).push(text); } }
+function stepSum(v) {   // what both sides can see on the open table, for "did this step change anything"
+  if (!v) return ""; return JSON.stringify(["you", "bot"].map(function (k) { var x = v[k] || {}; return [x.hf, x.isr, x.sup, x.marker, (x.front || []).concat(x.rear || []).map(function (u) { return [u.uid, u.dmg, u.ex, u.hidden, u.row]; }), (x.track || []).length]; })); }
+function stepMerge(f, text) {   // a side's Force Posture told in one beat: "The bot deploys A, B, C and D." (a revealed or upgraded card keeps its own line)
+  var nm = stepNames(), m0 = null, who = null;
+  [0, 1].forEach(function (i) { if (who == null && !(i === 0 && nm[0] === "You")) { var m = new RegExp("^" + nm[i].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + " deploys (.+?)\\.$").exec(text); if (m) { who = nm[i]; m0 = m; } } });
+  if (!m0) return null; var cards = [m0[1]], last = f;
+  while (G.queue.length && !G.skip) { var q = G.queue[0], mq = q.fx && q.fx.kind ? null : new RegExp("^" + who.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + " deploys (.+?)\\.$").exec(q.text || ""); if (!mq) break; G.queue.shift(); cards.push(mq[1]); last = q; G.shownN = q.n; }
+  if (cards.length < 2) return null; return { f: last, text: who + " deploys " + cards.slice(0, -1).join(", ") + " and " + cards[cards.length - 1] + "." }; }
+function stepTrack() {   // the step line under the round line
   var el = STEPT; if (!el) return; var s = G.stepNow, ov = G.over && !G.playing && !G.queue.length, short = W < 600 && H <= 520;
   document.documentElement.classList.toggle("short", short); var home = short ? $("phase") : $("top"); if (el.parentNode !== home) { if (short) home.appendChild(el); else home.insertBefore(el, $("phase").nextSibling); }
   if (!G.info || !s) { el.hidden = !G.info; el.innerHTML = '<span class="sx"><span class="sn">Steps of the round</span></span><span class="sl" aria-hidden="true">▾</span>'; return; }
   el.hidden = false;
-  var txt = (ov ? "Game over in " + s.phase + " " + s.in_phase + ": " + s.name : "Step " + s.in_phase + ": " + s.name);
-  var key = txt + "|" + (ov ? "" : stepWho(s));
+  var head = ov ? "Game over in " + stepHead(s) : short ? (s.title || s.name || stepStage(s)) : stepHead(s), side   /* a short phone: the stage sits in the round line above, so the step line is the title and whose it is, on one line */ = ov ? "" : stepSide(s), part = ov ? "" : stepPart(s), key = head + "|" + side + "|" + part;
   if (el.dataset.k !== key) {
-    el.dataset.k = key; el.innerHTML = '<span class="sx"><span class="sn">' + esc(txt) + "</span>" + (ov ? "" : ' · <span class="sw">' + esc(stepWho(s)) + "</span>") + '</span><span class="sl" aria-hidden="true">▾<span class="n15"> 15</span></span>';
-    el.setAttribute("aria-label", (ov ? txt : s.phase + ", step " + s.in_phase + ": " + s.name + ", " + stepWho(s)) + ". Show all fifteen steps of the round.");
+    el.dataset.k = key; el.innerHTML = '<span class="sx"><span class="sn">' + esc(head) + "</span>" + (side ? ' · <span class="sw">' + esc(side) + "</span>" : "") + "" + '</span><span class="sl" aria-hidden="true">▾</span>';
+    el.setAttribute("aria-label", head + (side ? ", " + side : "") + (part ? ", " + part : "") + ". Show the steps of the round.");
     if (G.stepChg && !reducedMotion()) { el.classList.remove("chg"); void el.offsetWidth; el.classList.add("chg"); } }
   G.stepChg = false; if (!$("stepsP").hidden) stepList(); }
 function stepStopOn() { if (G.stepStop == null) { try { G.stepStop = localStorage.getItem("ss.stopStep") === "1"; } catch (e) { G.stepStop = false; } } return G.stepStop; }
-function stepHoldHere() {   // "Stop at each step": stop before a new step begins, unless your own question comes straight after it
-  var nf = G.queue[0]; if (G.stepGo || !stepStopOn() || G.skip || G.dir || !G.stepNow || !nf || !nf.fx || nf.fx.kind !== "step" || (G.info && G.info.tutorial)) return false;
-  if (!G.caption) return false;   // nothing shown since your own last question: your answer ended that step
-  if (G.queue.length === 1 && G.since >= (G.lastN || 0) && G.latestPend) return false;
+function stepStopSet(on) { G.stepStop = !!on; try { localStorage.setItem("ss.stopStep", on ? "1" : "0"); } catch (e) { } }
+function stepHoldHere() {   // "Stop at each step": stop once per stage, before its first step begins
+  var nf = G.queue[0], s = nf && nf.fx; if (G.stepGo || !stepStopOn() || G.skip || G.dir || G.replay || !s || s.kind !== "step" || (G.info && G.info.tutorial)) return false;
+  if (((G.stageSeen || {})[s.round] || {})[stepStage(s)]) return false;   // this stage has begun already this round
+  if (G.stepAns) return false;   // never right after your own answer
+  var lp = G.latestPend; if (lp && lp.step && stepStage(lp.step) === stepStage(s) && G.since >= (G.lastN || 0) && G.queue.every(function (q) { return /^step/.test((q.fx || {}).kind || ""); })) return false;   // your own question in this very stage comes next: it shows the stage
   return true; }
 function stepGo() { G.stepGo = true; G.stepHold = null; if (G.waiting) { G.waiting = false; playNext(); } else render(); }
-function stepList() {   // all fifteen steps of the round, from the engine's own list
-  var P = $("stepsP"), L = (G.info && G.info.round_steps) || [], s = G.stepNow, ov = G.over && !G.playing && !G.queue.length, names = (G.info && G.info.names) || ["You", "The bot"], h = "", ph = "";
+function stepHoldBox() {   // the panel while the table is stopped: the stage, whose it is, and what happens in it
+  var s = G.stepHold.fx, st = stepStage(s), side = stepSide(s), first = s.title && s.title !== st ? s.title : "";
+  return '<p class="stA" role="status"><span class="sk">Next:</span> <b>' + esc(st) + '</b> · <span class="sw">' + esc(side) + "</span>" + (s.about ? " — " + (first ? "<b>" + esc(first) + ":</b> " : "") + esc(s.about) : "") + "</p>" +
+    '<div class="btns"><button class="go" id="pNextStep">Continue: ' + esc(st) + " · " + esc(side) + " ▸</button></div>"; }
+function stepList() {   // the steps of the round, from the engine's own list, grouped by phase and stage
+  var P = $("stepsP"), L = (G.info && G.info.round_steps) || [], s = G.stepNow, ov = G.over && !G.playing && !G.queue.length, names = stepNames(), h = "", ph = null, sg = null, done = G.stepDone || {}, open = false;
   var t = $("top").getBoundingClientRect(); P.style.top = Math.round(t.bottom + 4) + "px"; P.style.maxHeight = "calc(100vh - " + Math.round(t.bottom + 12) + "px)";
-  h += "<h3>The round's fifteen steps" + (s ? " · round " + s.round : "") + "</h3>" + (G.view && document.documentElement.classList.contains("short") ? '<p class="note">The ground: ' + esc(G.view.terrain) + (G.view.contact ? " · IN CONTACT" : "") + "</p>" : "");
+  h += "<h3>The steps of the round" + (s ? " · round " + s.round : "") + "</h3>" + (G.view && document.documentElement.classList.contains("short") ? '<p class="note">The ground: ' + esc(G.view.terrain) + (G.view.contact ? " · IN CONTACT" : "") + "</p>" : "");
   L.forEach(function (x) {
-    if (x.phase !== ph) { ph = x.phase; h += (h.indexOf("<ol>") >= 0 ? "</ol>" : "") + '<p class="ph3">' + esc(x.phase) + " (" + esc(x.section) + ")</p><ol>"; }
-    var now = s && s.number === x.number, done = s && x.number < s.number, miss = ov && s && x.number > s.number && s.number >= 11 && s.number < 15;
-    var who = x.each_player ? [0, 1].map(function (p) { var k = x.number + ":" + p, d = (G.stepDone || {})[k] && !(now && s.player === p); return (now && s.player === p ? "now: " : d ? "✓ " : "") + names[p]; }).join(", ") : (now ? "now" : "");
-    h += '<li class="' + (now && !ov ? "now" : miss ? "miss" : done || (now && ov) ? "done" : "") + '"><b>' + x.in_phase + "</b><span>" + esc(x.name) + (who ? " <small>(" + esc(who) + ")</small>" : done ? " ✓" : "") + "</span></li>"; });
-  h += "</ol>";
-  if (ov && s && s.number < 15) h += '<p class="note">The game ended in ' + esc(s.phase) + " step " + s.in_phase + ": " + esc(s.name) + ". The steps after it were not played.</p>";
-  P.innerHTML = '<div class="stb"><button id="stStop" aria-pressed="' + stepStopOn() + '">Stop at each step: ' + (stepStopOn() ? "On" : "Off") + '</button><button class="ghost" id="stX">Close</button></div>' + h; }
+    if (x.phase !== ph) { if (open) h += "</ol>"; open = false; ph = x.phase; sg = null; h += '<p class="ph3">' + esc(x.phase) + "</p>"; }
+    var stg = stepStage(x);
+    if (stg !== sg) { if (open) h += "</ol>"; sg = stg; var all = L.filter(function (y) { return stepStage(y) === stg; }), tog = all.every(function (y) { return y.together; });
+      h += '<p class="sg3">' + esc(stg) + (x.stage && tog ? ' <small>· Both sides</small>' : "") + "</p><ol>"; open = true; }
+    var now = s && s.number === x.number, parts = x.each_player ? [0, 1] : null, allDone, who = "";
+    if (parts) { allDone = parts.every(function (p) { return done[x.number + ":" + p] && !(now && s.player === p); });
+      who = parts.map(function (p) { var me = now && s.player === p, d = done[x.number + ":" + p] && !me; return (me ? "▸ " : d ? "✓ " : "") + names[p]; }).join(" · "); }
+    else allDone = !!done[String(x.number)] && !now;
+    if (now && !ov) allDone = false;
+    var miss = ov && s && x.number > s.number, cls = now && !ov ? "now" : miss ? "miss" : allDone || (now && ov) ? "done" : "";
+    h += '<li class="' + cls + '"><b aria-hidden="true">' + (cls === "now" ? "▸" : cls === "done" ? "✓" : "") + '</b><span><span class="st">' + esc(x.title || x.name) + "</span>" + (cls === "now" ? ' <small class="nw">now' + (s.together ? "" : " · " + esc(stepSide(s))) + "</small>" : "") +
+      (who ? ' <small class="pt">' + (x.together ? "together: " : "") + esc(who) + "</small>" : "") + (x.about ? '<small class="ab">' + esc(x.about) + "</small>" : "") + "</span></li>"; });
+  if (open) h += "</ol>";
+  if (ov && s && L.length && s.number < L[L.length - 1].number) h += '<p class="note">The game ended in ' + esc(stepHead(s)) + ". The steps after it were not played.</p>";
+  P.innerHTML = '<div class="stb"><button id="stStop" aria-pressed="' + stepStopOn() + '">Stop at each step: ' + (stepStopOn() ? "On" : "Off") + '</button><button class="ghost" id="stX">Close</button></div>' +
+    '<p class="note sth">On: the table pauses as each stage of the round begins, says whose it is and what happens in it, and goes on when you tap Continue. It never pauses right after your own move.</p>' + h; }
 function stepPanel(on) { var P = $("stepsP"); P.hidden = !on; STEPT.setAttribute("aria-expanded", on ? "true" : "false"); if (on) { stepList(); SFX.open && SFX.open(); var b = $("stStop"); if (b) b.focus({ preventScroll: true }); var nw = P.querySelector("li.now") || P.querySelector("li.done:last-of-type"); var bar = P.querySelector(".stb"); P.scrollTop = nw ? Math.max(0, nw.offsetTop - (bar ? bar.offsetHeight : 0) - (P.clientHeight - (bar ? bar.offsetHeight : 0)) / 3) : 0; } else { SFX.close && SFX.close(); } }
 STEPT.onclick = function (e) { e.stopPropagation(); stepPanel($("stepsP").hidden); };
 $("stepsP").onclick = function (e) { e.stopPropagation(); var b = e.target.closest("button"); if (!b) return;
   if (b.id === "stX") { stepPanel(false); STEPT.focus(); return; }
-  if (b.id === "stStop") { G.stepStop = !stepStopOn(); try { localStorage.setItem("ss.stopStep", G.stepStop ? "1" : "0"); } catch (e) { } var keep = $("stepsP").scrollTop; stepList(); $("stepsP").scrollTop = keep; var nb = $("stStop"); if (nb) nb.focus({ preventScroll: true }); if (!G.stepStop && G.stepHold) stepGo(); else render(); } };
+  if (b.id === "stStop") { stepStopSet(!stepStopOn()); var keep = $("stepsP").scrollTop; stepList(); $("stepsP").scrollTop = keep; var nb = $("stStop"); if (nb) nb.focus({ preventScroll: true }); if (!G.stepStop && G.stepHold) stepGo(); else render(); } };
 document.addEventListener("click", function (e) { var P = $("stepsP"); if (P && !P.hidden && !P.contains(e.target) && e.target !== STEPT) stepPanel(false); });
 document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("stepsP").hidden) stepPanel(false); });
+function s7Result(o, inDebrief) {   // the end, said once: the result's name from your side, a slot for the mission's line, the engine's words, what was weighed
+  var r = o && o.result; if (!r) return ""; var nm = stepNames(), sp = stepSpect(), W0 = { decisive: "Decisive victory", pyrrhic: "Pyrrhic victory", points: "Victory on Homefront" }, L0 = { decisive: "Decisive defeat", pyrrhic: "Pyrrhic defeat", points: "Defeat on Homefront" }, E0 = { stalemate: "Stalemate", protraction: "Protraction", draw: "A draw" }, name;
+  if (r.winner == null) name = E0[r.kind] || "A draw";
+  else if (sp) name = (nm[r.winner] || "") + ": " + (W0[r.kind] || "Victory");
+  else name = r.winner === 0 ? (W0[r.kind] || "Victory") : (L0[r.kind] || "Defeat");
+  var cls = r.winner == null || sp ? "even" : r.winner === 0 ? "win" : "lose", met = r.met || [[], []], hf = r.homefront || [];
+  var wc = (G.info && G.info.win_conditions) || [["homefront", "Homefront collapse"], ["devastation", "Devastation"], ["supremacy", "Supremacy"]];
+  var col = [0, 1].map(function (i) { var n = nm[i] || "", c = (r.names || [])[i]; return n + (c && c !== n ? " (" + c + ")" : ""); });
+  var tb = '<table class="s7w"><caption>What was weighed at the end of round ' + esc(String(r.round)) + '</caption><thead><tr><th scope="col">Win condition</th><th scope="col">' + esc(col[0]) + '</th><th scope="col">' + esc(col[1]) + "</th></tr></thead><tbody>" +
+    wc.map(function (w) { return '<tr><th scope="row">' + esc(w[1]) + (w[0] === "homefront" ? " (Homefront at 0)" : "") + "</th>" + [0, 1].map(function (i) { var m = (met[i] || []).indexOf(w[0]) >= 0; return '<td class="' + (m ? "met" : "") + '">' + (m ? "✓ Met" : "Not met") + "</td>"; }).join("") + "</tr>"; }).join("") +
+    '<tr class="s7hf"><th scope="row">Homefront at the end</th><td>' + esc(String(hf[0])) + "</td><td>" + esc(String(hf[1])) + "</td></tr></tbody></table>";   // each side's real number, below 0 included: the printed rule compares the real numbers
+  return '<div id="s7-result" class="s7r ' + cls + (inDebrief ? " s7db" : " s7strip") + '"><h3 class="s7r-name">' + esc(name) + '</h3><p class="s7r-mission" hidden></p><p class="s7r-why">' + esc(r.words || "") + "</p>" + tb + "</div>"; }
 function feed(text, fx) {
   if (fx && /^step/.test(fx.kind || "")) return stepFeed(text, fx);
   var nm = (G.info && G.info.names) || ["You", "The bot"], tx = text.replace(/^H-Hour: /, ""), cls = tx.indexOf(nm[1]) === 0 ? "foe" : (tx.indexOf(nm[0]) === 0 || /^Your /.test(tx)) ? "own" : ""; if (/destroyed|devastated|Homefront|wins|Contact/.test(text)) cls += " big";
   var d = document.createElement("div"); d.className = cls; d.textContent = (PREF.shapes && /own|foe/.test(cls) ? (/foe/.test(cls) ? "◆ " : "■ ") : "") + text.replace(/^--- | ---$/g, ""); $("feed").appendChild(d);
-  while ($("feed").children.length > (H < 700 || W < 600 ? 2 : 4)) $("feed").removeChild($("feed").firstChild); setTimeout(function () { d.style.opacity = .3; }, 6000);
+  while ($("feed").children.length > feedKeep()) $("feed").removeChild($("feed").firstChild); setTimeout(function () { d.style.opacity = .3; }, 6000);
 }
-function banner(big, small) { if (G.skip || G.dirQuiet) return; var b = $("banner"); b.innerHTML = esc(big) + (small ? "<small>" + esc(small) + "</small>" : ""); b.classList.remove("on"); void b.offsetWidth; b.classList.add("on"); }
+function banner(big, small) { if (G.skip || G.dirQuiet) return; var b = $("banner"); b.innerHTML = esc(big) + (small ? "<small>" + esc(small) + "</small>" : ""); b.classList.remove("on"); void b.offsetWidth; b.classList.add("on"); (window.SS_BANNERS = window.SS_BANNERS || []).push({ big: big, small: small || "", round: G.view && G.view.round, t: Date.now() }); clearTimeout(G.banT); if (G.rm) G.banT = setTimeout(function () { b.classList.remove("on"); }, 2000); }
 function glossFor(u) {   // which keywords and game terms appear on this card, with their meanings (from browser_play.glossary)
   var GL = G.gloss || [], txt = [].concat(u.lines || [], [u.atk || "", u.range || "", u.sub || "", u.kind || ""]).join("  "), out = [], seen = {};
   GL.forEach(function (g) { if (seen[g[0]]) return; try { if (new RegExp(g[1]).test(txt)) { seen[g[0]] = 1; out.push(g); } } catch (e) { } });
@@ -901,8 +969,9 @@ $("zoom").addEventListener("click", function (e) {
 
 /* ================= moments: a played card shown large, short radio-style callouts, the aiming line ================= */
 function isOrder(name) { var f = (G.faces || {})[name]; return !!(f && !(f.cap !== false && (f.cap || f.dur > 0)) && f.sub !== "Reaction" && !(+f.timer > 0)); }   // v0.19.4: an Order is an Effect with no timer
-function hhPulse() { if (G.skip) return; var m = $("mtrack"); m.classList.remove("hh"); void m.offsetWidth; m.classList.add("hh"); setTimeout(function () { m.classList.remove("hh"); }, 1600 / G.speed); }   // the Order lands at H-Hour on the Mission Track, then acts
+function hhPulse() { if (G.skip || G.rm) return; var m = $("mtrack"); m.classList.remove("hh"); void m.offsetWidth; m.classList.add("hh"); setTimeout(function () { m.classList.remove("hh"); }, 1600 / G.speed); }   // the Order lands at H-Hour on the Mission Track, then acts
 function showcase(name, label, hot) {
+  if (window.SSMoments && !G.skip) { var smr = SSMoments.show(name, label, hot); if (smr != null) return smr; }
   var f = (G.faces || {})[name]; if (!f || G.skip) return 0; var el = $("show"); if (f.id && CF.hi) CF.hi(f.id);
   try { $("showImg").src = drawCard(f, 1.6, {}).toDataURL("image/jpeg", .9); } catch (e) { return 0; }
   $("showLab").textContent = label; el.className = hot ? "hot" : ""; el.style.animation = "none"; void el.offsetWidth; var d = 1.5 / G.speed; el.style.animation = "showIn " + d + "s ease-out forwards"; return 1.35;
@@ -1146,6 +1215,7 @@ $("prompt").onclick = function (e) {
   if (b.id === "pHint" && G.pend) { G.hint = { n: G.pend.n }; G.hints = (G.hints || 0) + 1; SFX.select && SFX.select(); return render(); }
   if (b.id === "cfNo") { G.confirm = null; return render(); }
   if (b.id === "pNextStep") return stepGo();
+  if (b.id === "pStopOff") { stepStopSet(false); return stepGo(); }
   if (b.id === "pPause") return pause(!G.paused);
   if (b.id === "pWhy") { if (G.playing && !G.paused) pause(true); return showWhy(); }
   if (b.id === "pStep") { G.stepOnce = true; if (G.waiting) { G.waiting = false; playNext(); } return; }
@@ -1499,7 +1569,7 @@ function tipLine(p) {
 
 /* ================= talking to the engine ================= */
 var engineOk, ENGINE = new Promise(function (ok) { engineOk = ok; });
-function api(path, body) { return ENGINE.then(function (handle) { return new Promise(function (r) { setTimeout(r, 0); }).then(function () { var out = JSON.parse(handle(CP + path, JSON.stringify(body || {}))); if (out && out.error && !out.game) throw new Error(out.error); return out; }); }); }
+function api(path, body) { if (path === "/play/start") { body = body || {}; window.SSHooks && SSHooks.fire("start", { request: body, info: G.info }); } return ENGINE.then(function (handle) { return new Promise(function (r) { setTimeout(r, 0); }).then(function () { var out = JSON.parse(handle(CP + path, JSON.stringify(body || {}))); if (out && out.error && !out.game) throw new Error(out.error); return out; }); }); }
 function fail(e) { G.err = String(e && e.message || e); G.busy = false; render(); }
 function hintable(p) { return !!(p && p.rate && p.rate.length === p.options.length && p.options.length > 1 && !(G.info && G.info.spectate)); }
 function hintBox(p) {   // the bot's own rating of your options: its top pick and the next two (Settings > Tips does not hide it; you asked for it)
@@ -1518,7 +1588,7 @@ function choose(i, sure) {
   if (co && !coachReady(G.pend)) { G.cpage[G.pend.n] = 99; }
   if (!co && G.tipNow && G.tipNow.key && G.tipNow.n === G.pend.n) tipSeen(G.tipNow.key);
   if (PREF.confirm && !sure && needsConfirm(i)) { G.confirm = { i: i, n: G.pend.n }; SFX.select && SFX.select(); return render(); }
-  G.confirm = null; var n = G.pend.n; G.lastChosen = { i: i, n: n, label: G.pend.options[i], meta: (G.pend.meta || [])[i] || null }; SFX.click(); G.hits = []; G.hitsAll = false; G.instrOpen = false; if (G.hgrp) G.hgrp = G.hgrp.own ? null : { cause: G.hgrp.cause, lines: [] };   /* an exchange your choice interrupted (a reaction, a target) keeps its cause for what follows */ closePreview(); closeInspector(true); G.sel = null; G.selT = null; G.pend = null; G.latestPend = null; G.busy = true; handKey = ""; render();
+  G.confirm = null; G.stepAns = true; var n = G.pend.n; G.lastChosen = { i: i, n: n, label: G.pend.options[i], meta: (G.pend.meta || [])[i] || null }; SFX.click(); G.hits = []; G.hitsAll = false; G.instrOpen = false; if (G.hgrp) G.hgrp = G.hgrp.own ? null : { cause: G.hgrp.cause, lines: [] };   /* an exchange your choice interrupted (a reaction, a target) keeps its cause for what follows */ closePreview(); closeInspector(true); G.sel = null; G.selT = null; G.pend = null; G.latestPend = null; G.busy = true; handKey = ""; render();
   api("/play/choose", { i: i, n: n }).then(poll, fail);
 }
 function undo() { if (G.busy) return; G.busy = true; G.sel = null; G.selT = null; G.pend = null; closePreview(); render(); api("/play/undo", {}).then(poll, fail); }
@@ -1535,12 +1605,12 @@ function poll() {
 function finish() {
   G.playing = false; G.skip = false; G.caption = ""; musicState(G.latest); $("vig").className = G.stand && !G.over ? "fx stand" : "fx"; if (G.over) MUS.target = 0;
   if (G.latest) { G.view = G.latest; sync(G.view); }
-  G.pend = G.latestPend; G.started = true; if (G.pend && G.pend.step) stepNow(G.pend.step); if (G.over && G.over.step && !G.queue.length) stepNow(G.over.step); handKey = "";
+  G.pend = G.latestPend; G.started = true; if (G.pend && G.pend.step) stepAsked(G.pend); if (G.over && G.over.step && !G.queue.length) stepNow(G.over.step); handKey = ""; if (G.pend && G.pend !== G.hkPend && !G.over) { G.hkPend = G.pend; window.SSHooks && SSHooks.fire("pending", { pending: G.pend, view: G.view, info: G.info }); }
   if (G.pend && G.view && G.info && !G.info.spectate && !G.replay && !G.over && G.ordersRound !== G.view.round) { G.ordersRound = G.view.round; SFX.turn(); vox("orders", { delay: .25 }); }
   if (G.pend && G.autoQ && !G.over) { if (G.pend.kind === G.autoQ.kind) { setTimeout(autoStep, 60); return render(); } G.autoQ = null; }
   if (G.pend && G.multi && G.multi.kind !== G.pend.kind) G.multi = null;
   if (G.replay && !G.over && !G.queue.length) G.over = G.replay.body.over || null;
-  if (G.over && !G.overShown) { G.overShown = true; if (!G.replay) { storeGame(); $("bQuit").textContent = "Exit game"; } var won = G.over.winner === "You", gen = G.pgen; banner(G.info && G.info.spectate || G.replay ? G.over.winner : won ? "Victory" : G.over.winner === "The bot" ? "Defeat" : "Draw", overHow(G.over)); (won ? SFX.win : SFX.lose)(); if (SND) { setMood("debrief", true); if (!(G.info && G.info.spectate)) vox(won ? "win" : "lose", { delay: .5 }); } if (G.info && G.info.tutorial) { if (won) try { localStorage.setItem("ss.trained", "1"); } catch (e) { } } else setTimeout(function () { if (gen === G.pgen && G.over) showDebrief(); }, 1900); }
+  if (G.over && !G.overShown) { G.overShown = true; window.SSHooks && SSHooks.fire("over", { over: G.over, info: G.info }); if (!G.replay) { storeGame(); $("bQuit").textContent = "Exit game"; } var won = G.over.winner === "You", gen = G.pgen; banner(G.info && G.info.spectate || G.replay ? G.over.winner : won ? "Victory" : G.over.winner === "The bot" ? "Defeat" : "Draw", overHow(G.over)); (won ? SFX.win : SFX.lose)(); if (SND) { setMood("debrief", true); if (!(G.info && G.info.spectate)) vox(won ? "win" : "lose", { delay: .5 }); } if (G.info && G.info.tutorial) { if (won) try { localStorage.setItem("ss.trained", "1"); } catch (e) { } } else setTimeout(function () { if (gen === G.pgen && G.over) showDebrief(); }, 1900); }
   else if (G.pend) tone(.1, 880, 880, .06);
   render();
 }
@@ -1550,8 +1620,8 @@ function playNext() {
   if (stepHoldHere()) { G.stepHold = G.queue[0]; G.waiting = true; G.playing = true; return render(); }
   G.stepGo = false; G.stepHold = null;
   G.stepOnce = false;
-  G.playing = true; var f = G.queue.shift(), text = f.text, fx = f.fx || {}, wait = .7 + Math.min(1.3, text.length / 85);
-  G.hist.push(fx.kind === "step_account" ? "▸ " + text : text); stepSeen(f); G.caption = text; G.shownN = f.n; aarNote(f);
+  G.playing = true; var f = G.queue.shift(), text = f.text, fx = f.fx || {}, wait = .7 + Math.min(1.3, text.length / 85), hkW = 0; window.SSHooks && SSHooks.fire("frame", { frame: f, skipping: !!G.skip, wait: function (s) { hkW = Math.max(hkW, +s || 0); } });
+  var mg = stepMerge(f, text); if (mg) { f = mg.f; text = mg.text; } stepSeen(f, text); if (fx.kind === "step") text = stepLogText(fx); G.hist.push(fx.kind === "step_account" ? "▸ " + text : text); G.caption = text; G.shownN = f.n; aarNote(f);
   if (f.why) { G.why = f.why; G.whyAt = f.n; G.histWhy[G.hist.length - 1] = whyLine(f.why); rateNote(f.why, f.view.round); }
   if (G.skip) { if (!G.queue.length) { G.view = f.view; sync(f.view, text); feed(text, fx); } return playNext(); }
   try {
@@ -1561,8 +1631,8 @@ function playNext() {
     else if (/^H-Hour/.test(text)) { var hm = text.match(/'s ([A-Z0-9][A-Z0-9 '\-]+?) (resolves|ends|completes)/); SFX.hhour(); vox(/^H-Hour: Your /.test(text) ? "hhour" : "incoming"); flashScreen(.12); wait = 1.7; if (!(hm && showcase(hm[1], "H-Hour: " + (hm[2] === "ends" ? "ends" : "resolves now"), true))) banner("H-Hour", ""); $("mtrack").classList.remove("tick"); void $("mtrack").offsetWidth; $("mtrack").classList.add("tick"); }
     else if (/^Frontline contest/.test(text) && G.stand && G.standRound !== f.view.round) { G.standRound = f.view.round; var home = f.view.you.marker === 1 ? ((G.info && G.info.names) || ["You"])[0] : ((G.info && G.info.names) || ["", "The bot"])[1]; banner("Last stand", home + " " + (home === "You" ? "defend" : "defends") + " the home edge"); SFX.react(); vox(home === "You" ? "stand" : "advance"); shake = .25; wait = 1.9;
       var cm = text.match(/^Frontline contest: (.+?) (\d+), (.+?) (\d+)\./), nm2 = (G.info && G.info.names) || ["You", "The bot"], youHome = f.view.you.marker === 1;   // v0.21 (ruling B): the result is REPELLED or ROUTED, from the player's side
-      if (cm && !(G.info && G.info.spectate)) { var ys = cm[1] === nm2[0] ? +cm[2] : +cm[4], bs = cm[1] === nm2[0] ? +cm[4] : +cm[2], held = youHome ? ys >= bs : bs >= ys; var g2 = G.pgen;
-        after(1.6, function () { if (g2 === G.pgen) banner(held ? "REPELLED" : "ROUTED", youHome ? (held ? "You held your home edge" : "You were driven off your home edge") : (held ? "The enemy held its home edge" : "You drove the enemy off its home edge")); }); wait = 3.2; } }
+      if (cm && !(G.info && G.info.spectate)) { var ys = cm[1] === nm2[0] ? +cm[2] : +cm[4], bs = cm[1] === nm2[0] ? +cm[4] : +cm[2], held = youHome ? ys >= bs : bs >= ys; var g2 = G.pgen, kept = held;
+        after(1.6, function () { if (g2 === G.pgen) banner(kept ? "REPELLED" : "ROUTED", youHome ? (kept ? "You held your home edge" : "You were driven off your home edge") : (kept ? "The enemy held its home edge" : "You drove the enemy off its home edge")); }); wait = 3.2; } }
     else if ((pm = text.match(/ (plays|puts) ([A-Z0-9][A-Z0-9 '\-]+?)( on the Mission Track \((\d+) round|[:.])/)) && showcase(pm[2], pm[1] === "puts" ? "On the Mission Track: " + pm[4] + " round" + (pm[4] === "1" ? "" : "s") + " to H-Hour" : isOrder(pm[2]) ? "Mission Track · H-Hour: happens now" : "Played", false)) { SFX.ability(); wait = Math.max(wait, 1.5); if (pm[1] === "plays" && isOrder(pm[2])) hhPulse(); }
     else if ((pm = text.match(/ fires ([A-Z0-9][A-Z0-9 '\-]+?):/)) && showcase(pm[1], "Reaction", true)) { SFX.react(); wait = Math.max(wait, 2.2); }
     else if (/reveals a Hidden card/.test(text)) { wait += .4; }
@@ -1596,10 +1666,10 @@ function playNext() {
     if (prev) ["you", "bot"].forEach(function (k) { if (f.view[k].hf < prev[k].hf) { var d = document.createElement("div"); d.className = "dmg"; d.style.fontSize = "24px"; d.textContent = "Homefront −" + (prev[k].hf - f.view[k].hf); d.style.left = "50%"; d.style.top = (k === "you" ? H - 60 : 70) + "px"; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 1400); } });
     $("vig").className = G.stand ? "fx stand" : "fx"; render();
   } catch (e) { console.error(e); }
-  if (fx.kind === "step") wait = .8; else if (fx.kind === "step_account") wait = Math.max(wait, 1.3);
+  if (fx.kind === "step") wait = .05; else if (fx.kind === "step_account" && G.stepQuiet) wait = .05;   /* a step heading holds no beat; an account holds one beat only when the table changed */
   if (G.dir) { G.playing = false; return; }   // v0.18: the opening plays one frame at a time, on its own schedule
   var mo = /^step/.test(fx.kind || "") ? null : momentFor(f); if (mo) { var g0 = G.pgen; after(Math.min(wait, 1.1), function () { if (g0 === G.pgen) { if (!G.queue.length && G.latest) { G.view = G.latest; sync(G.view); } G.moment = mo; SFX.turn && SFX.turn(); render(); } }); return; }   // v0.19: explain it now; Continue resumes
-  var gen = G.pgen; after(wait, function () { if (gen === G.pgen) playNext(); });
+  var gen = G.pgen, smGo = function () { if (gen === G.pgen) playNext(); }; if (window.SSMoments && SSMoments.gate(smGo, Math.max(wait, hkW) / G.speed, f)) return; after(Math.max(wait, hkW), smGo);
 }
 
 /* ================= menu, log, setup ================= */
@@ -1659,6 +1729,7 @@ function showSettings() { audioInit(); unlock(); SFX.open && SFX.open(); G.retFo
     segRow("shapes", "Side markers", "Adds a shape to the side colours: your cards a rectangle, the enemy's a diamond, as on a map.", [[false, "Colour only"], [true, "Colour and shape"]]) +
     "<h4>Sound</h4>" + '<div class="row"><span>Mute everything</span><label class="ck"><input type="checkbox" id="sMute"' + (G.muted ? " checked" : "") + "> Mute</label></div>" + rng("sFx", "Effects", G.volFx) + rng("sMus", "Music", G.volMus) + rng("sVox", "Radio voices", G.volVox) +
     "<h4>Gameplay</h4>" + segRow("speed", "Speed", "How fast the bot's moves play out.", [[.5, "½×"], [1, "1×"], [2, "2×"]]) +
+    segRow("moments", "Card moments", "When a card is played, used, reacts or goes off at H-Hour, it is shown large. Read: it stays about one second for every three words (2 to 15 seconds); tap to go on, hold to keep it. Wait for a tap: it stays until you tap. Quick: the old pace. Speed still applies.", [["quick", "Quick"], ["read", "Read"], ["tap", "Wait for a tap"]]) +
     segRow("steady", "Steadier touch", "How far a finger or pointer may wander before a press becomes a drag. Steadier allows twice as far (20 px for a finger), for a shaky hand or a slow press. Holding still never matters.", [[false, "Standard"], [true, "Steadier"]]) +
     segRow("confirm", "Ask before moves you cannot take back", "Passing, playing a card, using an ability, moving the Force Marker and ending deployment ask you to confirm.", [[false, "Off"], [true, "On"]]) +
     segRow("tips", "Tips", "First-time tips, and the one-line hints in the prompt.", [[true, "On"], [false, "Off"]]) + '<div class="row"><span>First-time tips<small>Show each one again, as in your first game.</small></span><button class="ghost" id="sTipsAgain">Show them again</button></div>' +
@@ -1711,7 +1782,7 @@ function showAAR() {
   c.onpointermove = c.onpointerdown = function (ev) { var r = c.getBoundingClientRect(), i = Math.max(0, Math.min(n - 1, Math.round((ev.clientX - r.left - L) / ((cw - L - R) / (n - 1))))); draw(i); var w = rows[i]; tip.innerHTML = "<b>" + esc(w.label) + "</b><br>" + esc(nm[0]) + ": Homefront " + w.you.hf + "<br>" + esc(nm[1]) + ": Homefront " + w.bot.hf; tip.style.display = "block"; tip.style.left = Math.min(cw - 170, X(i) + 10) + "px"; tip.style.top = "8px"; };
   c.onpointerleave = function () { draw(null); tip.style.display = "none"; };
 }
-function showLog() { var el = $("log"); el.innerHTML = '<button class="ghost" id="logX">Close</button><h3 class="t">Battle log</h3>' + G.hist.map(function (t, i) { return '<div class="' + (/^---/.test(t) ? "r" : /^Round \d+\. [A-Za-z]+, step \d+: /.test(t) ? "stp" : /^▸ /.test(t) ? "acct" : "") + '">' + esc(t) + "</div>" + (G.histWhy[i] && (G.over || (G.info && G.info.spectate)) ? '<div style="color:var(--dim);font-size:calc(12px * var(--ts));margin:0 0 4px 14px">' + esc(G.histWhy[i]) + "</div>" : ""); }).join(""); el.style.display = "block"; el.scrollTop = el.scrollHeight; $("logX").onclick = function () { el.style.display = "none"; }; }
+function showLog() { var el = $("log"); el.innerHTML = '<button class="ghost" id="logX">Close</button><h3 class="t">Battle log</h3>' + G.hist.map(function (t, i) { return '<div class="' + (/^---/.test(t) ? "r" : /^Round \d+ · /.test(t) ? "stp" : /^▸ /.test(t) ? "acct" : "") + '">' + esc(t) + "</div>" + (G.histWhy[i] && (G.over || (G.info && G.info.spectate)) ? '<div style="color:var(--dim);font-size:calc(12px * var(--ts));margin:0 0 4px 14px">' + esc(G.histWhy[i]) + "</div>" : ""); }).join(""); el.style.display = "block"; el.scrollTop = el.scrollHeight; $("logX").onclick = function () { el.style.display = "none"; }; }
 $("bLog").onclick = function () { $("menu").hidden = true; showLog(); };
 $("bAAR").onclick = function () { $("menu").hidden = true; showAAR(); };
 $("bRec").onclick = function () { $("menu").hidden = true; api("/play/record", {}).then(function (r) { r.notes = G.notes; r = (G.notes.length ? "NOTES\n" + notesText() + "\n\nGAME RECORD\n" : "") + JSON.stringify(r); var el = $("log"), show = function (ok) {
@@ -1893,7 +1964,7 @@ function sendForm(root) {
     } });
 }
 $("bSaveRep").onclick = function () { $("menu").hidden = true; if (!G.info || G.replay) return; saveReplay(null, null); };
-function reset() { G.wdOpen = false; G.hgrp = null; G.lastChosen = null; G.cpage = {}; G.moment = null; G.momDone = {}; G.nudge = null; G.tipNow = null; tweens = []; clearBoard(); G.hint = null; G.hints = 0; G.view = null; G.latest = null; G.pend = null; G.latestPend = null; G.queue = []; G.playing = false; G.since = 0; G.sel = null; G.over = null; G.overShown = false; G.err = null; G.stand = false; G.standRound = 0; G.hoverDst = null; G.heldAtk = null; G.lastAtk = null; G.explain = ""; G.aar = []; G.aarEv = []; G.aarLast = null; G.why = null; G.histWhy = {}; G.rate = {}; gameId = ""; G.startedAt = new Date().toISOString(); G.stored = false; G.hist = []; G.hits = []; G.cause = ""; $("bQuit").textContent = "Abandon game"; G.multi = null; G.autoQ = null; G.notes = []; G.paused = false; G.replay = null; G.savedReplay = null; G.lastRec = null; G.pgen = (G.pgen || 0) + 1; G.ordersRound = 0; G.shuffled = false; document.body.classList.remove("replaying"); $("debrief").style.display = "none"; $("bQuit").textContent = "Abandon game"; G.waiting = false; G.lastN = 0; G.skip = false; G.started = false; G.busy = false; G.caption = ""; lastHf = {}; handKey = ""; $("feed").innerHTML = ""; G.stepNow = null; G.stepDone = {}; G.stepHold = null; G.stepGo = false; G.stepLast = null; window.SS_STEPSEEN = []; window.SS_ACCTSEEN = []; if ($("stepsP")) $("stepsP").hidden = true; closePreview(); }
+function reset() { G.wdOpen = false; G.hgrp = null; G.lastChosen = null; G.cpage = {}; G.moment = null; G.momDone = {}; G.nudge = null; G.tipNow = null; tweens = []; clearBoard(); G.hint = null; G.hints = 0; G.view = null; G.latest = null; G.pend = null; G.latestPend = null; G.queue = []; G.playing = false; G.since = 0; G.sel = null; G.over = null; G.overShown = false; G.err = null; G.stand = false; G.standRound = 0; G.hoverDst = null; G.heldAtk = null; G.lastAtk = null; G.explain = ""; G.aar = []; G.aarEv = []; G.aarLast = null; G.why = null; G.histWhy = {}; G.rate = {}; gameId = ""; G.startedAt = new Date().toISOString(); G.stored = false; G.hist = []; G.hits = []; G.cause = ""; $("bQuit").textContent = "Abandon game"; G.multi = null; G.autoQ = null; G.notes = []; G.paused = false; G.replay = null; G.savedReplay = null; G.lastRec = null; G.pgen = (G.pgen || 0) + 1; G.ordersRound = 0; G.shuffled = false; document.body.classList.remove("replaying"); $("debrief").style.display = "none"; $("bQuit").textContent = "Abandon game"; G.waiting = false; G.lastN = 0; G.skip = false; G.started = false; G.busy = false; G.caption = ""; lastHf = {}; handKey = ""; $("feed").innerHTML = ""; G.stepNow = null; G.stepDone = {}; G.stepHold = null; G.stepGo = false; G.stepLast = null; G.stageSeen = {}; G.stepAct = {}; G.stepTurn = null; G.stepAskedK = {}; G.stepAns = false; window.SS_STEPSEEN = []; window.SS_ACCTSEEN = []; window.SS_SILENT = []; if ($("stepsP")) $("stepsP").hidden = true; closePreview(); }
 function useBuild(k) {   // card faces and printed values of the build in play (the test build has cards the baseline does not)
   var b = (G.builds || []).filter(function (x) { return x.key === k; })[0]; if (!b || G.buildOn === k) return; G.buildOn = k; G.faces = b.faces || G.faces; G.meta = b.meta || G.meta; G.gloss = b.glossary || G.gloss; G.decklists = b.decklists || G.decklists; handCv = {}; handKey = ""; }
 /* ================= the map: contour lines of the chosen battlefield (setup backdrop and saved-game cover) ================= */
@@ -1951,7 +2022,7 @@ function setupBody(d) {
     '<div><label>Goes first in round 1</label>' + seg("first", [["", "Random"], ["you", watch ? "South" : "You"], ["bot", watch ? "North" : "The bot"]]) + "</div>" +
     '<div><label>Concept benefits</label><p class="hint">Held for campaign play.</p></div>' +   /* v0.21 (ruling AS item 12): no switch; the base game is played without them */
     '<div><label>Hand at the end of the round</label>' + seg("fd", [["0", "Keep it"], ["1", "Draw 5 new"]]) + "</div>" +
-    '<div><label>The game ends</label><p class="hint">At Check for the end, the last step of Assessment, as the rulebook prints it (this test page).</p></div>' +
+    '<div><label>The game ends</label><p class="hint">Only at the last step of the round, as the rulebook prints it (this test page).</p></div>' +
     (!watch ? (window.SS_TEST_NAME ? '<div><label>Trial rule (test page): table limit of 10 and Withdraw</label>' + seg("trial", [["0", "Off"], ["1", "On"]]) + "</div>" + (SET.trial === "1" ? '<div><label>Withdrawn cards go to</label>' + seg("wdest", [["1", "Hand"], ["2", "Discard pile"], ["3", "Face-up to discard, face-down to hand"]]) + '</div><div><label>Withdraw gives back</label>' + seg("wref", [["0", "Nothing"], ["1", "1 Supply"], ["2", "Half of what you paid"], ["3", "All of it, less its damage"], ["4", "Relief: next deploy costs less"]]) + '</div><div><label>An enemy FIX stops Frontline withdrawals</label>' + seg("wfix", [["0", "Off"], ["1", "On"]]) + "</div>" : "")
       : '<div><label>Trial rule: table limit of 10 and Withdraw (experimental)</label>' + seg("trial", [["0", "Off"], ["1", "On"]]) + '<p class="hint">' + esc(TRIAL_LIVE_NOTE) + "</p></div>") : "") + "</div></details>" +
     '<div class="go"><button id="pgo" class="big">' + (watch ? "Watch the game" : "Start the game") + '</button><p>' + esc(SET.you) + " against " + esc(SET.bot) + (SET.terrain ? ", " + esc(SET.terrain.toLowerCase()) : ", random ground") + (SET.mode === "bot" && SET.trial === "1" ? " · trial rule on" : "") + '</p></div><pre id="serr"></pre>';
@@ -1959,7 +2030,7 @@ function setupBody(d) {
 /* v0.21 (WP8, spec 5.2; Menu, About and Briefing content pack v0.1, section 3): the Main Menu is one big action and four short ones.
    START BASIC TRAINING is the primary until training is done, then PLAY (with the last setup under it) and TRAINING joins the list.
    Each label's description is its accessible description; only the primary's is printed. */
-function buildTag(d) { return "Battlefield table v0.21.1 · TEST PAGE · Step display · printed rules on: one Reaction to each action, and the game is decided only at Check for the end · engine 5ad9ce5d (commit b13c99e) · cards and decks v0.17.2 · staged 24 Nov 2026, 4:36 PM EST" + (d && d.version ? " · game " + d.version : "") + (d && d.cards ? " · " + d.cards : ""); }
+function buildTag(d) { return "Battlefield table v0.21.1 · TEST PAGE · Vertical slice · the printed rules with the rulings of 24 November: one Reaction to each action; Hits from an Effect respect the Frontline; you choose the targets of your own Effects; both sides draw and set their Force Posture together; a 2-Zone push off the home edge is Supremacy; the second player draws 1 more card · engine 23cff937 (commit 40255d7) · cards and decks v0.17.2 · staged 25 Nov 2026, 5:31 AM EST" + (d && d.version ? " · game " + d.version : "") + (d && d.cards ? " · " + d.cards : ""); }
 /* v0.21 (checkers A): the lead edits notices.js by hand, so its data is checked once: lists that are not lists become empty, entries
    without a text id, title and body are dropped, and anything unusable hides the bell; the Main Menu never depends on it */
 (function () { try { var N = window.SS_NOTICES; if (!N || typeof N !== "object" || Array.isArray(N)) { window.SS_NOTICES = null; return; }
@@ -1986,7 +2057,7 @@ function menuBody(el, d) {
   h += '<nav class="mm" aria-label="Main Menu">' + (trained ? item("play", "PLAY", last, true) : item("train", "TRAINING", "Basic Training: a guided battle of about 15 minutes.", true)) + '<div class="mlist">' + (trained ? item("train", "TRAINING", "Basic Training, and more lessons as they come.") : item("play", "PLAY", "A battle against the bot.")) +
     item("library", "LIBRARY", "Cards, the Field Manual and saved replays.") + item("settings", "SETTINGS", "Text size, sound, motion and controls.") + item("about", "ABOUT", "The game, the film and the team.") + "</div>" +
     ((SITE || LOCAL) ? '<div class="msec">' + (SITE ? '<button class="ghost lk" id="suSend" aria-describedby="md_fb">PROVIDE FEEDBACK</button><span class="sr" id="md_fb">Tell the team what worked and what did not.</span>' : "") + (LOCAL ? '<button class="ghost lk" id="suQuit">QUIT</button>' : "") + "</div>" : "") + "</nav>";
-  el.innerHTML = h; splashFit();
+  el.innerHTML = h; splashFit(); window.SSHooks && SSHooks.fire("menu", { el: el });
 }
 /* the band is about 36% of a phone's height (250 px or more), smaller only if the menu would otherwise need scrolling */
 var WELCOME_TINY = "Thank you for testing. New here? Start with **TRAINING**: a guided battle of about 15 minutes. Please do not share this page's address.";   /* RC2 (Council F4): the welcome note's words when the full note cannot show whole above the title (small phones) */
@@ -2247,13 +2318,13 @@ function showDebrief() {
   var key = spect || R ? (o.winner && o.winner.indexOf("Nobody") < 0 ? o.winner + " wins" : "Draw") : o.winner === "You" ? "Victory" : o.winner === "The bot" ? "Defeat" : "Draw", kc = /Victory/.test(key) ? "win" : /Defeat/.test(key) ? "lose" : "even";
   var m = { you: G.info.you, bot: G.info.bot, names: nm, spectate: spect, winner: o.winner, how: o.how, finished: true, rounds: o.round };
   var rows = (G.aar || []).slice(); if (G.aarLast) rows.push(G.aarLast);
-  el.innerHTML = '<div class="db"><p class="dbk ' + kc + '">' + esc(key) + "</p><h2>" + esc(resultLine(m).replace(/ \((you|bot)\)/g, "")) + "</h2>" +
-    '<p class="dbs">' + esc(overHow(o)) + ". Final Homefront: " + esc(nm[0]) + " " + o.you_hf + ", " + esc(nm[1]) + " " + o.bot_hf + ".</p>" + (trialLine() ? '<p class="dbs dtr">' + esc(trialLine()) + ".</p>" : "") +
+  el.innerHTML = '<div class="db"><p class="dbk ' + kc + '">' + esc(key) + "</p>" + (o.result ? "" : "<h2>" + esc(resultLine(m).replace(/ \((you|bot)\)/g, "")) + "</h2>") +
+    (o.result ? s7Result(o, true) : '<p class="dbs">' + esc(overHow(o)) + ". Final Homefront: " + esc(nm[0]) + " " + o.you_hf + ", " + esc(nm[1]) + " " + o.bot_hf + ".</p>") + (trialLine() ? '<p class="dbs dtr">' + esc(trialLine()) + ".</p>" : "") +
     (rows.length > 1 ? '<div class="dbc"><p class="dbl">Homefront by round</p><canvas id="dbC"></canvas></div>' : "") +
     '<div class="dbt"><p class="dbl">Turning points</p><ol>' + (turningPoints().map(function (e) { return "<li><b>Round " + e.round + "</b> " + esc(e.text) + "</li>"; }).join("") || "<li>None recorded.</li>") + "</ol></div>" +
     '<div class="dba">' + (R ? '<button class="big" id="dAgain">Watch again</button>' : '<button class="big" id="dRedeploy">Redeploy</button>' + (SITE ? '<button id="dFeedback">✉ Provide Feedback</button>' : "") + '<button class="ghost" id="dSave">Save replay</button>') + '<button class="ghost" id="dAAR">After-action review</button><button class="ghost" id="dLog">Battle log</button>' +
     (R ? (R.standalone ? "" : '<button class="ghost" id="dBack">Saved replays</button>') : '<button class="ghost" id="dNew">Exit to the Main Menu</button>') + '<button class="ghost" id="dClose">Look at the board</button></div><p id="dMsg" class="dbm">' + (G.savedReplay ? savedText(G.savedReplay) : "") + "</p>" + (SITE && !R ? '<div class="dbn"><p class="dbl">✉ Provide Feedback: your verdict, for the team</p><div id="dSendBox"></div></div>' : "") + "</div>";
-  el.style.display = "flex"; requestAnimationFrame(function () { hfChart($("dbC"), rows, nm); }); if (SITE && !R) sendForm($("dSendBox"));
+  el.style.display = "flex"; requestAnimationFrame(function () { hfChart($("dbC"), rows, nm); }); window.SSHooks && SSHooks.fire("debrief", { el: el, over: o, info: G.info }); if (SITE && !R) sendForm($("dSendBox"));
 }
 function savedText(r) { return r.error ? esc(r.error) : LOCAL ? "Saved as “" + esc(r.name) + "” in " + esc(r.folder || "04. Workbench/replays") + ". It opens in any browser." : "Saved as “" + esc(r.name) + "”. Find it under Saved replays on the Main Menu." + ' <button class="ghost" id="dDl">Download a file to share</button>'; }
 function saveReplay(msg, btn) {
@@ -2338,5 +2409,6 @@ var fontReady = (document.fonts && document.fonts.load) ? Promise.race([Promise.
 [1500, 6000, 15000].forEach(function (ms) { setTimeout(function () { dbReady().then(function (d) { if (d) recoverNotes(); }); }, ms); });
 (function () { var rj = document.getElementById("ss-replay"); if (!rj) return; try { window.SS_REPLAY = JSON.parse(rj.textContent); } catch (e) { return; }   // a saved-replay file: no engine, just the game
   Promise.all([artReady, fontReady]).then(function () { $("cover").classList.add("map"); $("cover").firstElementChild.innerHTML = standaloneCover(window.SS_REPLAY); requestAnimationFrame(function () { contourMap($("suMap"), (window.SS_REPLAY.meta || {}).terrain || window.SS_TNAME || ""); }); }); })();
+window.SSMomentsAPI = { screenPos: function (o) { return screenPos(o.grp.position); }, shake: function (v) { if (!G.calm) shake = Math.max(shake, v); }, SFX: SFX, vox: vox };
 window.SS = { render: function () { if (G.pend) G.pend = Object.assign({}, G.pend); handKey = ""; $("prompt").dataset.h = ""; render(); }, unslice: unslice, spotCheck: spotCheck, rowRect: function (k) { return rowRect(ROWZ[k]); }, sendForm: sendForm, showSend: showSend, site: SITE, copyWhere: copyWhere, optWhere: optWhere, quitApp: quitApp, winTrack: winTrack, showLibrary: showLibrary, toggleWin: toggleWin, glossFor: glossFor, hintBox: hintBox, PREF: PREF, applyPrefs: applyPrefs, showSettings: showSettings, caption: caption, TER: TER, SND: SND, readCard: readCard, showPiles: showPiles, hitsBox: hitsBox, isCause: isCause, saveReplay: saveReplay, playReplay: playReplay, buildReplayFile: buildReplayFile, listReplays: listReplays, loadReplay: loadReplay, showDebrief: showDebrief, replayJump: replayJump, set: SET, drawCard: function (u, S) { return drawCard(u, S || 1); }, engine: function (handle) { Promise.all([artReady, fontReady]).then(function () { engineOk(handle); G.engineUp = true; var gate = window.SSOpening && window.SSOpening.gate && window.SSOpening.gate(); (gate || Promise.resolve()).then(showSetup); }); }, op: OPDIR, G: G, api: api, objs: function () { return O; }, fitInfo: fitInfo, choose: choose, tapObj: tapObj, objAt: objAt, peekAt: peekAt, zoom: zoom, resume: function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); } };
 })();

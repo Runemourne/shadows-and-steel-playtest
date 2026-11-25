@@ -1,0 +1,67 @@
+/* Sprint 6 package 3b, Sprint 7 package 5 (the table lane): the step line, the step list, the stop panel, the end's result, room to read */
+#stepT{display:flex;align-items:baseline;gap:6px;width:100%;box-sizing:border-box;margin:-14px 0 -12px;padding:16px 0;min-height:0;clip-path:none;overflow:visible;border:0;background:none;color:var(--ink,#e8efe9);
+  font-family:Barlow,system-ui,sans-serif;font-size:calc(13px * var(--ts));line-height:1.3;text-align:left;cursor:pointer;position:relative;z-index:3;text-transform:none;letter-spacing:0;font-weight:400}   /* above the plain lines its tap area lies over */
+.ph #stepT{font-size:calc(12px * var(--ts))}
+/* the tap area: the padding above and below the line (at least 44 px in all), taken back by negative margins, so the layout does not grow */
+#stepT .sn{font-weight:700;color:#fff}#stepT .sp{color:var(--dim,#9fb0a8)}#stepT .sw{color:var(--amber,#e0a85a)}#stepT .sl{margin-left:auto;color:var(--dim,#9fb0a8);padding-left:6px;white-space:nowrap}
+#stepT .sx{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+#stepT.chg .sn{animation:stchg 1s ease-out}@keyframes stchg{0%{color:var(--amber,#e0a85a)}100%{color:#fff}}
+#stepT:focus-visible{outline:3px solid var(--amber,#e0a85a);outline-offset:2px}
+.ph #stepT{padding-right:10px}
+/* a short phone screen (the lead's: 430 x 405): the tracker takes the round line's second line, so it costs the table and the log nothing;
+   Contact moves up to the first line, and the ground's name moves to the step list */
+#phase .ctS{display:none}.short #phase .ctS{display:inline}.short #phase small{display:none}.short #phase .rs{display:inline}.short #phase .rl{display:none}
+.short #phase #stepT{margin:-14px 0;padding:14px 0;display:flex;white-space:normal}
+#stepsP{position:fixed;left:8px;right:8px;z-index:60;max-width:520px;overflow:auto;background:rgba(10,14,13,.97);border:1px solid var(--line,#3c4a44);padding:8px 12px 10px;
+  font-family:Barlow,system-ui,sans-serif;font-size:calc(15px * var(--ts));line-height:1.35;color:var(--ink,#e8efe9);box-sizing:border-box}
+#stepsP h3{margin:2px 0 4px;font-size:calc(15px * var(--ts))}#stepsP .ph3{margin:8px 0 2px;color:var(--amber,#e0a85a);font-weight:700}
+#stepsP ol{list-style:none;margin:0;padding:0}#stepsP li{display:flex;gap:8px;padding:2px 0}#stepsP li b{min-width:1.4em;text-align:right}
+#stepsP li.done{color:var(--dim,#9fb0a8)}#stepsP li.now{color:#fff;font-weight:700;background:rgba(224,168,90,.16);outline:1px solid var(--amber,#e0a85a)}
+#stepsP li.miss{color:var(--dim,#9fb0a8);text-decoration:line-through}
+#stepsP .stb{display:flex;flex-wrap:wrap;gap:8px;margin:-8px -12px 6px;padding:8px 12px 6px;position:sticky;top:-8px;z-index:1;background:rgba(10,14,13,.99);border-bottom:1px solid var(--line,#3c4a44)}   /* Stop at each step and Close stay at the top while the list scrolls */#stepsP .stb button{min-height:44px;min-width:44px;padding:0 12px;font-size:calc(15px * var(--ts))}
+#stepsP .note{color:var(--dim,#9fb0a8);margin:6px 0 0}
+#feed div.stp{border-left-color:var(--amber,#e0a85a);color:var(--amber,#e0a85a);font-weight:700}#feed div.acct{border-left-color:var(--amber,#e0a85a)}
+#log div.stp{color:var(--amber,#e0a85a);font-weight:700;margin-top:6px}#log div.acct{margin-left:14px}
+#cover[data-screen="about"] #suTag{display:none}   /* About prints the build label in THIS BUILD; the footer would print it a second time */
+/* Sprint 7: the step list grouped by phase and stage, each step's sentence under it */
+#stepsP .sg3{margin:6px 0 2px;font-weight:700;color:#fff}#stepsP .sg3 small{font-weight:400;color:var(--dim,#9fb0a8)}
+#stepsP li>span{display:flex;flex-direction:column;flex:1 1 auto;min-width:0}#stepsP li small{font-size:calc(13px * var(--ts))}
+#stepsP li small.ab{color:var(--dim,#9fb0a8);font-weight:400}#stepsP li small.pt,#stepsP li small.nw{color:var(--amber,#e0a85a);font-weight:400}
+#stepsP li.now small.ab{color:#e8efe9}#stepsP .sth{font-size:calc(13px * var(--ts));margin:0 0 4px}
+/* the stop panel: the stage, whose it is, what happens in it */
+#prompt .stH{margin:0 0 4px;font-size:calc(16px * var(--ts))}#prompt .stH .sk{color:var(--dim,#9fb0a8);text-transform:uppercase;font-size:.8em;letter-spacing:.06em}#prompt .stH .sw{color:var(--amber,#e0a85a)}
+#prompt .stA{margin:0 0 4px}#prompt .stA .sk{color:var(--dim,#9fb0a8)}#prompt .stA .sw{color:var(--amber,#e0a85a)}
+/* the end: the result's name, the engine's words, what was weighed */
+.s7r .s7n{margin:0 0 4px;font-weight:700;font-size:calc(18px * var(--ts));color:var(--amber,#e0a85a)}.s7r.win .s7n{color:#9fe0a0}.s7r.lose .s7n{color:#ff9a8a}
+.s7r .s7t{margin:0 0 6px}
+.s7w{border-collapse:collapse;font-size:calc(14px * var(--ts));margin:0 0 6px;max-width:100%}
+.s7w caption{text-align:left;color:var(--dim,#9fb0a8);padding-bottom:2px;font-size:calc(13px * var(--ts))}
+.s7w th,.s7w td{border:1px solid var(--line,#3c4a44);padding:3px 6px;text-align:left;vertical-align:top}.s7w thead th{font-weight:700}
+.s7w td.met{color:#fff;font-weight:700;background:rgba(224,168,90,.18)}.s7w tr.s7hf th,.s7w tr.s7hf td{font-weight:700}
+#debrief #s7-result{margin:8px 0}
+/* room to read on a phone: the event lines on an opaque panel, two of them (three on a tall phone); a smaller hand handle and panel buttons, each 44 px to the touch */
+html.ph #feed div{background:rgb(12,18,21);display:block}
+html.ph #feed div.stp,html.ph #feed div.acct{white-space:nowrap}
+html.ph #hand{height:44px}html.ph #hand .hhandle{bottom:0;height:44px;padding:0 10px;font-size:calc(14px * min(var(--ts),1.4))}html.ph #hand .strip{bottom:44px}
+html.ph #hand .hhandle .pk img{height:26px}
+html.ph #prompt .pfoot>.btns{margin-top:4px}html.ph #prompt .pfoot>.btns>button{min-height:44px}
+html.ph #prompt .pfoot>.btns>button.ghost{flex:0 1 auto;font-size:calc(13px * min(var(--ts),1.4));padding-left:12px;padding-right:12px}
+html.ph body:has(#hand.open) #feed div:not(:last-child){display:none}   /* the open hand lifts the panel: the event lines keep to one */
+#stepT .sq{color:var(--dim,#9fb0a8)}   /* whose part, in brief, on every screen */
+/* Sprint 7 integration: the handle keeps 110 px free left of its arrow (LAST CARD goes there, the moments lane); the count gives way first */
+html.ph #hand .hhandle>span:first-child{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}html.ph #hand .hhandle .pk{margin-right:0}html.ph #hand .hhandle i{flex:none;margin-left:110px}
+html:not(.short) #stepT{width:auto;max-width:calc(100vw - 132px)}   /* a tall phone: the step line's tap area stops short of the flag and menu buttons */
+/* Sprint 7 fix round: nothing of the table lane's under 16 px; "More" under the prompt's sentence, never beside it; the ending said once */
+#stepT,.ph #stepT{font-size:calc(16px * var(--ts))}#stepsP li small,#stepsP .sth,#stepsP .note{font-size:calc(16px * var(--ts))}
+html.ph:not(.tut) #bot:has(#hand.open) #prompt .pmore,html.ph #prompt .pmore{position:static!important;align-self:flex-end;margin:2px 0 0!important}
+.s7r .s7r-name{margin:0 0 4px;font-weight:700;font-size:calc(20px * var(--ts));color:var(--amber,#e0a85a)}.s7r.win .s7r-name{color:#9fe0a0}.s7r.lose .s7r-name{color:#ff9a8a}
+.s7r .s7r-mission{margin:0 0 6px;font-size:calc(16px * var(--ts))}.s7r .s7r-why{margin:0 0 6px;font-size:calc(16px * var(--ts))}
+.s7w,.s7w caption{font-size:calc(16px * var(--ts))}
+/* a question's long answers: first in the pinned row, full width, above "?", Undo and the short answers; the row scrolls (with the page's amber edge) when they do not all fit */
+#prompt .pfoot .btns>.s7ans{order:-1;flex:1 1 100%;text-align:left;min-height:44px}
+/* a question answered by long buttons: its sentence shows whole above them (no More pill); on a short phone the tips give way to the answers */
+#prompt:has(.s7ans) .pbody{flex:0 0 auto!important;max-height:none!important;overflow:visible!important}#prompt:has(.s7ans) .pmore{display:none!important}
+html.short #prompt:has(.s7ans) .pbody>:not(.instr):not(.coach){display:none!important}
+/* a short phone with the hand open: the event line gives its room to the question (it is shown again when the hand is tucked) */
+html.short body:has(#hand.open) #feed{display:none}
+#stepT,.ph #stepT,#stepT *{font-size:max(16px,calc(16px * var(--ts)))}   /* never under 16 px, whatever the page's text scale */

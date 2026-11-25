@@ -692,17 +692,62 @@ def handle(path, body="{}"):
     return json.dumps(out)
 
 
+# ===== session/00_slice.py =====
+
 
 # ---------------------------------------------------------------------------------------------------------------------------
-# Sprint 6, package 3b: the step display test page. stage.py appends this to the released browser_play.py in the STAGED COPY
+# Sprint 7, the vertical slice test page: the frame's session code (owner: the frame; changes are asked of the Studio Lead).
+# stage.py appends this first, then every other file in session/ in sorted order, to the released browser_play.py in the
+# STAGED COPY only. It changes no rule of its own: it sets the rules the slice starts every game with (slice_rules.json), the
+# way the step display page set as_printed:
+#   - before each run, every switch in slice_rules.json "rules" is set on the session's rules (Basic Training: as_printed only), and
+#     instant_end is dropped, so the Play screen's "The game ends: the instant a condition is met" cannot override them;
+#     a switch the engine does not know yet is passed through as it is (the engine reads only the switches it knows);
+#   - info["slice"]: the build record (label, name, rules line, rules, engine sha256 and commit); info["as_printed"].
+SLICE = json.loads('{"as_printed": true, "cards": "SS_Merged_Cards_v0.17.2.csv", "decks": "SS_Merged_Decks_v0.17.2.csv", "engine": {"branch_head": "2e963ad", "commit": "40255d7", "path": "03. Beta 3.5 (Current Development)/L. Merged Baseline (3.5 + Gemini)/merged_engine.py", "sha256": "23cff937aff8827d42bd8c1a01b2a41e4d3c4ff013b40cc1a150134ac0210241"}, "label": "TEST PAGE \\u00b7 Vertical slice \\u00b7 the printed rules with the rulings of 24 November: one Reaction to each action; Hits from an Effect respect the Frontline; you choose the targets of your own Effects; both sides draw and set their Force Posture together; a 2-Zone push off the home edge is Supremacy; the second player draws 1 more card \\u00b7 engine 23cff937 (commit 40255d7) \\u00b7 cards and decks v0.17.2 \\u00b7 staged 25 Nov 2026, 5:31 AM EST", "lanes": {"page_css": ["10_table.css", "20_moments.css", "30_ops.css"], "page_js": ["00_hooks.js", "10_enemy.js", "20_moments.js", "30_ops.js"], "patches": ["patches_00_hooks.py", "patches_10_table.py", "patches_20_moments.py"], "session": ["00_slice.py", "10_steps.py", "20_engine.py"]}, "name": "Vertical slice", "rules": {"as_printed": 1, "command_together": 1, "hits_frontline": 1, "ops_start_after_track": 1, "person_targets": 1, "plan_copies": 1, "push_off_edge": 1, "start_bonus": 1}, "rules_line": "the printed rules with the rulings of 24 November: one Reaction to each action; Hits from an Effect respect the Frontline; you choose the targets of your own Effects; both sides draw and set their Force Posture together; a 2-Zone push off the home edge is Supremacy; the second player draws 1 more card", "rules_not_in_engine_defaults": ["as_printed", "command_together", "hits_frontline", "ops_start_after_track", "person_targets", "plan_copies", "push_off_edge", "start_bonus"]}')
+SLICE_RULES = dict(SLICE.get("rules") or {})
+
+_slice_released_init, _slice_released_run = Session.__init__, Session.run
+
+
+def _slice_init(self, b):
+    _slice_released_init(self, b)
+    self.info["slice"] = dict(SLICE)
+    self.info["as_printed"] = bool(SLICE_RULES.get("as_printed"))
+
+
+def _slice_rules_for(self):   # Basic Training is a scripted lesson: it plays the printed rules only, as on the step display
+    if getattr(self, "train", None):   # page; a ruling that adds a question or a card to the hand would put its script out of step
+        return dict((k, v) for k, v in SLICE_RULES.items() if k == "as_printed")
+    return SLICE_RULES
+
+
+def _slice_run(self, emit=True):
+    rules = _slice_rules_for(self)
+    if rules:
+        self.rules.update(rules); self.rules.pop("instant_end", None)
+    return _slice_released_run(self, emit)
+
+
+Session.__init__, Session.run = _slice_init, _slice_run
+
+
+# ===== session/10_steps.py =====
+
+
+# ---------------------------------------------------------------------------------------------------------------------------
+# The table lane's session code (carried over from Sprint 6 package 3b, the step display test page; owner: the table lane).
+# The vertical slice page's stage.py appends it, after session/00_slice.py, to the released browser_play.py in the STAGED COPY
 # only. It changes no rule and no frame: the engine (merged_engine.py at this branch's head) already sends each printed step
 # and each step account through on_event, so they arrive as frames with fx.kind "step" or "step_account". This adds:
 #   - info["round_steps"]: the engine's own list ROUND_STEPS, so the page can show all fifteen steps without typing a name;
 #   - pending["step"]: the step the game is in when it asks the person (the engine's open step, without its private
 #     "before" table), so the tracker is right after Undo, which replays the game without frames;
 #   - over["step"]: the step the game ended in (F2: a game can end inside Assessment, and the later steps never begin);
-#   - with the printed rules on (stage.py's default): rule as_printed in every game, instant_end dropped, and info["as_printed"].
-STEP_PAGE = '{"as_printed": true, "cards": "SS_Merged_Cards_v0.17.2.csv", "decks": "SS_Merged_Decks_v0.17.2.csv", "engine": {"branch_head": "5bf7887", "commit": "b13c99e", "path": "03. Beta 3.5 (Current Development)/L. Merged Baseline (3.5 + Gemini)/merged_engine.py", "sha256": "5ad9ce5d4e8ab241ba6386b2b7c40a06fd88b33de2050271e8a28bfee629835c"}, "label": "TEST PAGE \\u00b7 Step display \\u00b7 printed rules on: one Reaction to each action, and the game is decided only at Check for the end \\u00b7 engine 5ad9ce5d (commit b13c99e) \\u00b7 cards and decks v0.17.2 \\u00b7 staged 24 Nov 2026, 4:36 PM EST"}'
+#   - info["win_conditions"]: the engine's win conditions, [code, name] (Sprint 7, for the end's table of what was weighed);
+#   - info["step_page"]: the slice's build record (SLICE, from session/00_slice.py). The printed rules (as_printed on, instant_end
+#     dropped, info["as_printed"]) are now set by session/00_slice.py from slice_rules.json, before each run, as this file did.
+STEP_PAGE = json.dumps(SLICE, sort_keys=True)
 
 
 def _open_step(g):
@@ -717,16 +762,11 @@ def _steps_init(self, b):
     _released_init(self, b)
     self.info["round_steps"] = [dict(s) for s in getattr(E, "ROUND_STEPS", ())]
     self.info["step_page"] = json.loads(STEP_PAGE)
-    self.info["as_printed"] = bool(json.loads(STEP_PAGE).get("as_printed"))
-
-
-def _printed_rules(self):   # package 3b, printed rules on: every game on this page (Basic Training too) plays rule as_printed, and the
-    if json.loads(STEP_PAGE).get("as_printed"):   # Play screen's "The game ends: the instant a condition is met" cannot override it
-        self.rules["as_printed"] = 1; self.rules.pop("instant_end", None)
+    codes = getattr(E.Game, "MET_CODE", {})   # Sprint 7: the win conditions' names, for the end's table of what was weighed (the engine's words)
+    self.info["win_conditions"] = [[codes[w[0]], w[0]] for w in getattr(E.Game, "WIN_CONDITIONS", ()) if w[0] in codes]
 
 
 def _steps_run(self, emit=True):
-    _printed_rules(self)
     g0 = None
     try:
         _released_run(self, emit)
@@ -772,3 +812,71 @@ def handle(path, body="{}"):
         s = PLAY.get("game"); g = s.g if s else None
         return json.dumps(dict(told=list(getattr(g, "_ss_told", []) if g is not None else []), over=s.over if s else None))
     return _released_handle(path, body)
+
+
+# ===== session/20_engine.py =====
+
+
+# ---------------------------------------------------------------------------------------------------------------------------
+# Sprint 7, package 2 (rules-data): the engine's part of the vertical slice page's session. The frame lane's stage script
+# appends this file to the STAGED COPY of the page's session code (browser_play.py) only. It changes no rule by itself:
+#   - the start request may carry "scenario": a mission's starting situation as data (docs/plans/Sprint_7_Engine_Contract_v0.1.md,
+#     section 3), given to the engine's Game; its "first" (seat 0 is "you") sets the first Active Player;
+#   - the start request may carry "engine_rules": rule switch names to whole numbers (the contract, section 4), added to the game's
+#     rules, so the page can play the slice's switches;
+#   - over["result"]: the engine's Game.result (the result as data and in plain words; None unless rule as_printed is on).
+_engine_released_init, _engine_released_run, _engine_released_replay = Session.__init__, Session.run, Session.replay
+
+
+def _engine_rules_from(b):
+    rules = b.get("engine_rules") or {}
+    if not isinstance(rules, dict): raise ValueError("engine_rules must name rule switches and whole numbers.")
+    return dict((str(name), int(value)) for name, value in rules.items())
+
+
+def _engine_init(self, b):
+    self.scenario = E.checked_scenario(b.get("scenario")) if hasattr(E, "checked_scenario") else None
+    self.engine_rules = _engine_rules_from(b)
+    if self.scenario and "first" in self.scenario: b = dict(b, first=("you", "bot")[self.scenario["first"]])
+    _engine_released_init(self, b)
+    self.info["scenario"] = self.scenario or None
+
+
+class _GameWithScenario(object):
+    """For one call of the released run or replay: E.Game, given this session's scenario."""
+    def __init__(self, session): self.session = session; self.released_game = E.Game
+
+    def __enter__(self):
+        released, scenario = self.released_game, self.session.scenario
+        class GameFromScenario(released):
+            def __init__(game, *args, **keys): keys["scenario"] = scenario; released.__init__(game, *args, **keys)
+        if scenario: E.Game = GameFromScenario
+
+    def __exit__(self, *problem): E.Game = self.released_game
+
+
+def _engine_run(self, emit=True):
+    self.rules.update(getattr(self, "engine_rules", {}))
+    with _GameWithScenario(self):
+        _engine_released_run(self, emit)
+    if self.over is not None and self.g is not None: self.over["result"] = getattr(self.g, "result", None)
+
+
+def _engine_replay(self):
+    with _GameWithScenario(self):
+        return _engine_released_replay(self)
+
+
+Session.__init__, Session.run, Session.replay = _engine_init, _engine_run, _engine_replay
+
+
+# Sprint 7 fix round: a card in hand that is not offered because it has no legal target says so in the hand's "why not" notes.
+_engine_released_why_hand = why_hand
+
+
+def why_hand(g, p, kind, labels):
+    notes = _engine_released_why_hand(g, p, kind, labels)
+    for card in p.hand:
+        if kind != "deploy" and not card.cap and hasattr(g, "no_legal_target") and g.no_legal_target(p, card):
+            notes[card.name] = "%s has no legal target: no enemy card it may hit can be targeted now." % card.name
+    return notes
