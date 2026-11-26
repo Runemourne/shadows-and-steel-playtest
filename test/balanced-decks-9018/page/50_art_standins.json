@@ -1,0 +1,9 @@
+{
+ "about": "Stand-in pictures for trial cards that have no art yet (Sprint 8, package 7). Each card shows the picture of another card in the page's own art until the art lane makes its own. The card's ID on its face stays its own.",
+ "standins": {
+  "CAP-130": {"card": "WATCHTOWER", "use": "EFF-111", "use_card": "BATTLE POSITION", "why": "an observer with binoculars behind sandbags, watching a valley: a prepared observation post"},
+  "CAP-131": {"card": "BUSHWHACKER", "use": "CAP-102", "use_card": "VELITES", "why": "light infantry behind a village wall with an anti-armor launcher: fighters defending their own town"},
+  "CAP-132": {"card": "BACKTRACK", "use": "CAP-103", "use_card": "REDLEG", "why": "a howitzer battery in action: BACKTRACK is cannon artillery with a counterfire radar, REDLEG's parallel card"},
+  "EFF-117": {"card": "BREACH", "use": "EFF-301", "use_card": "BREAKTHROUGH", "why": "armor going through a gap in an obstacle belt: BREACH is the breach half of BREAKTHROUGH"}
+ }
+}

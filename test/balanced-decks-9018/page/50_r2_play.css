@@ -1,0 +1,11 @@
+/* Sprint 8 round two, package 10 (ui-frontend): "More ▼" sits in the answers' row, at its right end (across from PASS), 44 px at least;
+   the question's text gets the row the pill took. When the answers wrap to two rows or more, More stays at the right of the first.
+   Its place in the row is always kept (unseen while the text has nothing below), so the panel is measured with it and the answers
+   never jump to a second row after the panel's height was set (that squeezed the question's text to nothing). */
+#prompt .pfoot.pmr{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:8px}
+#prompt .pfoot.pmr>.btns{flex:1 1 auto;min-width:0;margin-top:4px}
+#prompt .pfoot.pmr .pmore,html.ph #prompt .pfoot.pmr .pmore,html.ph:not(.tut) #bot:has(#hand.open) #prompt .pfoot.pmr .pmore{
+  display:inline-flex!important;align-items:center;justify-content:center;visibility:hidden;position:static!important;flex:none;order:9;align-self:flex-start;margin:4px 0 0!important;min-height:44px;min-width:44px;padding:0 10px;
+  border:1px solid rgba(216,182,106,.6);background:#111D1F;color:#D8B66A;font:600 max(16px,calc(16px * min(var(--ts),1.4)))/1.2 Barlow,system-ui,sans-serif;
+  text-transform:none;letter-spacing:.02em;white-space:nowrap}
+#prompt.more .pfoot.pmr .pmore,html.ph #prompt.more .pfoot.pmr .pmore,html.ph:not(.tut) #bot:has(#hand.open) #prompt.more .pfoot.pmr .pmore{visibility:visible}

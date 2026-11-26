@@ -1,5 +1,8 @@
 """[Candidate v0.16-SC: SPECTRUM control keys added by apply_sc_keys.py; RD-143]
 Shadows & Steel: Merged Baseline rules engine (Beta 3.5 structure + the Gemini v5.1 changes + the pieces kept from the Core Set).
+26 Nov 2026 (Sprint 8 round two, package 12: the trial's sixth version): one more switch, OFF by default: breach_order 1 = the
+E_BREACH Order ("Ignore enemy OBSTACLE and RIPOSTE this round") sets only E_BREAK's flag for ignoring OBSTACLE, none of its
+Frontline Strength, ATK or ROUT; with break_riposte 1 that flag also quiets RIPOSTE. The bot rates it as it rates E_BREAK.
 25 Nov 2026 (Sprint 8, package 5c: the words a person is shown): one more switch, OFF by default: jam_card_name 1 = the E_JAMSWEEP
 Reaction's option and the attacker's pay question name the card by its printed Name, not by an old name (fault F21). With
 tw_react 1, the E_WITHDRAW Reaction's option gives the whole effect; with sitrep_support 1, SITREP's option says it readies a card with
@@ -1248,6 +1251,7 @@ class Game:
             "E_COLLAPSE": s.collapse_value(p), "E_CASCADE": s.cascade_value(p),
             "E_WITHDRAW": ((1.8 if p.ben in ("KILL CHAIN", "SPECTRUM") or s.strength(p) < s.strength(o) else -1) if s.contact() and s.pos[p.i] != (1 if p.i == 0 else s.Z) else -1),
             "E_GRAYZONE": 1.0 + 0.6 * len(p.track)}.get(k, -1)   # Patch 15: TACTICAL WITHDRAWAL is an Order (RD-156 (2)); GRAY ZONE is worth more with more cards on your track (RD-160)
+        if k == "E_BREACH" and s.R.get("breach_order", 0): return 2.2 if s.contact() and len(p.front()) >= 2 else -1   # as E_BREAK
         if k == "E_FRAGO" and len(myex) and s.is_human(p): v = 1
         if k == "E_ARM" and s.tr("sust_jump"): v = (1.4 if p.sup() >= 3 else -1) if s.R.get("bot_sust", 0) else 1.2   # trial JUMP POINT: a plain rating; bot_sust rule 3, 1.4 with Supply 3 or more
         if k == "E_ARM" and s.tr("sust_jump") and not any(u.c.atk and not u.hidden for u in p.units): v = -1   # (both: never with no shooter face up on the table)
@@ -1345,6 +1349,7 @@ class Game:
             s.gain_isr(p, s.R.get("mtc_isr", 2))
             if s.contact() and s.R.get("mtc_shock", 0): p.fl["shock"] = p.fl.get("shock", 0) + 1
         elif k == "E_BREAK": p.fl["fatk"] = p.fl.get("fatk", 0) + 1; p.fl["rout"] = 1; p.fl["spill"] = 1; p.fl["noobs"] = 1; p.fl["str"] = p.fl.get("str", 0) + s.R["break_str"]
+        elif k == "E_BREACH" and s.R.get("breach_order", 0): p.fl["noobs"] = 1   # "Ignore enemy OBSTACLE and RIPOSTE this round"
         elif k == "E_FIREMISSION":
             targets = E(p, 1, pred=lambda u: not u.c.air)
             if not targets and s.R.get("hits_frontline", 0): s.say("%s has no legal target." % c.name)

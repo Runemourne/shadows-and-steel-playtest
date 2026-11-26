@@ -1,12 +1,13 @@
 {
  "about": [
+  "None of these is in force (26 Nov 2026, 11:58 AM EST). The lead ruled on 26 Nov 2026 that Skirmish and player against player play with no handicap (drafts entry C; rules list row D-11). The three entries are kept as a record of what the fifth version's test page played; the commit gate's rules check fails if one is switched on again.",
   "Balance provisions (RD-207 item 5): one entry a pairing. \"decks\" names the two decks; \"starts\" gives what each deck starts with, by deck name, in the scenario's own keys (homefront, isr, marker, bases as [{supply, damage, devastated}], frontline, rear); \"first\" names the deck that goes first, or is \"\" to leave it to the Play screen; \"words\" is the one sentence printed for the player.",
   "The page uses an entry only when its \"in_force\" is true; every other entry is ignored. The three entries below are in force: each was found and confirmed by bot games on the trial's third and fifth versions (docs/plans/Sprint_8_Third_Version_Measured_v0.1.md; docs/plans/Sprint_8_Fifth_Version_Measured_v0.1.md). A marker is counted from that deck's own end (Zone 1 is its home Zone).",
   "To put a provision in: edit the entry's numbers and words and set \"in_force\": true (or add a new entry the same way). Skirmish and watched games use it whichever seat each deck is in; the missions and Basic Training never do."
  ],
  "provisions": [
   {
-   "in_force": true,
+   "in_force": false,
    "id": "SPEARHEAD against BULWARK",
    "decks": [
     "SPEARHEAD",
@@ -24,7 +25,7 @@
    "words": "SPEARHEAD starts with one ARMING STATION from its deck already in its Rear Area, face up and Ready."
   },
   {
-   "in_force": true,
+   "in_force": false,
    "id": "SPEARHEAD against SPECTRUM",
    "decks": [
     "SPEARHEAD",
@@ -43,7 +44,7 @@
    "words": "SPECTRUM starts with 6 ISR and one LISTENING POST from its deck already in its Rear Area, face up and Ready."
   },
   {
-   "in_force": true,
+   "in_force": false,
    "id": "BULWARK against SPECTRUM",
    "decks": [
     "BULWARK",

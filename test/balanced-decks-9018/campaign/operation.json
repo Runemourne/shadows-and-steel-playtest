@@ -15,10 +15,10 @@
       "bot": "SPECTRUM",
       "terrain": "MOUNTAIN PASS",
       "first": "random",
-      "scenario": {"sides": [{"isr": 8, "rear": ["RED BALL"]}, {"rear": ["LISTENING POST"]}]},
+      "scenario": {"sides": [{"isr": 8, "rear": ["RED BALL"]}, {}]},
       "handicap": "",
       "order": {
-        "situation": "Enemy SPECTRUM forces defend MOUNTAIN PASS with jamming, deception and decoys; a LISTENING POST is already working in their Rear Area. They trade ground for time, drain our ISR and our Bases' Supply, and strike hardest at any Base left without Supply. Higher has given our attack priority of collection: we start with 8 ISR. Our Force Marker is in Zone 1.",
+        "situation": "Enemy SPECTRUM forces defend MOUNTAIN PASS with jamming, deception and decoys. They trade ground for time, drain our ISR and our Bases' Supply, and strike hardest at any Base left without Supply. Higher has given our attack priority of collection: we start with 8 ISR. Our Force Marker is in Zone 1.",
         "mission": "SPEARHEAD attacks through MOUNTAIN PASS on a narrow front from round 1 and drives enemy forces off their home edge (Supremacy) by the end of round 8, to open the road to the capital.",
         "execution": "A penetration in three phases. Close: reach Contact by round 3. Break: win the Frontline contest each Assessment with a full Frontline. Pursue: advance every round the enemy falls back. Main effort is the Frontline. Strike enemy Bases only when the Frontline is secure.",
         "sustainment": "The Staging Base adds 5 Supply a round, the Hub 1; each working Base gives 2 Lift. A RED BALL convoy starts in our Rear Area and brings 2 more Supply to the Bases each Sustainment. Keep Supply on both Bases: the enemy strikes hardest at an empty one, and if both are devastated the enemy wins by Devastation.",
@@ -59,7 +59,7 @@
           {
             "bases": [
               {
-                "supply": 6
+                "supply": 10
               },
               {
                 "supply": 0,
@@ -70,16 +70,16 @@
           },
           {
             "marker": 5,
-            "homefront": 9
+            "homefront": 7
           }
         ]
       },
       "handicap": "",
       "order": {
-        "situation": "We hold the crest of MOUNTAIN PASS, cut off. A heavier enemy BULWARK force masses at the far exit to retake it. Losing the pass left its Homefront at 9: it cannot afford a long fight. Relief follows round 6. BULWARK moves first.",
+        "situation": "We hold the crest of MOUNTAIN PASS, cut off. A heavier enemy BULWARK force masses at the far exit to retake it. Losing the pass left its Homefront at 7: it cannot afford a long fight. Relief follows round 6. BULWARK moves first.",
         "mission": "SPEARHEAD retains the crest of MOUNTAIN PASS (Zone 3) from round 1 until the battle ends after round 6, to keep the pass open for the relief force.",
-        "execution": "A defense of key terrain. Hold Zone 3: while only we hold the center, the enemy loses 1 Homefront each Assessment. Win the Frontline contest; do not trade ground. Main effort: the Frontline. Priority of fires: enemy cards that can strike the Hub.",
-        "sustainment": "The Hub holds 6 Supply. Enemy fires devastated our Staging Base: it holds at most 5 Supply, adds 1 a round and gives 1 Lift; the Hub adds 1. Alone, the Hub's Survivability is 2. If devastated, the enemy meets its Devastation win condition.",
+        "execution": "A defense of key terrain, won by time. (1) Hold the crest: keep the Force Marker in Zone 3; if pushed off it, return the next round; do not go past it. While only we hold the center, the enemy loses 1 Homefront each Assessment. (2) Strike every round: REDLEG and every FIRES card engage, and each enemy card destroyed costs the enemy Homefront. (3) Keep the Frontline full, and offer no card the enemy can destroy cheaply: each card we lose costs us Homefront. (4) Spend the Supply on cards; a full Hub wins nothing. Main effort: the Frontline. Priority of fires: enemy cards that can strike the Hub, then its weakest card.",
+        "sustainment": "The Hub holds 10 Supply. Enemy fires devastated our Staging Base: it holds at most 5 Supply, adds 1 a round and gives 1 Lift; the Hub adds 1. Alone, the Hub's Survivability is 2. If devastated, the enemy meets its Devastation win condition.",
         "command": "The commander stays on the crest with the Frontline; the Hub is the main command post. Signal: the Hub carries the force's links to higher; expect the enemy to hunt them."
       },
       "intent": "Keep the pass open for the relief force by outlasting a counterattack the enemy cannot afford to prolong, so that at the end state, after round 6, we still hold the crest, the Hub still works, and the enemy's Homefront stands below ours.",
