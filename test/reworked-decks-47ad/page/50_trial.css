@@ -1,0 +1,43 @@
+/* Sprint 8, package 7 (ui-frontend): the reworked decks' Main Menu line and "What changed". Composition only; colours and type
+   from tokens.css (Digital Studio Style Guide v0.2). Text scales with the page's own text size (--tsz); body 18 px, controls 44 px. */
+.s8m{margin:12px 0 0;padding:10px 12px;border-left:4px solid var(--ss-color-action,#D8B66A);background:rgba(216,182,106,.08);
+  font-family:var(--ss-type-body-family);font-size:calc(18px * var(--tsz,1));line-height:1.4;color:var(--ss-color-text-primary,#E8EDE8);text-align:left}
+.s8m p{margin:0 0 6px;overflow-wrap:anywhere}
+.s8m b{font-family:var(--ss-type-control-family);font-weight:700;letter-spacing:.06em;margin-right:6px}
+.s8m button,.s8lc button{min-height:44px;min-width:44px;padding:8px 12px;font-size:calc(18px * var(--tsz,1));white-space:normal;text-align:left}
+.s8m button i,.s8lc button i{font-style:normal}
+.s8lc{margin:10px 0}
+#s8dk{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;background:var(--ss-color-background,#0C1215);color:var(--ss-color-text-primary,#E8EDE8);
+  font-family:var(--ss-type-body-family);font-size:calc(18px * var(--tsz,1));line-height:1.45;touch-action:pan-y}
+#s8dk[hidden]{display:none}
+#s8dk .s8scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+#s8dk .s8in{max-width:720px;margin:0 auto;padding:12px 16px 20px}
+#s8dk p{margin:0 0 8px;overflow-wrap:anywhere}
+#s8dk button{min-height:44px;min-width:44px;font-family:var(--ss-type-control-family);font-weight:700;font-size:calc(18px * var(--tsz,1));line-height:1.15;letter-spacing:.03em;white-space:normal;overflow-wrap:anywhere}
+#s8dk .s8back{display:inline-flex;align-items:center;margin:0 0 8px;padding:8px 12px}
+#s8dk .s8k{font-family:var(--ss-type-control-family);font-weight:700;letter-spacing:.06em;color:var(--ss-color-text-secondary,#B5C1C2);margin:0 0 6px}
+#s8dk .s8tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+#s8dk .s8tabs button{flex:1 1 auto;padding:8px 10px;border:1px solid var(--ss-color-control-boundary,#75858D);background:none;color:var(--ss-color-text-primary,#E8EDE8)}
+#s8dk .s8tabs button.on{border:2px solid var(--ss-color-action,#D8B66A);background:rgba(216,182,106,.14)}
+#s8dk .s8t{font-family:var(--ss-type-section-family);font-weight:700;font-size:calc(30px * var(--tsz,1));line-height:1.1;margin:4px 0 8px;letter-spacing:.02em;overflow-wrap:anywhere}
+#s8dk .s8id{border-left:4px solid var(--ss-color-action,#D8B66A);padding:2px 0 2px 12px;margin:0 0 10px}
+#s8dk .s8id p:first-child{font-weight:600}
+#s8dk h3{font-family:var(--ss-type-control-family);font-weight:700;font-size:calc(20px * var(--tsz,1));letter-spacing:.05em;margin:12px 0 6px}
+#s8dk .s8ch{margin:0;padding:0 0 0 22px}
+#s8dk .s8ch li{margin:0 0 8px;overflow-wrap:anywhere}
+#s8dk .s8nav{display:flex;justify-content:space-between;gap:10px;margin:14px 0 0}
+#s8dk .s8nav button{padding:8px 12px}
+#s8Lib small{font-size:calc(16px * var(--tsz,1))}
+/* Package 7d: card names in the lines open the Library's reader. Shape and text, not colour alone: bold and a solid underline, and a
+   line above the list says so. The lines keep the body text's own spacing; each name's touch area is a box 44 px tall (and at least 48
+   wide) laid over it, which does not change the line. Boxes of names on neighbouring lines may overlap a little at their edges; the
+   middle of a name is always its own. A long name wraps inside its own box. */
+#s8dk .s8hint{color:var(--ss-color-text-secondary,#B5C1C2);font-size:calc(16px * var(--tsz,1));margin:0 0 8px}
+#s8dk a.s8card{position:relative;color:inherit;font-weight:700;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px;
+  text-decoration-color:var(--ss-color-action,#D8B66A);cursor:pointer;-webkit-tap-highlight-color:transparent;display:inline-block;max-width:100%;vertical-align:baseline}
+#s8dk a.s8card::after{content:"";position:absolute;left:50%;top:50%;width:max(calc(100% + 8px),48px);height:max(100%,44px);transform:translate(-50%,-50%)}
+#s8dk a.s8card:hover{text-decoration-thickness:3px}
+#s8dk a.s8card:focus{outline:none}
+#s8dk a.s8card:focus-visible{outline:3px solid var(--ss-color-focus,#91D9E8);outline-offset:4px}
+/* the reader opened from this screen sits above it (the reader's own layer is under this screen's) */
+body:has(#s8dk:not([hidden])) #zoom{z-index:31}

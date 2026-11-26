@@ -1,0 +1,7 @@
+/* Sprint 8, package 7b (ui-frontend): a balance provision's sentence on the Play screen (above START THE GAME) and in the ☰ menu.
+   Composition only; colours and type from tokens.css (Digital Studio Style Guide v0.2). Text 16 px and up, scaled with --tsz. */
+.s60{flex:1 1 100%;margin:0;padding:8px 12px;border-left:4px solid var(--ss-color-action,#D8B66A);background:rgba(12,18,21,.92);
+  font-family:var(--ss-type-body-family);font-size:calc(18px * var(--tsz,1));line-height:1.35;color:var(--ss-color-text-primary,#E8EDE8);text-align:left}
+.s60 p{margin:0;overflow-wrap:anywhere}
+.s60 .s60k{font-family:var(--ss-type-control-family);font-weight:700;font-size:calc(16px * var(--tsz,1));letter-spacing:.06em;color:var(--ss-color-action,#D8B66A);margin:0 0 2px}
+#menu .s60m{margin:4px 0 8px;max-width:22em;white-space:normal}

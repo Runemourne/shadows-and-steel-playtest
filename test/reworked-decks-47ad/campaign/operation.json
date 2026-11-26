@@ -15,13 +15,13 @@
       "bot": "SPECTRUM",
       "terrain": "MOUNTAIN PASS",
       "first": "random",
-      "scenario": {"sides": [{"isr": 8, "rear": ["RED BALL"]}, {}]},
+      "scenario": {"sides": [{"isr": 8, "rear": ["RED BALL"]}, {"rear": ["LISTENING POST"]}]},
       "handicap": "",
       "order": {
-        "situation": "Enemy SPECTRUM forces defend MOUNTAIN PASS with jamming, deception and decoys. They trade ground for time, drain our ISR and our Bases' Supply, and strike hardest at a Base that has none. Higher has weighted collection to our attack: we start with 8 ISR. Our Force Marker is in Zone 1.",
+        "situation": "Enemy SPECTRUM forces defend MOUNTAIN PASS with jamming, deception and decoys; a LISTENING POST is already working in their Rear Area. They trade ground for time, drain our ISR and our Bases' Supply, and strike hardest at any Base left without Supply. Higher has given our attack priority of collection: we start with 8 ISR. Our Force Marker is in Zone 1.",
         "mission": "SPEARHEAD attacks through MOUNTAIN PASS on a narrow front from round 1 and drives enemy forces off their home edge (Supremacy) by the end of round 8, to open the road to the capital.",
         "execution": "A penetration in three phases. Close: reach Contact by round 3. Break: win the Frontline contest each Assessment with a full Frontline. Pursue: advance every round the enemy falls back. Main effort is the Frontline. Strike enemy Bases only when the Frontline is secure.",
-        "sustainment": "The Staging Base adds 5 Supply a round, the Hub 1; each working Base gives 2 Lift. A RED BALL convoy starts in our Rear Area: 2 more Supply onto the Bases each Sustainment. Never let a Base run empty: if both are devastated, the enemy wins by Devastation.",
+        "sustainment": "The Staging Base adds 5 Supply a round, the Hub 1; each working Base gives 2 Lift. A RED BALL convoy starts in our Rear Area and brings 2 more Supply to the Bases each Sustainment. Keep Supply on both Bases: the enemy strikes hardest at an empty one, and if both are devastated the enemy wins by Devastation.",
         "command": "The commander moves with the Frontline; the Hub is the main command post, the Staging Base the alternate. Signal: expect jamming on every net; report the far exit clear when the enemy is driven off its home edge."
       },
       "intent": "Open the road to the capital before the enemy can wear us down, so that at the end state the enemy is driven off its home edge, the pass is open, and at least one of our Bases still works.",
@@ -40,7 +40,8 @@
         "defeat_points": "Neither side broke, and after eight rounds the enemy's Homefront stands higher. The pass stays closed.",
         "draw": "The fighting stops with no result. The pass stays in enemy hands; the attack must be made again."
       },
-      "next": "Mission 2, THE CREST: the force that took the pass must now hold it."
+      "next": "Mission 2, THE CREST: the force that took the pass must now hold it.",
+      "picture": {"task": "attack", "zone": 6, "label": "ATTACK", "alt": "Map of MOUNTAIN PASS: SPEARHEAD starts in Zone 1 at the near entrance and attacks up the pass through all five Zones, to drive SPECTRUM in Zone 5 off its home edge at the far exit."}
     },
     {
       "id": "m2",
@@ -69,13 +70,13 @@
           },
           {
             "marker": 5,
-            "homefront": 10
+            "homefront": 9
           }
         ]
       },
       "handicap": "",
       "order": {
-        "situation": "We hold the crest of MOUNTAIN PASS, cut off. A heavier enemy BULWARK force masses at the far exit to retake it. Losing the pass left its Homefront at 10: it cannot afford a long fight. Relief follows round 6. BULWARK moves first.",
+        "situation": "We hold the crest of MOUNTAIN PASS, cut off. A heavier enemy BULWARK force masses at the far exit to retake it. Losing the pass left its Homefront at 9: it cannot afford a long fight. Relief follows round 6. BULWARK moves first.",
         "mission": "SPEARHEAD retains the crest of MOUNTAIN PASS (Zone 3) from round 1 until the battle ends after round 6, to keep the pass open for the relief force.",
         "execution": "A defense of key terrain. Hold Zone 3: while only we hold the center, the enemy loses 1 Homefront each Assessment. Win the Frontline contest; do not trade ground. Main effort: the Frontline. Priority of fires: enemy cards that can strike the Hub.",
         "sustainment": "The Hub holds 6 Supply. Enemy fires devastated our Staging Base: it holds at most 5 Supply, adds 1 a round and gives 1 Lift; the Hub adds 1. Alone, the Hub's Survivability is 2. If devastated, the enemy meets its Devastation win condition.",
@@ -97,7 +98,8 @@
         "defeat_points": "Neither side broke, but at the end of round 6 the enemy's Homefront stands higher. Its counterattack outlasted us; the relief force turns back.",
         "draw": "The fighting stops with no result. The relief force arrives to a crest that neither side can claim."
       },
-      "next": "The operation is over."
+      "next": "The operation is over.",
+      "picture": {"task": "defend", "zone": 3, "label": "HOLD THE CREST", "alt": "Map of MOUNTAIN PASS: SPEARHEAD holds the crest in Zone 3 while BULWARK, massed in Zone 5 at the far exit, counterattacks to retake it."}
     }
   ],
   "copy": {
@@ -137,7 +139,8 @@
       "you": "YOU",
       "bot": "ENEMY",
       "close": "CLOSE",
-      "learn": "DOCTRINE IN PRACTICE"
+      "learn": "DOCTRINE IN PRACTICE",
+      "zone": "ZONE"
     }
   }
 }

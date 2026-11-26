@@ -1,5 +1,22 @@
 """[Candidate v0.16-SC: SPECTRUM control keys added by apply_sc_keys.py; RD-143]
 Shadows & Steel: Merged Baseline rules engine (Beta 3.5 structure + the Gemini v5.1 changes + the pieces kept from the Core Set).
+25 Nov 2026 (Sprint 8, package 5c: the words a person is shown): one more switch, OFF by default: jam_card_name 1 = the E_JAMSWEEP
+Reaction's option and the attacker's pay question name the card by its printed Name, not by an old name (fault F21). With
+tw_react 1, the E_WITHDRAW Reaction's option gives the whole effect; with sitrep_support 1, SITREP's option says it readies a card with
+a SUPPORT line. No switch: A_RIPOSTE's log line names the ability as the card's ACTION line prints it (RIPOSTE when released).
+25 Nov 2026 (Sprint 8, package 5b: the trial's third version): one more switch, OFF by default: break_riposte 1 = in the round a side
+plays its E_BREAK Order ("Ignore enemy OBSTACLE and RIPOSTE this round"), the enemy's RIPOSTE does not answer that side's attacks.
+No switch: A_SPOOF charges the ISR its ACTION line prints ("ACTION [1 ISR][EXHAUST] · SPOOF"), and is offered only to a player who can
+pay it. The released card prints no ISR there, so it costs nothing, as before.
+25 Nov 2026 (Sprint 8, package 5: the reworked Concept decks; five switches, all OFF by default, so the game is unchanged):
+sitrep_support 1 = SITREP readies only one of your other cards that has a SUPPORT line (fault F19; RD-203 item 7). tw_react 1 = TACTICAL
+WITHDRAWAL's Reaction answers an attack on your Frontline only, and has the Order's whole effect: the enemy can't advance next round, and
+the +1 Survivability counts against the attack itself (fault F20; RD-156). inject_hhour 1 = INJECT may advance a card from space 1 to
+H-Hour, where it resolves at once (a person's choice; the bot never does). hold_adds 1 = HOLD N adds N to the card's 1 for Frontline
+Strength (RD-286 (h); one bot arm only). After the doctrine check, two more, both OFF by default: riposte_close 1 = RIPOSTE answers
+a Close attack on the Frontline only; shield_self 1 = an R_SHIELD reaction may protect its own card ("this card or another"), and not a Base.
+No switch: the bot values the E_COUNTERATK card when the card's own requirement is met (as released, for the released card), and the
+say-lines of E_NAVWAR and E_DCO print the card's own name (the trial renames both cards).
 22 Nov 2026 (Sprint 3, package 3a: the trial build of the redesigned Sustainment cards; trial switches, all OFF by default, so the game is
 unchanged): sust_trial 1 turns on the printed lines of the trial cards (docs/plans/derivation_pilot/sust/trial/). Each line also has its own
 switch in SUST_TRIAL below, on at its priced value while sust_trial is 1; set one to 0 to switch that line off, or sust_repair to 2 for
@@ -133,7 +150,7 @@ CONCEPTS = {
 # keyword list for the Workbench: word -> (when, how it is typed, what it does)
 ABILITY_TEXT = {
     "HOLD": ("Frontline", "HOLD {n}", "Counts as {n} for Frontline Strength."), "ROUT": ("Contact", "ROUT", "If you win the Frontline contest, the enemy retreats 1 more Zone."),
-    "SEIZE": ("Frontline", "SEIZE", "Your Force Marker may advance 1 extra Zone."), "OVERRUN": ("Contact", "OVERRUN", "When this card's attack destroys a Frontline card, ready this card (once a round)."), "UPGRADE_ONLY": ("Deploy", "FLAGSHIP", "Enters play only as an upgrade of a card in play (pay the difference)."), "INF_HIT": ("Infiltrate", "INFILTRATE: DIRECT ACTION {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour deal {n} damage to an enemy LAND card anywhere, then return to the Rear Area exhausted."), "INF_INTEL": ("Infiltrate", "INFILTRATE: SPECIAL RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain {n} ISR and draw 1, then return to the Rear Area exhausted."), "INF_REVEAL": ("Infiltrate", "INFILTRATE: COUNTER-RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain 2 ISR and reveal up to {n} Hidden enemy cards, then return to the Rear Area exhausted."), "A_RIPOSTE": ("Action", "RIPOSTE {n}", "Deal {n} damage to each Exhausted enemy Frontline card."), "DISRUPT": ("Infiltrate", "DISRUPT {n}", "At H-Hour, also cancel {n} enemy Mission Track card(s): Conditions first, then Plans, then Operators. Canceled cards go to their owner's discard pile."), "FLAGSHIP": ("Deploy", "FLAGSHIP", "Only one of this card in play per player."), "A_FLIP": ("Action", "FALSE PICTURE {n}", "Flip up to {n} of your other cards face down; revealing them again costs nothing."), "A_STRIKEPKG": ("Action", "STRIKE PACKAGE {n}", "Ready up to {n} of your FIRES cards."), "SHOOTER": ("Ability", "SENSOR-TO-SHOOTER {n}", "Your FIRES attacks cost {n} less ISR."), "RETARGET": ("Ability", "RE-ATTACK", "When your FIRES attack destroys a card or damages a Base, ready that card (once a round each)."), "RIPOSTE": ("Reaction", "RIPOSTE {n}", "When an enemy unit attacks your Frontline, deal {n} damage to it."), "IMMOVABLE": ("Frontline", "IMMOVABLE", "While in your Frontline, your Force Marker is pushed back at most 1 Zone."), "RAMPAGE": ("Contact", "BREAKTHROUGH ASSAULT", "Each time this card's attack destroys a card, ready this card."),
+    "SEIZE": ("Frontline", "SEIZE", "Your Force Marker may advance 1 extra Zone."), "OVERRUN": ("Contact", "OVERRUN", "When this card's attack destroys a Frontline card, ready this card (once a round)."), "UPGRADE_ONLY": ("Deploy", "FLAGSHIP", "Enters play only as an upgrade of a card in play (pay the difference)."), "INF_HIT": ("Infiltrate", "INFILTRATE: DIRECT ACTION {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour deal {n} damage to an enemy LAND card anywhere, then return to the Rear Area exhausted."), "INF_INTEL": ("Infiltrate", "INFILTRATE: SPECIAL RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain {n} ISR and draw 1, then return to the Rear Area exhausted."), "INF_REVEAL": ("Infiltrate", "INFILTRATE: COUNTER-RECONNAISSANCE {n}", "From the Frontline, pay 1 ISR: go to the Mission Track for its Timer; at H-Hour gain 2 ISR and reveal up to {n} Hidden enemy cards, then return to the Rear Area exhausted."), "A_RIPOSTE": ("Action", "RIPOSTE {n}", "Deal {n} damage to each Exhausted enemy Frontline card."), "DISRUPT": ("Infiltrate", "DISRUPT {n}", "At H-Hour, also cancel {n} enemy Mission Track card(s): Conditions first, then Plans, then Operators. Canceled cards go to their owner's discard pile."), "FLAGSHIP": ("Deploy", "FLAGSHIP", "Only one of this card in play per player."), "A_FLIP": ("Action", "FALSE PICTURE {n}", "Flip up to {n} of your other cards face down; revealing them again costs nothing."), "A_STRIKEPKG": ("Action", "STRIKE PACKAGE {n}", "Ready up to {n} of your FIRES cards."), "SHOOTER": ("Ability", "SENSOR-TO-SHOOTER {n}", "Your FIRES attacks cost {n} less ISR."), "RETARGET": ("Ability", "RE-ATTACK", "When your FIRES attack destroys a card or damages a Base, ready that card (once a round each)."), "RIPOSTE": ("Ability", "RIPOSTE {n}", "When an enemy unit attacks your Frontline, deal {n} damage to it."), "IMMOVABLE": ("Frontline", "IMMOVABLE", "While in your Frontline, your Force Marker is pushed back at most 1 Zone."), "RAMPAGE": ("Contact", "BREAKTHROUGH ASSAULT", "Each time this card's attack destroys a card, ready this card."),
     "HIJACK_ATK": ("Attack", "HIJACK", "Take control of 1 enemy DRONE or ROBOT, even if it is exhausted, and attack with its ATK. Then exhaust it."),
     "SPOT_ISR": ("Action", "SPOTLIGHT +{n} ISR", "SPOTLIGHT also gains {n} ISR."),
     "LIFT": ("Ability", "THROUGHPUT {n}", "You get +{n} Lift each Command phase."),
@@ -243,6 +260,20 @@ class Card:
             _m = re.search(r"\(([^)]*)\)", _ut); s.up_tags = set(t.strip().upper() for t in re.split(r"\bor\b|/|,", _m.group(1), flags=re.I) if t.strip()) if _m else set()
         s.gi = {"I": 1, "II": 2, "III": 3}.get(s.gen, 1)
     def lines(s): return list(s.l)
+    def action_isr(s, ability):
+        """The ISR printed in the costs of this card's ACTION line for the named ability ("ACTION [1 ISR][EXHAUST] · SPOOF:"), or 0."""
+        for line in s.l:
+            printed = re.match(r"ACTION\s*((?:\[[^\]]*\])*)\s*·\s*" + re.escape(ability) + r":", line)
+            if printed:
+                cost = re.search(r"\[(\d+) ISR\]", printed.group(1))
+                return int(cost.group(1)) if cost else 0
+        return 0
+    def action_name(s, effect, otherwise):
+        """The name this card's ACTION line prints for the ability whose words hold `effect` ("ACTION [EXHAUST] · NAME 2: effect"), or otherwise."""
+        for line in s.l:
+            printed = re.match(r"ACTION\s*(?:\[[^\]]*\])*\s*·\s*([^:]*?)(?:\s+\d+)?:(.*)", line)
+            if printed and effect in printed.group(2): return printed.group(1)
+        return otherwise
     def cost_text(s):
         if s.cap: return "Deploy %d" % s.cost
         b = ["%d Supply" % s.cost] if s.cost else []
@@ -481,6 +512,7 @@ class Game:
         return "the Hidden card%s in the enemy %s" % ((" %d of %d" % (row.index(x) + 1, len(row))) if len(row) > 1 else "", "Frontline" if x.row == "F" else "Rear Area")
     def track_label(s, q, t, d):
         whose = "your" if s.is_human(q) else "the enemy's"
+        if t["t"] + d == 0: return "Advance %s %s to H-Hour: it resolves now" % (whose, t["c"].name)   # rule inject_hhour 1
         return "%s %s %s (H-Hour in %d round%s, then %d)" % ("Delay" if d > 0 else "Advance", whose, t["c"].name, t["t"], "" if t["t"] == 1 else "s", t["t"] + d)
     def pay(s, p, n):
         k = s.R.get("pay_hub", 0)
@@ -541,8 +573,12 @@ class Game:
             if not d: return
             p.hand.append(d.pop()); s.info += 1
     def span(s, p): return min(s.R["span_max"] + (1 if p.fl.get("sync") else 0), 1 + sum(u.k("COMMAND") for u in p.units) + p.span_bonus) if not p.fl.get("sync") else 4
+    def frontline_count(s, unit):   # HOLD N counts as N (as released); with rule hold_adds 1, HOLD N adds N to the card's 1 (RD-286 (h))
+        if s.R.get("hold_adds", 0): return 1 + unit.k("HOLD")
+        return unit.k("HOLD") or 1
     def strength(s, p):
-        v = sum((u.k("HOLD") or 1) for u in p.front() if not u.hidden and u.c.cap and not (u.pin and s.R["pin_str"])) + p.fl.get("str", 0) + (2 if s.cond(p, "E_BATTLEPOS") and p.fl.get("held") else 0)
+        v = (sum(s.frontline_count(u) for u in p.front() if not u.hidden and u.c.cap and not (u.pin and s.R["pin_str"]))
+             + p.fl.get("str", 0) + (2 if s.cond(p, "E_BATTLEPOS") and p.fl.get("held") else 0))
         if s.pos[p.i] == (1 if p.i == 0 else s.Z): v += s.R["home_bonus"] or sum(1 for b in p.bases if not b.dev)
         return v
     def track_threat(s, o):   # how much the enemy's Mission Track is worth disrupting (bot)
@@ -554,6 +590,7 @@ class Game:
         s.say(src, "cancels", s.who(o) + "'s", t["c"].name, "on the Mission Track.")
     def obstacle(s, p): return (p.has("OBSTACLE") and any(u.k("OBSTACLE") and u.row == "F" for u in p.units)) or s.cond(p, "E_DEPTH")
     def cond(s, p, key): return any(t["kind"] == "cond" and key in t["c"].keys for t in p.track)
+    def track_card_name(s, player, key): return next(entry["c"].name for entry in player.track if entry["kind"] == "cond" and key in entry["c"].keys)   # the Condition's printed name
     def tconc(s, a, d, u):
         if u.spot or d.fl.get("zero_conc") or s.exposed(u): return 0   # trial: ARMING STATION · EXPOSED, Concealment 0 while Exhausted
         c = u.c.conc + (2 if d.fl.get("cloak") else 0) + (1 if s.cond(d, "E_PSYOP") else 0) + max([x.k("DECEIVE") for x in d.units if not x.hidden] + [0])
@@ -795,8 +832,8 @@ class Game:
         """Damage to an enemy Base that ignores Survivability (SABOTAGE, CYBER, EXPLOIT): the Staging Base first, then the Hub."""
         o = s.opp(p); bs = [b for b in o.bases if not b.dev]
         if s.cond(o, "E_DCO"):
-            n -= 2; s.say("DEFENSIVE CYBERSPACE OPERATIONS: the damage is reduced by 2.")
-            if s.R.get("dco_isr", 0) and p.isr: s.gain_isr(p, -s.R["dco_isr"]); s.say("DEFENSIVE CYBERSPACE OPERATIONS traces the attack:", s.who(p), "loses %d ISR." % s.R["dco_isr"])
+            n -= 2; s.say("%s: the damage is reduced by 2." % s.track_card_name(o, "E_DCO"))
+            if s.R.get("dco_isr", 0) and p.isr: s.gain_isr(p, -s.R["dco_isr"]); s.say(s.track_card_name(o, "E_DCO"), "traces the attack:", s.who(p), "loses %d ISR." % s.R["dco_isr"])
         if not bs or n <= 0: return
         b = next((x for x in bs if x.kind == "Staging Base"), bs[0])
         if b.kind == "Hub" and s.R.get("raid_hub", 9) < n:  # sabotage and cyber bite less on the Hub (raid_hub = most damage; 0 = costs 1 Homefront instead)
@@ -837,6 +874,18 @@ class Game:
         if getattr(u, "_hja", None) is not None: return u._hja
         return max([x.c.atk for x in s.hijack_pool(p)] + [0])
     SUPPORT_KEYS = ("FS", "CUE", "JAM", "SUSTAIN", "SUSTAINR", "MEDEVAC")
+    def has_support_line(s, unit): return any(unit.k(key) for key in s.SUPPORT_KEYS)
+    def sitrep_pool(s, player, acting):
+        """The cards SITREP may ready: your other Exhausted face-up cards; with rule sitrep_support 1, only those with a SUPPORT line
+        ("Ready 1 of your other cards that has a SUPPORT line"; fault F19, RD-203 item 7)."""
+        pool = [unit for unit in player.units if unit.ex and unit is not acting and not unit.hidden]
+        if s.R.get("sitrep_support", 0): pool = [unit for unit in pool if s.has_support_line(unit)]
+        return pool
+    def sitrep_words(s):   # what SITREP's option says it may ready (rule sitrep_support 1: as the card prints it)
+        return "ready 1 of your other cards that has a SUPPORT line" if s.R.get("sitrep_support", 0) else "ready 1 other card"
+    def sitrep_worth_it(s, player, acting):   # the bot: is there a card for SITREP to ready? (as released: any Exhausted card of yours)
+        if s.R.get("sitrep_support", 0): return bool(s.sitrep_pool(player, acting))
+        return any(unit.ex for unit in player.units)
     def support_sets(s, p, u):
         """Every legal set of supporters for an attack by u (digital game, for a person): ready, face-up Capabilities with a SUPPORT
         ability, each of a different Class from the attacker and each other, at most Span of Control of them. Includes the empty set."""
@@ -922,18 +971,18 @@ class Game:
         opts = [(s.later_reaction_value(d, ctx), "Do not react", None)]; u = ctx.get("unit"); t = ctx.get("target"); atk = ctx["kind"] == "attack"
         threat = ctx.get("threat", 1.0)
         for x in d.units:
-            if x.ex or x.hidden or not x.c.cap or x is t: continue
+            if x.ex or x.hidden or not x.c.cap or (x is t and not s.covers_itself(x)): continue
             front = isinstance(t, Unit) and t.row == "F"; rearish = t is not None and not front; noint = ctx.get("noint")
-            n = x.k("R_COVER") or x.k("R_SHIELD") or (x.k("R_ESCORT") if front else 0) or (x.k("R_GUARD") if rearish else 0) or (x.k("R_SCREEN") if rearish else 0)
+            n = x.k("R_COVER") or s.shield_n(x, t) or (x.k("R_ESCORT") if front else 0) or (x.k("R_GUARD") if rearish else 0) or (x.k("R_SCREEN") if rearish else 0)
             if x.k("R_SCREEN") and rearish and not noint and atk and u is not None and (u.c.tags & {"DRONE", "ROBOT"}): opts.append((threat + 0.5, "%s: intercept and cancel it" % x.c.name, ("cancel", x)))
             if n and t is not None and ctx.get("hits", 0) > 0: opts.append((min(n, ctx["hits"]) * 0.6 + (2.0 if ctx.get("kill") and ctx["hits"] - n < ctx.get("need", 99) else -0.3), "%s: give the target +%d Survivability" % (x.c.name, n), ("cover", x, n)))
             if not noint and ((x.k("R_SHIELD") and ctx.get("air")) or (x.k("R_ESCORT") and ctx.get("air") and front) or (x.k("R_GUARD") and (ctx.get("air") or ctx.get("rocket")) and rearish)): opts.append((threat + 0.5, "%s: intercept and cancel it" % x.c.name, ("cancel", x)))
             if x.k("R_GLIDE") and not noint and (not atk or ctx.get("ranged")): opts.append((threat + 1.0, "%s: cancel it%s" % (x.c.name, " and deal 2 damage to the attacker" if u else ""), ("glide", x)))
         for c in d.hand:
-            if c.sub != "Reaction" or d.sup() < c.cost or d.isr < c.isr + jam or not s.req_ok(d, c): continue
+            if not s.reacts_from_hand(c) or d.sup() < c.cost or d.isr < c.isr + jam or not s.req_ok(d, c): continue
             if "E_HARDKILL" in c.keys and (ctx.get("hits", 0) > 0 or not atk): opts.append((threat + 0.2, "Play HARD KILL (%s): cancel it and ready the protected card" % c.cost_text(), ("card", c)))
-            if "E_JAMSWEEP" in c.keys and (not atk or ctx.get("ranged")): opts.append((threat * 0.8 + 0.4, "Play JAMMING SWEEP (%s): cancel it unless the enemy pays 3 ISR; the enemy loses 2 ISR" % c.cost_text(), ("card", c)))
-            if "E_WITHDRAW" in c.keys and atk and s.contact() and s.pos[d.i] != (1 if d.i == 0 else s.Z): opts.append((0.3 if ctx.get("hits", 0) > 1 else -1, "Play TACTICAL WITHDRAWAL (%s): fall back 1 Zone, your Frontline gets +1 Survivability" % c.cost_text(), ("card", c)))
+            if "E_JAMSWEEP" in c.keys and (not atk or ctx.get("ranged")): opts.append((threat * 0.8 + 0.4, "Play %s (%s): cancel it unless the enemy pays 3 ISR; the enemy loses 2 ISR" % (s.jamming_name(c), c.cost_text()), ("card", c)))
+            if "E_WITHDRAW" in c.keys and atk and s.contact() and s.pos[d.i] != (1 if d.i == 0 else s.Z) and s.withdrawal_answers(t): opts.append((0.3 if ctx.get("hits", 0) > 1 else -1, "Play TACTICAL WITHDRAWAL (%s): %s" % (c.cost_text(), s.withdrawal_words()), ("card", c)))
             if "E_UNMASK" in c.keys and any(x.hidden for x in p.units): opts.append((1.3, "Play UNMASK (%s): reveal up to 2 enemy Hidden cards and draw 1" % c.cost_text(), ("card", c)))
             if "E_OODA" in c.keys: opts.append((0.9, "Play OODA LOOP (%s): take one attack of your own first" % c.cost_text(), ("card", c)))
         if atk and ctx.get("kill") and s.tr("sust_onereact") and s.R.get("bot_sust", 0) and not s.is_human(d) and s.hold_for(d, t, jam):   # bot_sust rule 15: hold the one Reaction for the wreck
@@ -955,10 +1004,10 @@ class Game:
                 if isinstance(t, Unit): t.ex = False
                 if u is not None and s.R.get("hk_dmg", 0) and u in p.units: s.say("HARD KILL strikes back:", u.c.name, "takes %d damage." % s.R["hk_dmg"]); s.hit_unit(p, u, s.R["hk_dmg"])
             elif "E_JAMSWEEP" in c.keys:
-                if p.isr >= 3 and s.decide(p, "pay", "JAMMING SWEEP: pay 3 ISR to push your action through?", [(1, "Pay 3 ISR", 1), (0, "Let it be canceled", 0)]): p.isr -= 3; s.say(s.who(p), "pays 3 ISR to push through the jamming.")
+                if p.isr >= 3 and s.decide(p, "pay", "%s: pay 3 ISR to push your action through?" % s.jamming_name(c), [(1, "Pay 3 ISR", 1), (0, "Let it be canceled", 0)]): p.isr -= 3; s.say(s.who(p), "pays 3 ISR to push through the jamming.")
                 else: res["cancel"] = True
                 s.gain_isr(p, -2)
-            elif "E_WITHDRAW" in c.keys: s.pos[d.i] += -1 if d.i == 0 else 1; d.fl["wd"] = 1; s.say(s.who(d), "falls back 1 Zone, breaking Contact."); res["wd"] = True
+            elif "E_WITHDRAW" in c.keys: s.withdraw_in_reaction(d); res["wd"] = True
             elif "E_UNMASK" in c.keys:
                 for x in [x for x in p.units if x.hidden][:2]:
                     if not s.reveal(p, x, forced=True): s.gain_isr(d, 3)
@@ -970,6 +1019,33 @@ class Game:
                     if pick: s.do_attack(d, pick, noreact=True)
         s.one_rx(-1)
         return res
+    def riposte_reaches(s, attacker):   # rule riposte_close 1: RIPOSTE answers "a Close attack on your Frontline" only (as released: any attack)
+        return not s.R.get("riposte_close", 0) or attacker.range == "Close"
+    def riposte_answers(s, attacking_side, attacker): return s.riposte_reaches(attacker) and not s.breach_quiets_riposte(attacking_side)
+    def breach_quiets_riposte(s, attacking_side):   # rule break_riposte 1: "Ignore enemy OBSTACLE and RIPOSTE this round" (E_BREAK's flag, kept for the round)
+        return bool(s.R.get("break_riposte", 0) and attacking_side.fl.get("noobs"))
+    def isr_price(s, isr): return " (%d ISR)" % isr if isr else ""   # an ability's printed ISR in the option's label; nothing when it is free
+    def covers_itself(s, protector):   # rule shield_self 1: ACTIVE PROTECTION (R_SHIELD) may protect "this card or another" (as released: another only)
+        return bool(s.R.get("shield_self", 0) and protector.k("R_SHIELD"))
+    def reacts_from_hand(s, card):   # a Reaction card; with rule tw_react 1 also the Order that prints a REACTION line (E_WITHDRAW)
+        return card.sub == "Reaction" or bool(s.R.get("tw_react", 0) and "E_WITHDRAW" in card.keys)
+    def shield_n(s, protector, target):   # R_SHIELD's +N; with rule shield_self 1 for a card only ("another targeted friendly card"), not a Base
+        return 0 if s.R.get("shield_self", 0) and not isinstance(target, Unit) else protector.k("R_SHIELD")
+    def withdrawal_answers(s, target):   # rule tw_react 1: "When an enemy attacks your Frontline in Contact" (as released: any attack in Contact)
+        return not s.R.get("tw_react", 0) or (isinstance(target, Unit) and target.row == "F")
+    def jamming_name(s, card):   # rule jam_card_name 1: the jamming Reaction is named as its card prints (F21; as released: an old name)
+        return card.name if s.R.get("jam_card_name", 0) else "JAMMING SWEEP"
+    def withdrawal_words(s):
+        """The Reaction option's words: with rule tw_react 1, the whole effect it has (the Order's), the enemy's held advance included."""
+        if not s.R.get("tw_react", 0): return "fall back 1 Zone, your Frontline gets +1 Survivability"
+        held = ", and the enemy can't advance its Force Marker next round" if s.R.get("tw_hold", 0) else ""
+        return "fall back 1 Zone, your Frontline gets +1 Survivability this round" + held
+    def withdraw_in_reaction(s, player):
+        """TACTICAL WITHDRAWAL played as a Reaction: fall back 1 Zone, Contact ends, the Frontline gets +1 Survivability this round. With rule
+        tw_react 1, "play this instead, with the same effect": the enemy can't advance its Force Marker next round, as with the Order (F20)."""
+        s.pos[player.i] += -1 if player.i == 0 else 1; player.fl["wd"] = 1; s.say(s.who(player), "falls back 1 Zone, breaking Contact.")
+        if s.R.get("tw_react", 0) and s.R.get("tw_hold", 0):
+            player.hold_off = s.round + 1; s.say(s.who(s.opp(player)), "can't advance its Force Marker next round.")
     def do_attack(s, p, ch, noreact=False):
         _, u, kind, t, sup, cost, kc = ch[:7]; o = s.opp(p); c = u.c
         if u not in p.units or u.ex: return
@@ -1004,6 +1080,7 @@ class Game:
             r = s.react(p, o, dict(kind="attack", unit=u, target=t, tkind=kind, air=c.air or bool(s.R["shield_rockets"] and "ROCKET" in c.tags), ranged=c.range != "Close", rocket="ROCKET" in c.tags, noint=bool(u.k("NOINT")), jam=sum(x.k("JAM") for x in sup), hits=hits, kill=hits >= need, need=need,
                                    threat=hits * 0.6 + (2.5 if hits >= need else 0), text="%s's %s attacks %s for %d damage." % (s.who(p), c.name, name if kind == "b" else t.c.name, hits)))
         if u.k("SELFDMG"): s.hit_unit(p, u, 1)
+        if r.get("wd") and s.R.get("tw_react", 0): sv = s.tsurv(o, t, kind == "b")   # the withdrawal's +1 Survivability counts against this attack
         killed = False
         if r.get("wd") and c.range == "Close": s.say("Contact is broken. The Close attack does nothing.")
         elif not r["cancel"]:
@@ -1023,7 +1100,7 @@ class Game:
         if not r["cancel"] and c.cls == "FIRES" and s.cond(p, "E_DYNTGT") and (killed or (kind == "b" and hits > 0)): s.gain_isr(p, 2); s.say("DYNAMIC TARGETING: kill confirmed, +2 ISR.")
         if (r["cancel"] or hits == 0) and o.ben == "BULWARK" and kind == "u" and getattr(t, "row", "") == "F": s.gain_isr(o, 1); s.add_supply(o, 1)
         rip = max([x.k("RIPOSTE") for x in o.units if not x.hidden] + [0])
-        if rip and kind == "u" and getattr(t, "row", "") == "F" and u in p.units: s.say(s.who(o) + "'s RIPOSTE:", c.name, "takes %d damage." % rip); s.hit_unit(p, u, rip)
+        if rip and kind == "u" and getattr(t, "row", "") == "F" and u in p.units and s.riposte_answers(p, c): s.say(s.who(o) + "'s RIPOSTE:", c.name, "takes %d damage." % rip); s.hit_unit(p, u, rip)
         if kind == "u" and getattr(t, "row", "") == "F" and u in p.units and not noreact:
             fp = next((x for x in o.hand if "E_FPF" in x.keys and o.sup() >= x.cost and o.isr >= x.isr + s.jam_to_react(o) and s.req_ok(o, x)), None)
             if fp and not s.one_sust_used(o) and s.may_react(o) and s.decide(o, "reaction", "%s attacked your Frontline. Play FINAL PROTECTIVE FIRES (3 damage to it)?" % c.name + s.jam_words(o), [(1.6, "Yes, fire FINAL PROTECTIVE FIRES", fp), (0, "No", 0)]):
@@ -1165,7 +1242,7 @@ class Game:
             "E_FIREMISSION": 2.0 if (E(pred=lambda u: not u.c.air) and s.dist() <= s.R["tac_reach"]) else -1, "E_KILLBOX": 1.3 if o.units else 0.2,
             "E_GLIDE": 2.6, "E_DEPTH": 1.5 if s.dist() <= 2 else 0.4, "E_CLOAK": 1.0 if sum(u.dmg for u in p.units) >= 2 else -1, "E_FUSION": 1.0 if p.isr <= 6 else -1,
             "E_CODEBREAK": 1.8 if o.hand else 0.8, "E_PSYOP": 1.9, "E_GRID": 3.0, "E_FRAGO": 1.4 if myex else -1, "E_SYNC": 1.0 if p.mf else -1, "E_STOCKS": 1.3, "E_PREPO": 1.9 if any(x.cap and x.cost >= 4 for x in p.hand) else 1.0,
-            "E_DROP": 1.2 + 0.4 * len(myex), "E_SEAD": 2.0 if E(pred=lambda u: u.c.tags & {"DEFENSE", "AIR-DEFENSE", "SENSOR"}) else -1, "E_CRUISE": 2.4, "E_EYE": 1.4 + 0.7 * sum(1 for x in o.units if x.hidden) - (0.6 if p.isr >= 8 else 0), "E_DYNTGT": (2.0 if any(u.c.cls == "FIRES" for u in p.units if not u.hidden) else -1), "E_FASCAM": (2.1 if s.dist() <= 2 else 0.6), "E_BATTLEPOS": (1.9 if s.dist() <= 2 else 0.9), "E_DCO": 1.4, "E_COUNTERATK": (2.6 if s.contact() and sum(1 for u in o.front() if u.ex) >= 2 else -1), "E_INFOADV": 1.9, "E_NAVWAR": (2.2 if s.dist() >= 1 else 0.8), "E_NARR": 1.6, "E_MTC": (2.4 if s.dist() == 1 and any(not u.ex and not u.hidden and u.c.cls == "M2" and u.c.atk for u in p.units) else (1.0 if s.dist() >= 2 else -1)), "E_CONVERGE": 3.2,
+            "E_DROP": 1.2 + 0.4 * len(myex), "E_SEAD": 2.0 if E(pred=lambda u: u.c.tags & {"DEFENSE", "AIR-DEFENSE", "SENSOR"}) else -1, "E_CRUISE": 2.4, "E_EYE": 1.4 + 0.7 * sum(1 for x in o.units if x.hidden) - (0.6 if p.isr >= 8 else 0), "E_DYNTGT": (2.0 if any(u.c.cls == "FIRES" for u in p.units if not u.hidden) else -1), "E_FASCAM": (2.1 if s.dist() <= 2 else 0.6), "E_BATTLEPOS": (1.9 if s.dist() <= 2 else 0.9), "E_DCO": 1.4, "E_COUNTERATK": (2.6 if s.req_ok(p, c) else -1), "E_INFOADV": 1.9, "E_NAVWAR": (2.2 if s.dist() >= 1 else 0.8), "E_NARR": 1.6, "E_MTC": (2.4 if s.dist() == 1 and any(not u.ex and not u.hidden and u.c.cls == "M2" and u.c.atk for u in p.units) else (1.0 if s.dist() >= 2 else -1)), "E_CONVERGE": 3.2,
             "E_COMMS": (1.7 if len(o.hand) >= 2 else (0.6 if o.hand else -1)), "E_OVERLOAD": (1.6 if len(o.mf) <= 8 or s.cond(p, "E_WEARY") else 1.0) if (o.mf or o.discard) and not o.ie else -1, "E_COUNTERMAND": (1.2 + 0.25 * len(o.hand)) if len(o.hand) >= 3 and not o.ie else -1,
             "E_WEARY": (2.2 if len(o.mf) <= 9 and not o.ie else 1.0),
             "E_COLLAPSE": s.collapse_value(p), "E_CASCADE": s.cascade_value(p),
@@ -1377,7 +1454,7 @@ class Game:
             n = s.collapse_n(p); s.say("%s: the ISR gap is %d." % (c.name, p.isr - o.isr)); s.ev(p, "COLLAPSE %d" % n); p.isr = 0 if s.R["collapse_all"] else p.isr - n; s.lose_hf(o, n, c.name)
         elif k == "E_CASCADE":   # SYSTEMS CASCADE: n damage to each enemy Base that is out of Supply
             n = c.keys[k] - (2 if s.cond(o, "E_DCO") else 0)
-            if s.cond(o, "E_DCO"): s.say("DEFENSIVE CYBERSPACE OPERATIONS: the damage is reduced by 2.")
+            if s.cond(o, "E_DCO"): s.say("%s: the damage is reduced by 2." % s.track_card_name(o, "E_DCO"))
             for b in s.cascade_bases(p):
                 if n > 0 and s.winner is None: s.say("%s: %s has no Supply left to keep its systems up." % (c.name, b.name)); s.ev(p, "CASCADE HIT"); s.hit_base(o, b, n)
     def dig(s, p, n):
@@ -1420,7 +1497,7 @@ class Game:
             if K("A_SPOTLIGHT"):
                 tg = [x for x in o.units if not x.hidden and x.c.cap and not x.spot and (x.c.conc >= 2 or x.row == "R")]
                 if tg: opts.append((1.1 if any(not y.ex and y.c.atk and y.c.range != "Close" for y in p.units) else -0.5, "Use %s: spotlight an enemy card (Concealment 0, can be hit in the Rear Area)" % n, ("ab", u, "A_SPOTLIGHT")))
-            if K("A_SPOOF"): opts.append((1.0 + (0.5 if o.cls_units("INTEL", "C2") else 0) - (0.8 if o.isr == 0 else 0), "Use %s: the enemy loses 2 ISR; exhaust 1 enemy Intelligence or C2 card" % n, ("ab", u, "A_SPOOF")))
+            if K("A_SPOOF") and p.isr >= u.c.action_isr("SPOOF"): opts.append((1.0 + (0.5 if o.cls_units("INTEL", "C2") else 0) - (0.8 if o.isr == 0 else 0), "Use %s%s: the enemy loses 2 ISR; exhaust 1 enemy Intelligence or C2 card" % (n, s.isr_price(u.c.action_isr("SPOOF"))), ("ab", u, "A_SPOOF")))
             if K("A_INJECT") and p.isr >= 1: opts.append((1.0 + (0.5 if o.track or p.track else 0), "Use %s (1 ISR): move a Mission Track card 1 space; the enemy loses 2 ISR" % n, ("ab", u, "A_INJECT")))
             if K("A_HIJACK") and p.isr >= 1 and any(not x.hidden and (x.c.tags & {"DRONE", "ROBOT"}) and x.c.atk for x in o.units): opts.append((2.2, "Use %s (1 ISR): hijack an enemy DRONE or ROBOT to damage an enemy card" % n, ("ab", u, "A_HIJACK")))
             if K("A_MALWARE") and p.isr >= 1: opts.append((2.4, "Use %s (1 ISR): an enemy Base loses 2 Supply and %s" % (n, ("takes %d damage" % K("CYBER")) if K("CYBER") else ("the enemy loses %d Homefront" % K("A_MALWARE"))), ("ab", u, "A_MALWARE")))
@@ -1436,7 +1513,7 @@ class Game:
             if K("A_PARALYZE"):
                 tg = [x for x in o.units if not x.ex and not x.hidden and x.c.cap]
                 if tg: opts.append((1.2 + 0.5 * min(len(tg), K("A_PARALYZE")) + 0.15 * sum(sorted([x.c.atk for x in tg], reverse=True)[:K("A_PARALYZE")]), "Use %s: exhaust up to %d enemy cards" % (n, K("A_PARALYZE")), ("ab", u, "A_PARALYZE")))
-            if K("A_SITREP"): opts.append((0.9 + (0.6 if any(x.ex for x in p.units) else 0), "Use %s: draw 1 card and ready 1 other card" % n, ("ab", u, "A_SITREP")))
+            if K("A_SITREP"): opts.append((0.9 + (0.6 if s.sitrep_worth_it(p, u) else 0), "Use %s: draw 1 card and %s" % (n, s.sitrep_words()), ("ab", u, "A_SITREP")))
             if K("A_PIN") and p.isr >= s.R["pin_isr"]:
                 tg = [x for x in o.front() if not x.hidden and x.c.cap and not x.pin]
                 if tg: opts.append((0.9 + max(s.pin_value(x) for x in tg), "Use %s (%d ISR): PIN %d enemy Frontline card (exhausted; it does not ready at this Recovery)" % (n, s.R["pin_isr"], K("A_PIN")), ("ab", u, "A_PIN")))
@@ -1479,7 +1556,8 @@ class Game:
         elif k == "A_STRIKEPKG":
             for x in sorted([x for x in p.units if x.ex and not x.hidden and x.c.cls == "FIRES" and x.c.atk], key=lambda x: -x.c.atk)[:u.k("A_STRIKEPKG")]: x.ex = False; s.say("STRIKE PACKAGE:", x.c.name, "readies.")
         if k == "A_RIPOSTE":
-            for x in [x for x in o.front() if x.ex and not x.hidden and x.c.cap]: s.say("RIPOSTE:", x.c.name, "takes %d damage." % u.k("A_RIPOSTE")); s.hit_unit(o, x, u.k("A_RIPOSTE"))
+            printed_name = u.c.action_name("to each Exhausted enemy Frontline", "RIPOSTE")   # BREAK THE ASSAULT on the trial card
+            for x in [x for x in o.front() if x.ex and not x.hidden and x.c.cap]: s.say(printed_name + ":", x.c.name, "takes %d damage." % u.k("A_RIPOSTE")); s.hit_unit(o, x, u.k("A_RIPOSTE"))
         if k == "A_PARALYZE" and s.is_human(p):   # printed: "EXHAUST up to 2 enemy cards" (face-up, ready enemy Capabilities, as for the bot)
             pool = [x for x in o.units if not x.ex and not x.hidden and x.c.cap]
             for x in s.pick_upto(p, "paralyze", u.k("A_PARALYZE"), "PARALYSIS: exhaust up to %d enemy cards (%%d chosen)." % u.k("A_PARALYZE"), pool, lambda x: "Exhaust %s" % x.c.name, "Exhaust none"):
@@ -1525,16 +1603,17 @@ class Game:
             if t: t.spot = True; s.say(t.c.name, "is spotlighted.")
             if u.k("SPOT_ISR"): s.gain_isr(p, u.k("SPOT_ISR"))   # HIGH WATCH (RD-153 (4))
         elif k == "A_SPOOF":
-            s.gain_isr(o, -2); tg = [x for x in o.cls_units("INTEL", "C2") if not x.ex]
+            p.isr -= u.c.action_isr("SPOOF"); s.gain_isr(o, -2); tg = [x for x in o.cls_units("INTEL", "C2") if not x.ex]
             if tg and s.is_human(p) and len(tg) > 1: tg = [s.decide(p, "target", "SPOOF: exhaust which enemy Intelligence or C2 card?", [(0, "Exhaust %s" % x.c.name, x) for x in tg])]   # printed: "EXHAUST 1 enemy INTEL or C2 card"
             if tg: tg[0].ex = True; s.say(tg[0].c.name, "is exhausted.")
         elif k == "A_INJECT":
             p.isr -= 1; s.gain_isr(o, -2); et = [t for t in o.track if t["t"] < 3]; mt = [t for t in p.track if t["kind"] == "op" and t["t"] > 1]
             if s.is_human(p):   # printed: "ADVANCE or DELAY 1 track card by 1": every legal card and direction, on either side
-                ch = [(0, s.track_label(q, t, d), (t, d)) for q in (o, p) for t in q.track for d in (-1, 1) if d > 0 or t["t"] > 1]
+                ch = [(0, s.track_label(q, t, d), (t, d)) for q in (o, p) for t in q.track for d in (-1, 1) if d > 0 or t["t"] > 1 or s.R.get("inject_hhour", 0)]
                 if ch:
                     t, d = s.decide(p, "target", "INJECT: move which Mission Track card 1 round, and which way?", ch); t["t"] += d
                     s.say(s.who(o if t in o.track else p) + "'s", t["c"].name, "is %s 1 round." % ("delayed" if d > 0 else "advanced"))
+                    if t["t"] <= 0: s.advanced_to_h_hour(o if t in o.track else p, t)
             elif et: et[0]["t"] += 1; s.say(s.who(o) + "'s", et[0]["c"].name, "is delayed 1 round.")
             elif mt: mt[0]["t"] -= 1; s.say(mt[0]["c"].name, "is advanced 1 round.")
         elif k == "A_HIJACK":
@@ -1550,7 +1629,7 @@ class Game:
             if u.c.keys.get("CYBER"): s.raid(p, u.c.keys["CYBER"], u.c.name)
             else: s.lose_hf(o, u.c.keys["A_MALWARE"], u.c.name)
         elif k == "A_SITREP":
-            s.draw(p, 1); ex = [x for x in p.units if x.ex and x is not u and not x.hidden]
+            s.draw(p, 1); ex = s.sitrep_pool(p, u)
             if ex: x = s.decide(p, "target", "Ready which card?", [(s.unit_value(x) + x.c.atk, x.c.name, x) for x in ex]); x.ex = False
         elif k == "A_RETRANS":
             mt = [t for t in p.track if t["kind"] == "op" and t["t"] > 1]
@@ -1741,8 +1820,8 @@ class Game:
         if s.obstacle(l) and not w.fl.get("noobs"): s.say(s.who(l) + "'s", "OBSTACLE stops the pursuit."); return
         nw = s.cond(l, "E_NAVWAR")
         if nw and w.isr < s.R.get("navwar", 1): return
-        if s.is_human(w) and not s.decide(w, "maneuver", "The enemy has moved back. Pursue 1 Zone?" + (" The enemy's NAVIGATION WARFARE makes it cost %d ISR (you have %d)." % (s.R.get("navwar", 1), w.isr) if nw else ""), [(1, "Pursue 1 Zone" + (" (pay 2 ISR)" if nw else ""), 1), (0, "Stay", 0)]): return
-        if nw: w.isr -= s.R.get("navwar", 1); s.say(s.who(w), "pays %d ISR to pursue" % s.R.get("navwar", 1) + " under NAVIGATION WARFARE.")
+        if s.is_human(w) and not s.decide(w, "maneuver", "The enemy has moved back. Pursue 1 Zone?" + (" The enemy's %s makes it cost %d ISR (you have %d)." % (s.track_card_name(l, "E_NAVWAR"), s.R.get("navwar", 1), w.isr) if nw else ""), [(1, "Pursue 1 Zone" + (" (pay 2 ISR)" if nw else ""), 1), (0, "Stay", 0)]): return
+        if nw: w.isr -= s.R.get("navwar", 1); s.say(s.who(w), "pays %d ISR to pursue under %s." % (s.R.get("navwar", 1), s.track_card_name(l, "E_NAVWAR")))
         s.pos[w.i] += 1 if w.i == 0 else -1; s.say(s.who(w), "pursues 1 Zone." + (" The forces are in Contact." if s.contact() else ""))
     def maneuver(s, p):
         s.step_begins(5, p); mv = s.moves(p); lab = {0: "Hold position", 1: "Advance 1 Zone", 2: "Advance 2 Zones (SEIZE)", -1: "Fall back 1 Zone"}
@@ -1753,7 +1832,8 @@ class Game:
         if not m:
             p.fl["held"] = 1
             if s.cond(p, "E_BATTLEPOS"): s.say(s.who(p), "holds position: BATTLE POSITION gives +2 Frontline Strength this round.")
-        if m and m > 0 and s.cond(s.opp(p), "E_NAVWAR"): p.isr -= s.R.get("navwar", 1); s.say(s.who(p), "pays %d ISR to move under NAVIGATION WARFARE." % s.R.get("navwar", 1))
+        if m and m > 0 and s.cond(s.opp(p), "E_NAVWAR"):
+            p.isr -= s.R.get("navwar", 1); s.say(s.who(p), "pays %d ISR to move under %s." % (s.R.get("navwar", 1), s.track_card_name(s.opp(p), "E_NAVWAR")))
         if m: s.pos[p.i] += m if p.i == 0 else -m; s.say(s.who(p), "advances %d Zone%s." % (m, "" if m == 1 else "s") if m > 0 else "falls back 1 Zone.")
         if m and s.contact(): s.say("The forces are in Contact.")
         if m < 0: s.pursue(s.opp(p), p)
@@ -1784,34 +1864,42 @@ class Game:
             for t in list(p.track):
                 t["t"] -= 1
                 if t["t"] > 0: continue
-                p.track.remove(t); c = t["c"]
-                if t["kind"] == "inf":
-                    s.say("H-Hour:", s.who(p) + "'s", c.name, "completes its mission."); u = Unit(c, "R"); u.ex = True; u.dmg = t.get("dmg", 0)
-                    if s.table_room(p) > 0: p.units.append(u)
-                    else: p.hand.append(c); s.say("The table is full (%d of %d):" % (len(p.units), s.R["table_cap"]), c.name, "returns to hand instead.")   # trial table_cap (rules audit B2)
-                    op = t.get("op", "INF_PSYOP"); o = s.opp(p); s.ev(p, "H:" + op)
-                    if op == "INF_HIT":
-                        tg = [x for x in o.units if x.c.cap and (s.R.get("op_anydomain", 1) or "LAND" in x.c.tags)]
-                        if tg: x = s.mission_target(p, c, tg); s.say(c.name, "strikes", x.c.name if not x.hidden else "a Hidden card", "for %d damage." % t["n"]); s.hit_unit(o, x, t["n"])
-                    elif op == "INF_INTEL": s.gain_isr(p, t["n"]); s.draw(p, 1); s.say(c.name, "reports in: +%d ISR and a card." % t["n"])
-                    elif op == "INF_REVEAL":
-                        s.gain_isr(p, 2)
-                        for x in [x for x in o.units if x.hidden][:t["n"]]: s.reveal(o, x, forced=True)
-                    elif t.get("sab"): s.raid(p, t["sab"], c.name)
-                    else: s.lose_hf(o, t.get("n", 2), c.name)
-                    for _ in range(t.get("dis", 0)): s.cancel_track(o, c.name)
-                    s.grayzone(p, c)
-                    ot = [x for x in s.opp(p).track if x["t"] < 3]
-                    if ot and t.get("op", "INF_PSYOP") == "INF_PSYOP": ot[0]["t"] += 1
-                    continue
-                s.say("H-Hour:", s.who(p) + "'s", c.name, ("resolves." if t["kind"] == "op" else "ends.")); s.ev(p, "H:" + next(iter(c.keys)))
-                (p.ash if c.expend else p.discard).append(c); s.resolve(p, c); s.grayzone(p, c)
+                s.reach_h_hour(p, t)
         if s.R.get("ops_start_after_track", 0): s.start_of_operations_abilities(order)
         s.one_end()
         s.step_begins(7); passes = 0; i = 0; guard = 0
         while passes < 2 and guard < 80:
             guard += 1; p = order[i % 2]; i += 1
             passes = 0 if s.take_action(p) else passes + 1
+    def advanced_to_h_hour(s, owner, card_on_track):
+        """Rule inject_hhour 1: ADVANCE moved a card from space 1 to H-Hour, where it resolves at once; no one may react at H-Hour."""
+        action_in_hand = getattr(s, "act", None); s.one_act(None, hh=True)
+        s.say("It reaches H-Hour now."); s.reach_h_hour(owner, card_on_track)
+        s.act = action_in_hand   # the INJECT action goes on
+    def reach_h_hour(s, player, entry):
+        """A Mission Track card reaches H-Hour: it leaves the track and resolves (an Operator completes its mission)."""
+        player.track.remove(entry); c = entry["c"]
+        if entry["kind"] == "inf":
+            s.say("H-Hour:", s.who(player) + "'s", c.name, "completes its mission."); u = Unit(c, "R"); u.ex = True; u.dmg = entry.get("dmg", 0)
+            if s.table_room(player) > 0: player.units.append(u)
+            else: player.hand.append(c); s.say("The table is full (%d of %d):" % (len(player.units), s.R["table_cap"]), c.name, "returns to hand instead.")   # trial table_cap (rules audit B2)
+            op = entry.get("op", "INF_PSYOP"); o = s.opp(player); s.ev(player, "H:" + op)
+            if op == "INF_HIT":
+                tg = [x for x in o.units if x.c.cap and (s.R.get("op_anydomain", 1) or "LAND" in x.c.tags)]
+                if tg: x = s.mission_target(player, c, tg); s.say(c.name, "strikes", x.c.name if not x.hidden else "a Hidden card", "for %d damage." % entry["n"]); s.hit_unit(o, x, entry["n"])
+            elif op == "INF_INTEL": s.gain_isr(player, entry["n"]); s.draw(player, 1); s.say(c.name, "reports in: +%d ISR and a card." % entry["n"])
+            elif op == "INF_REVEAL":
+                s.gain_isr(player, 2)
+                for x in [x for x in o.units if x.hidden][:entry["n"]]: s.reveal(o, x, forced=True)
+            elif entry.get("sab"): s.raid(player, entry["sab"], c.name)
+            else: s.lose_hf(o, entry.get("n", 2), c.name)
+            for _ in range(entry.get("dis", 0)): s.cancel_track(o, c.name)
+            s.grayzone(player, c)
+            ot = [x for x in s.opp(player).track if x["t"] < 3]
+            if ot and entry.get("op", "INF_PSYOP") == "INF_PSYOP": ot[0]["t"] += 1
+            return
+        s.say("H-Hour:", s.who(player) + "'s", c.name, ("resolves." if entry["kind"] == "op" else "ends.")); s.ev(player, "H:" + next(iter(c.keys)))
+        (player.ash if c.expend else player.discard).append(c); s.resolve(player, c); s.grayzone(player, c)
     def start_of_operations_abilities(s, order):
         """BLACKOUT, "at the start of each Operations phase". As released, before the Mission Tracks move; with rule
         ops_start_after_track 1, after both tracks have moved (Rulebook 3.6.5, section 12; backlog F14)."""

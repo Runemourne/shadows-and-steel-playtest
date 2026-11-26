@@ -2007,7 +2007,7 @@ function forceTile(c, side) {
 function seg(key, opts) { return '<div class="seg2" data-set="' + key + '">' + opts.map(function (o) { return '<button data-v="' + esc(o[0]) + '" aria-pressed="' + (SET[key] === o[0]) + '">' + esc(o[1]) + "</button>"; }).join("") + "</div>"; }
 function setupBody(d) {
   var el = $("suBody"); if (!el) return;
-  var sc = SET.screen || "menu", bk = $("suBack"); if (bk) bk.hidden = sc === "menu"; var cv = $("cover"); if (cv) cv.dataset.screen = sc;
+  var sc = SET.screen || "menu", bk = $("suBack"); if (bk) { bk.hidden = sc === "menu"; var up = window.SSBack && window.SSBack.up(sc); bk.dataset.up = up ? up.go : "menu"; bk.textContent = up ? up.label : "‹ Main Menu"; }   /* package 16: Back goes up one level */ var cv = $("cover"); if (cv) cv.dataset.screen = sc;
   if (sc === "menu") return menuBody(el, d);
   if (sc === "about") return aboutBody(el, d);
   if (sc === "library") return libraryBody(el);
@@ -2030,7 +2030,7 @@ function setupBody(d) {
 /* v0.21 (WP8, spec 5.2; Menu, About and Briefing content pack v0.1, section 3): the Main Menu is one big action and four short ones.
    START BASIC TRAINING is the primary until training is done, then PLAY (with the last setup under it) and TRAINING joins the list.
    Each label's description is its accessible description; only the primary's is printed. */
-function buildTag(d) { return "Battlefield table v0.21.1 · TEST PAGE · Vertical slice · the printed rules with the rulings of 24 November: one Reaction to each action; Hits from an Effect respect the Frontline; you choose the targets of your own Effects; both sides draw and set their Force Posture together; a 2-Zone push off the home edge is Supremacy; the second player draws 1 more card · engine 23cff937 (commit 40255d7) · cards and decks v0.17.2 · staged 25 Nov 2026, 12:54 PM EST" + (d && d.version ? " · game " + d.version : "") + (d && d.cards ? " · " + d.cards : ""); }
+function buildTag(d) { return "Battlefield table v0.21.1 · TEST PAGE · Sprint 8 trial (reworked Concept decks) · the test page’s rules (24 November) with the Sprint 8 trial switches: SITREP readies a SUPPORT card; TACTICAL WITHDRAWAL’s Reaction holds the enemy; ADVANCE may reach H-Hour; RIPOSTE answers Close attacks only; BREAKTHROUGH also quiets RIPOSTE for the round; ELECTRONIC ATTACK is named as printed (trial cards and decks v0.5) · engine 142d3c29 (commit a8f5f21) · trial cards v0.5 and decks v0.5, Basic Training on cards and decks v0.17.2 · staged 25 Nov 2026, 11:59 PM EST" + (d && d.version ? " · game " + d.version : "") + (d && d.cards ? " · " + d.cards : ""); }
 /* v0.21 (checkers A): the lead edits notices.js by hand, so its data is checked once: lists that are not lists become empty, entries
    without a text id, title and body are dropped, and anything unusable hides the bell; the Main Menu never depends on it */
 (function () { try { var N = window.SS_NOTICES; if (!N || typeof N !== "object" || Array.isArray(N)) { window.SS_NOTICES = null; return; }
@@ -2148,7 +2148,7 @@ function showSetup() {
   }, function (e) { $("cover").style.display = "block"; $("cover").firstElementChild.innerHTML = "<h1 class='t'>Shadows &amp; Steel</h1><p class='lead'>The game engine did not start.</p><pre>" + esc(e.message) + "</pre>"; });
 }
 $("cover").addEventListener("click", function (e) {
-  var b = e.target.closest("button"); if (b && G.setupData && (b.dataset.go || b.id === "suBack" || b.id === "suReps")) { var go = b.id === "suBack" ? "menu" : b.id === "suReps" ? "replays" : b.dataset.go; SFX.select && SFX.select();
+  var b = e.target.closest("button"); if (b && G.setupData && (b.dataset.go || b.id === "suBack" || b.id === "suReps")) { var go = b.id === "suBack" ? (b.dataset.up || "menu") : b.id === "suReps" ? "replays" : b.dataset.go; SFX.select && SFX.select();
     if (go === "settings") return showSettings(); if (go === "train") SET.mode = "train"; else if (go === "play" && SET.mode !== "watch") SET.mode = "bot"; else if (go === "replays") SET.mode = "replays";
     SET.screen = go; setupBody(G.setupData); try { (go === "menu" ? document.querySelector("#suBody .mprim") : $("suBack")).focus({ preventScroll: true }); } catch (x) { } return; }   // v0.21 (WP8): one screen at a time; Back returns to the Main Menu
   if (b && b.id === "nBell") return showNotices(!$("notices")); if (b && b.id === "nClose") return showNotices(false);
@@ -2166,7 +2166,7 @@ $("cover").addEventListener("click", function (e) {
     api("/play/start", SET.mode === "train" ? { tutorial: "basic" } : Object.assign(tset, { build: "", seed: SET.seed || "", spectate: SET.mode === "watch" ? "1" : "", you: SET.you, bot: SET.bot, terrain: SET.terrain, first: SET.first, concepts: "0", forced_discard: SET.fd, instant_end: SET.end }))
       .then(function () { $("cover").style.display = "none"; reset(); fit(); MUS.on = true; return poll(); }, function (e) { b.disabled = false; b.textContent = "Start the game"; $("serr").textContent = e.message; }); }
 });
-addEventListener("keydown", function (e) { if (e.key !== "Escape" || !G.setupData || $("cover").style.display === "none" || !SET.screen || SET.screen === "menu") return;   /* v0.21 (checkers): Esc goes back one screen from Play, Training, Library and About too */
+addEventListener("keydown", function (e) { if (e.key !== "Escape" || e.defaultPrevented || !G.setupData || $("cover").style.display === "none" || !SET.screen || SET.screen === "menu") return;   /* v0.21 (checkers): Esc goes back one screen from Play, Training, Library and About too */
   var open = ["settings", "lib", "fm", "piles", "notice", "send"].some(function (id) { var x = $(id); return x && x.style.display && x.style.display !== "none"; }); if (open) return; var bk = $("suBack"); if (bk && !bk.hidden) { e.preventDefault(); bk.click(); } });
 window.addEventListener("resize", function () { var m = $("suMap"); if (m && $("cover").style.display !== "none") { m.dataset.done = ""; contourMap(m); } });
 

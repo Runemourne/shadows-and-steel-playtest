@@ -1,0 +1,18 @@
+/* Sprint 7, package 16 (owner: number 40): the picture that opens a mission's order. Composition only; type from tokens.css.
+   Its height: 200 px on a wide screen, 150 px on a phone held upright, 80 px on a short screen (the title, the first line of the
+   SITUATION and START THE MISSION stay in sight with it). SVG text is drawn at the screen's own pixels: 16 px at the least. */
+#s7ops .s7pic{position:relative;margin:4px 0 6px;height:150px;overflow:hidden;border:1px solid var(--ss-color-control-boundary,#75858D);background:#1b1f1d}
+#s7ops .s7pic svg{display:block;width:100%;height:100%}
+#s7ops .s7pic text{font-family:var(--ss-type-control-family);font-weight:700;font-size:16px;letter-spacing:.04em;fill:var(--ss-color-text-primary,#E8EDE8);
+  paint-order:stroke;stroke:#0c1215;stroke-width:4px;stroke-linejoin:round}
+#s7ops .s7pic text.fr{fill:#9cc8e2}#s7ops .s7pic text.ho{fill:#eba08f}
+@media (min-width:600px){#s7ops .s7pic{height:200px}}
+@media (max-height:520px){
+  #s7ops .s7pic{height:80px;margin:2px 0 4px}
+  #s7ops .s7in{padding-top:6px}
+  #s7ops .s7back{margin-bottom:4px}
+  #s7ops .s7oh{padding-bottom:4px;margin-bottom:4px}
+  #s7ops .s7oh p{margin-bottom:2px}
+  #s7ops .s7oh .s7t{font-size:calc(24px * var(--tsz,1));margin-bottom:2px}
+  #s7ops .s7o > li:first-child > h3{margin-top:4px;margin-bottom:2px}
+}

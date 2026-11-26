@@ -1,0 +1,7 @@
+/* Sprint 8, package 7d (ui-frontend, number 50): the Card library's filters on a short screen (page/50_library_short.js). Composition
+   only; the rows keep the look the game gives them inside the header. */
+#lib .s8lf{padding:0 0 8px;border-bottom:1px solid var(--line)}
+#lib .s8lf .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+#lib:has(#s8LibF){scroll-padding-top:120px}
+/* with the filters out, the fixed header also covers the Library's 12 px top padding, so no card or filter shows above the title */
+#lib:has(#s8LibF) .lh{top:-12px;margin-top:-12px;padding-top:12px}

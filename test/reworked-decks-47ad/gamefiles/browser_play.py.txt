@@ -704,7 +704,7 @@ def handle(path, body="{}"):
 #     instant_end is dropped, so the Play screen's "The game ends: the instant a condition is met" cannot override them;
 #     a switch the engine does not know yet is passed through as it is (the engine reads only the switches it knows);
 #   - info["slice"]: the build record (label, name, rules line, rules, engine sha256 and commit); info["as_printed"].
-SLICE = json.loads('{"as_printed": true, "cards": "SS_Merged_Cards_v0.17.2.csv", "decks": "SS_Merged_Decks_v0.17.2.csv", "engine": {"branch_head": "21011d0", "commit": "40255d7", "path": "03. Beta 3.5 (Current Development)/L. Merged Baseline (3.5 + Gemini)/merged_engine.py", "sha256": "23cff937aff8827d42bd8c1a01b2a41e4d3c4ff013b40cc1a150134ac0210241"}, "label": "TEST PAGE \\u00b7 Vertical slice \\u00b7 the printed rules with the rulings of 24 November: one Reaction to each action; Hits from an Effect respect the Frontline; you choose the targets of your own Effects; both sides draw and set their Force Posture together; a 2-Zone push off the home edge is Supremacy; the second player draws 1 more card \\u00b7 engine 23cff937 (commit 40255d7) \\u00b7 cards and decks v0.17.2 \\u00b7 staged 25 Nov 2026, 12:54 PM EST", "lanes": {"page_css": ["10_table.css", "20_moments.css", "30_ops.css"], "page_js": ["00_hooks.js", "10_enemy.js", "20_moments.js", "30_ops.js"], "patches": ["patches_00_hooks.py", "patches_10_table.py", "patches_20_moments.py"], "session": ["00_slice.py", "10_steps.py", "20_engine.py"]}, "name": "Vertical slice", "rules": {"as_printed": 1, "command_together": 1, "hits_frontline": 1, "ops_start_after_track": 1, "person_targets": 1, "plan_copies": 1, "push_off_edge": 1, "start_bonus": 1}, "rules_line": "the printed rules with the rulings of 24 November: one Reaction to each action; Hits from an Effect respect the Frontline; you choose the targets of your own Effects; both sides draw and set their Force Posture together; a 2-Zone push off the home edge is Supremacy; the second player draws 1 more card", "rules_not_in_engine_defaults": ["as_printed", "command_together", "hits_frontline", "ops_start_after_track", "person_targets", "plan_copies", "push_off_edge", "start_bonus"]}')
+SLICE = json.loads('{"as_printed": true, "cards": "SS_Merged_Cards_v0.17.2.csv", "decks": "SS_Merged_Decks_v0.17.2.csv", "engine": {"branch_head": "fb41878", "commit": "a8f5f21", "path": "03. Beta 3.5 (Current Development)/L. Merged Baseline (3.5 + Gemini)/merged_engine.py", "sha256": "142d3c29551e944546093c6a5fba70aa5f0b0cdc45e34a43714271fa002e7258"}, "label": "TEST PAGE \\u00b7 Sprint 8 trial (reworked Concept decks) \\u00b7 the test page\\u2019s rules (24 November) with the Sprint 8 trial switches: SITREP readies a SUPPORT card; TACTICAL WITHDRAWAL\\u2019s Reaction holds the enemy; ADVANCE may reach H-Hour; RIPOSTE answers Close attacks only; BREAKTHROUGH also quiets RIPOSTE for the round; ELECTRONIC ATTACK is named as printed (trial cards and decks v0.5) \\u00b7 engine 142d3c29 (commit a8f5f21) \\u00b7 trial cards v0.5 and decks v0.5, Basic Training on cards and decks v0.17.2 \\u00b7 staged 25 Nov 2026, 11:59 PM EST", "lanes": {"page_css": ["10_table.css", "20_moments.css", "30_ops.css", "40_brief.css", "50_library_short.css", "50_trial.css", "60_provision.css"], "page_js": ["00_hooks.js", "10_enemy.js", "20_moments.js", "30_ops.js", "40_brief.js", "40_nav.js", "50_library_short.js", "50_trial.js", "60_provision.js"], "patches": ["patches_00_hooks.py", "patches_10_table.py", "patches_20_moments.py", "patches_40_nav.py", "patches_50_art.py"], "session": ["00_slice.py", "10_steps.py", "20_engine.py", "50_trial.py", "60_provision.py"]}, "name": "Sprint 8 trial (reworked Concept decks)", "rules": {"as_printed": 1, "break_riposte": 1, "command_together": 1, "hits_frontline": 1, "inject_hhour": 1, "jam_card_name": 1, "ops_start_after_track": 1, "person_targets": 1, "plan_copies": 1, "push_off_edge": 1, "riposte_close": 1, "sitrep_support": 1, "start_bonus": 1, "tw_react": 1}, "rules_line": "the test page\\u2019s rules (24 November) with the Sprint 8 trial switches: SITREP readies a SUPPORT card; TACTICAL WITHDRAWAL\\u2019s Reaction holds the enemy; ADVANCE may reach H-Hour; RIPOSTE answers Close attacks only; BREAKTHROUGH also quiets RIPOSTE for the round; ELECTRONIC ATTACK is named as printed (trial cards and decks v0.5)", "rules_not_in_engine_defaults": ["as_printed", "break_riposte", "command_together", "hits_frontline", "inject_hhour", "jam_card_name", "ops_start_after_track", "person_targets", "plan_copies", "push_off_edge", "riposte_close", "sitrep_support", "start_bonus", "tw_react"], "trial": {"cards": "SS_Merged_Cards_v0.17.2_TEST_s8_trial_v0.5.csv", "cards_count": 92, "cards_version": "0.5", "concepts": ["BULWARK", "KILL CHAIN", "SPEARHEAD", "SPECTRUM"], "decks": "SS_Merged_Decks_v0.17.2_TEST_s8_trial_v0.5.csv", "decks_version": "0.5", "key": "trial", "label": "Trial cards v0.5, decks v0.5", "sources": {"cards": "docs/plans/sprint8_rework/trial/SS_Merged_Cards_v0.17.2_TEST_s8_trial_v0.5.csv", "cards_sha256": "8913a761154bd4c068097d0021f79b993c13221eab741a0ac3b09ffd8b10c808", "decks": "docs/plans/sprint8_rework/trial/SS_Merged_Decks_v0.17.2_TEST_s8_trial_v0.5.csv", "decks_sha256": "ce56eb118a9d7fa878e1b17d2dc44231e207c51f6550941bbfb0917761452b14"}}}')
 SLICE_RULES = dict(SLICE.get("rules") or {})
 
 _slice_released_init, _slice_released_run = Session.__init__, Session.run
@@ -880,3 +880,79 @@ def why_hand(g, p, kind, labels):
         if kind != "deploy" and not card.cap and hasattr(g, "no_legal_target") and g.no_legal_target(p, card):
             notes[card.name] = "%s has no legal target: no enemy card it may hit can be targeted now." % card.name
     return notes
+
+
+# ===== session/50_trial.py =====
+# ---------------------------------------------------------------------------------------------------------------------------
+# Sprint 8, package 7 (ui-frontend): the test page plays a trial's cards and decks. stage.py appends this file only when it is
+# given --cards and --decks (the files numbered 50 are the trial's), after 00_slice.py, so SLICE["trial"] names the two files.
+# The Sprint 4 trial page's way, reused: one more build, first in the list, so the Play screen, the campaign, watched games and the
+# Card Library use it; Basic Training keeps the released build "merged" (cards and decks v0.17.2). No rule is changed here: the
+# rule switches come from the rules file, through 00_slice.py, as before. Adds to the trial build's glossary the one keyword its
+# cards print that the page's glossary lacks (RIPOSTE, an Ability). Reads the game, never writes it. Python 3.8 or later, and Pyodide.
+# ---------------------------------------------------------------------------------------------------------------------------
+S8_TRIAL = SLICE.get("trial") or None
+
+if S8_TRIAL:
+    VERSION = VERSION + "+s8-trial-page-0.1"
+    S8_KEY = S8_TRIAL["key"]
+    S8_GLOSSARY = [  # [term, pattern, meaning, kind]: the meaning is the printed line's own rule, in the glossary's words
+        ["RIPOSTE", "\\bRIPOSTE \\d", "An Ability: it works even while this card is Exhausted. After an enemy unit makes a Close attack on your Frontline, that unit takes that much damage. Only your highest RIPOSTE counts.", "keyword"]]
+
+    _s8_builds = builds
+    def builds():
+        """The trial build first (a game the page starts without naming a build plays the first one), then the released one."""
+        out = []
+        if os.path.isfile(os.path.join(E.HERE, S8_TRIAL["cards"])) and os.path.isfile(os.path.join(E.HERE, S8_TRIAL["decks"])):
+            out.append(dict(key=S8_KEY, label=S8_TRIAL["label"], cards=S8_TRIAL["cards"], decks=S8_TRIAL["decks"]))
+        return out + [b for b in _s8_builds() if b["key"] != S8_KEY]
+
+    _s8_init = Session.__init__
+    def _s8_session_init(self, b):
+        """Every game but Basic Training plays the trial build; Basic Training plays the released build (its script names released cards)."""
+        if b.get("tutorial"): b = dict(b, build="merged")
+        elif not b.get("build"): b = dict(b, build=S8_KEY)
+        _s8_init(self, b)
+        self.info["trial"] = dict(on=self.build["key"] == S8_KEY, label=S8_TRIAL["label"], cards_version=S8_TRIAL["cards_version"], decks_version=S8_TRIAL["decks_version"])
+    Session.__init__ = _s8_session_init
+
+    _s8_setup = setup
+    def setup():
+        out = _s8_setup()
+        for b in out.get("builds") or []:
+            if b.get("key") == S8_KEY:
+                have = set(x[0] for x in b.get("glossary") or [])
+                b["glossary"] = list(b.get("glossary") or []) + [x for x in S8_GLOSSARY if x[0] not in have]
+                b["trial"] = dict(label=S8_TRIAL["label"], cards_version=S8_TRIAL["cards_version"], decks_version=S8_TRIAL["decks_version"])
+        return out
+
+
+# ===== session/60_provision.py =====
+# ---------------------------------------------------------------------------------------------------------------------------
+# Sprint 8, package 7b (ui-frontend): a balance provision (RD-207 item 5) in the game's own record. The page (page/60_provision.js)
+# puts the provision's scenario on the start request, and its words and decks as "provision"; this file keeps the words and decks in
+# the game's info (so the ☰ menu and a saved replay carry them) and in its record. It changes no rule: the scenario itself is the
+# engine lane's (session/20_engine.py). Only a game that has a scenario keeps a provision; Basic Training never does.
+_provision_released_init, _provision_released_record = Session.__init__, Session.record
+
+
+def _provision_from(b):
+    pv = b.get("provision")
+    if not isinstance(pv, dict) or not b.get("scenario") or b.get("tutorial"): return None
+    decks = [str(d) for d in (pv.get("decks") or [])][:2]
+    return dict(id=str(pv.get("id") or ""), decks=decks, words=str(pv.get("words") or ""))
+
+
+def _provision_init(self, b):
+    _provision_released_init(self, b)
+    self.provision = _provision_from(b)
+    self.info["provision"] = self.provision
+
+
+def _provision_record(self):
+    rec = _provision_released_record(self)
+    if getattr(self, "provision", None): rec["provision"] = dict(self.provision, scenario=getattr(self, "scenario", None))
+    return rec
+
+
+Session.__init__, Session.record = _provision_init, _provision_record

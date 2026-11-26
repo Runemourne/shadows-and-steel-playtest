@@ -41,11 +41,11 @@
   // ---- the overlay that holds the operation screen and the orders ----
   function layer() { var el = $("s7ops"); if (!el) { el = document.createElement("div"); el.id = "s7ops"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.hidden = true; document.body.appendChild(el); el.addEventListener("click", onClick); } return el; }
   function close() { var el = $("s7ops"); if (el) { el.hidden = true; el.innerHTML = ""; } }
-  function backWord() { var b = $("suBack"); return b ? b.textContent : "‹"; }
+  function backWord() { var b = $("suBack"); return b && (!b.dataset.up || b.dataset.up === "menu") ? b.textContent : "‹ Main Menu"; }   // the page's own Main Menu button
   function show(html, label, focusSel) { var el = layer(); el.innerHTML = html; el.setAttribute("aria-label", label || ""); el.hidden = false;
     var sc = el.querySelector(".s7scroll"); if (sc) sc.scrollTop = 0; try { (el.querySelector(focusSel || "button") || el).focus({ preventScroll: true }); } catch (e) { } }
 
-  function forces(m) { return '<p class="s7f"><span class="fr"><i aria-hidden="true">▲</i> ' + esc(m.you) + " <small>" + esc(lab("you")) + '</small></span> <span class="ho"><i aria-hidden="true">◆</i> ' + esc(m.bot) + " <small>" + esc(lab("bot")) + "</small></span></p>"; }
+  function forces(m) { return '<p class="s7f"><span class="fr"><i aria-hidden="true">■</i> ' + esc(m.you) + " <small>" + esc(lab("you")) + '</small></span> <span class="ho"><i aria-hidden="true">◆</i> ' + esc(m.bot) + " <small>" + esc(lab("bot")) + "</small></span></p>"; }
   function headLine(m) { return esc(lab("mission")) + " " + esc(m.number) + ": " + esc(m.title); }
 
   function showOperation() {
@@ -63,12 +63,17 @@
     var opt = function (k, cls) { return '<li><button class="s7m s7c ' + cls + '" data-s7="' + k + '" aria-labelledby="s7c_' + k + '" aria-describedby="s7cl_' + k + '"><span class="s7mb"><b id="s7c_' + k + '">' + esc(copy(k)) + '</b><span id="s7cl_' + k + '">' + esc(copy(k + "_line")) + '</span></span><i class="s7go" aria-hidden="true">→</i></button></li>'; };
     show('<div class="s7scroll"><div class="s7in s7play"><button class="ghost s7back" data-s7="menu" data-f="play">' + esc(backWord()) + "</button>" +
       '<h2 class="s7t" id="s7h">' + esc(copy("play_title")) + '</h2><ul class="s7ms" aria-labelledby="s7h">' + opt("campaign", "ready") + opt("skirmish", "") + "</ul></div></div>", copy("play_title"), "[data-s7=campaign]"); }
+  // package 16: the Play screen (SKIRMISH) goes back to PLAY's choice, one level up, and its Back says so (copy.play_back)
+  function backUp(sc) { return sc === "play" && OP && copy("play_back") ? { go: "s7play", label: copy("play_back") } : null; }
+  function toPlay() { var host = $("suBody"), t = document.createElement("button"); if (!host) return; t.dataset.go = "menu"; t.hidden = true; host.appendChild(t); t.click(); if (t.parentNode) t.remove();
+    showPlay(); try { var sk = document.querySelector("#s7ops [data-s7=skirmish]"); if (sk) sk.focus({ preventScroll: true }); } catch (x) { } }
   function playButton() { return document.querySelector("#suBody [data-go=play]"); }
   function openSkirmish() { var host = $("suBody"), t = document.createElement("button"); if (!host) return; close();
     t.dataset.go = "play"; t.dataset.s7pass = "1"; t.hidden = true; host.appendChild(t); t.click(); if (t.parentNode) t.remove(); }   // the cover's own handler draws its Play screen, as from the old PLAY
 
   function orderBody(m) {
     var o = m.order || {}, h = '<header class="s7oh"><p>' + esc(OP.name) + '</p><h2 class="s7t" id="s7h">' + headLine(m) + '</h2><p>' + esc(m.place) + "</p>" + forces(m) + "</header>";
+    if (m.picture && window.S7Picture) h += window.S7Picture.figure(m);   // package 16: the mission's picture above the SITUATION (40_brief.js)
     if (m.handicap && String(m.handicap).trim()) h += '<div class="s7hc" role="note"><i aria-hidden="true">⚠</i><p>' + esc(m.handicap) + "</p></div>";
     // the commander's intent opens paragraph 3, as an operation order carries it
     h += '<ol class="s7o">' + PARAS.map(function (k, i) { var intent = k === "execution" && m.intent ? '<div class="s7int"><h4>' + esc(lab("intent")) + "</h4>" + paras(m.intent) + "</div>" : "";
@@ -121,6 +126,7 @@
     if (a === "start" && m) return startMission(m); }
 
   document.addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b || !OP) return;
+    if (b.id === "suBack" && b.dataset.up === "s7play") { e.stopPropagation(); return toPlay(); }
     if (b.id === "s7Op") { e.stopPropagation(); FROM_PLAY = false; return showOperation(); }
     if (b.dataset.go === "play" && !b.dataset.s7pass && b.closest("#suBody")) { e.stopPropagation(); return showPlay(); }
     if (b.id === "s7Orders") { e.stopPropagation(); var mn = $("menu"); if (mn) mn.hidden = true; return showOrdersInGame(); }
@@ -183,5 +189,5 @@
     out.order = o; out.endings = e; return out; }
   fetch("campaign/operation.json").then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) { j.missions = (j.missions || []).map(withEnemy); OP = j;
     var el = document.querySelector("#suBody nav.mm"); if (el) menuHook({ el: $("suBody") }); }, function () { OP = null; });
-  window.S7OPS = { withEnemy: withEnemy, resultKey: resultKey, resultName: resultName, progress: progress, op: function () { return OP; }, current: function () { return CUR; }, key: KEY };
+  window.S7OPS = { withEnemy: withEnemy, resultKey: resultKey, resultName: resultName, progress: progress, op: function () { return OP; }, current: function () { return CUR; }, key: KEY, backUp: backUp, copy: copy, byId: byId };
 })();
