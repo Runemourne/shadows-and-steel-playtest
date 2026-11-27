@@ -9,3 +9,6 @@
   border:1px solid rgba(216,182,106,.6);background:#111D1F;color:#D8B66A;font:600 max(16px,calc(16px * min(var(--ts),1.4)))/1.2 Barlow,system-ui,sans-serif;
   text-transform:none;letter-spacing:.02em;white-space:nowrap}
 #prompt.more .pfoot.pmr .pmore,html.ph #prompt.more .pfoot.pmr .pmore,html.ph:not(.tut) #bot:has(#hand.open) #prompt.more .pfoot.pmr .pmore{visibility:visible}
+/* Sprint 9: when the answers wrap to two rows, More sits at the right end of the FIRST row only (page/50_r2_play.js, placeMore), so the
+   rows below keep the whole width and More never costs a row of its own. */
+#prompt .pfoot.pmr .btns>.pmore.pin1,html.ph #prompt .pfoot.pmr .btns>.pmore.pin1,html.ph:not(.tut) #bot:has(#hand.open) #prompt .pfoot.pmr .btns>.pmore.pin1{order:0;margin:0 0 0 auto!important;align-self:stretch}

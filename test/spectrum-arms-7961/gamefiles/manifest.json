@@ -5,16 +5,16 @@
   "basic_training.json",
   "browser_play.py",
   "merged_engine.py",
-  "SS_Merged_Cards_v0.17.2_TEST_s8_trial_v0.7.csv",
-  "SS_Merged_Decks_v0.17.2_TEST_s8_trial_v0.7.csv"
+  "SS_Merged_Cards_v0.17.2_TEST_s9_trial_v0.9.csv",
+  "SS_Merged_Decks_v0.17.2_TEST_s9_trial_v0.9.csv"
  ],
  "cards": "SS_Merged_Cards_v0.17.2.csv",
  "decks": "SS_Merged_Decks_v0.17.2.csv",
  "builds": [
   {
    "key": "trial",
-   "cards": "SS_Merged_Cards_v0.17.2_TEST_s8_trial_v0.7.csv",
-   "decks": "SS_Merged_Decks_v0.17.2_TEST_s8_trial_v0.7.csv"
+   "cards": "SS_Merged_Cards_v0.17.2_TEST_s9_trial_v0.9.csv",
+   "decks": "SS_Merged_Decks_v0.17.2_TEST_s9_trial_v0.9.csv"
   },
   {
    "key": "merged",
@@ -22,21 +22,21 @@
    "decks": "SS_Merged_Decks_v0.17.2.csv"
   }
  ],
- "built": "26 Nov 2026, 2:06 PM EST",
- "engine": "03. Beta 3.5 (Current Development)/L. Merged Baseline (3.5 + Gemini)/merged_engine.py @ 8e0d43a",
+ "built": "27 Nov 2026, 2:16 PM EST",
+ "engine": "03. Beta 3.5 (Current Development)/L. Merged Baseline (3.5 + Gemini)/merged_engine.py @ 8e0d43a3",
  "sha256": {
   "SS_Merged_Cards_v0.17.2.csv": "481f4add46c541c91be0738c9f40eb0fc649733c5c97b51aba353abd8c184946",
   "SS_Merged_Decks_v0.17.2.csv": "14cf2673123ecae909af1dc10fd67b8e33db2be4515fec5eaa55f2e054431a1b",
   "basic_training.json": "ff24d7b26b2336b3711fc40b1fabe43a5ff9904629ecafd21c97e3875bf61fc4",
-  "browser_play.py": "e578dd6fdc6da634626fce5eda103fb6ec56342ca07d1c87f9e608da6e490ad0",
+  "browser_play.py": "f1c27bbd542364c035bd00fd8b690ae896f5051fbadba01f1eb2eccdd4151e20",
   "merged_engine.py": "0ceb4bb8b25cc6dd63e107c9b4810ddcf2bb9bca73c53715780a6da0b03273f0",
-  "SS_Merged_Cards_v0.17.2_TEST_s8_trial_v0.7.csv": "61ce0af911209a49c701ffe0fd8d5906a725600b02d6afe471ce9a04f7b52349",
-  "SS_Merged_Decks_v0.17.2_TEST_s8_trial_v0.7.csv": "16ae29e1751afab6eb278d5088f0bceaa3a5c2c3def4bac4460ae8f3793f3dce"
+  "SS_Merged_Cards_v0.17.2_TEST_s9_trial_v0.9.csv": "8b6152ba16cb3ab21ec45dbacd89b19693cc4c6f5d0b1ab7217d735b97973a69",
+  "SS_Merged_Decks_v0.17.2_TEST_s9_trial_v0.9.csv": "3daa3c71dff780df988dfbc3c872c2877036233e7896062e8c9fa961574354c7"
  },
  "slice_page": {
-  "label": "TEST PAGE \u00b7 Sprint 8 trial (reworked Concept decks) \u00b7 the test page\u2019s rules (24 November) with the Sprint 8 trial switches: SITREP readies a SUPPORT card; TACTICAL WITHDRAWAL\u2019s Reaction holds the enemy; ADVANCE may reach H-Hour; RIPOSTE answers Close attacks only; BREAKTHROUGH also quiets RIPOSTE for the round; ELECTRONIC ATTACK is named as printed (trial cards and decks v0.7) \u00b7 engine 0ceb4bb8 (commit 8e0d43a) \u00b7 trial cards v0.7 and decks v0.7, Basic Training on cards and decks v0.17.2 \u00b7 staged 26 Nov 2026, 2:06 PM EST",
-  "name": "Sprint 8 trial (reworked Concept decks)",
-  "rules_line": "the test page\u2019s rules (24 November) with the Sprint 8 trial switches: SITREP readies a SUPPORT card; TACTICAL WITHDRAWAL\u2019s Reaction holds the enemy; ADVANCE may reach H-Hour; RIPOSTE answers Close attacks only; BREAKTHROUGH also quiets RIPOSTE for the round; ELECTRONIC ATTACK is named as printed (trial cards and decks v0.7)",
+  "label": "TEST PAGE \u00b7 Sprint 9 trial (SPECTRUM combined arms) \u00b7 the Sprint 8 trial rules, unchanged (no new switch): SITREP readies a SUPPORT card; TACTICAL WITHDRAWAL\u2019s Reaction holds the enemy; ADVANCE may reach H-Hour; RIPOSTE answers Close attacks only; BREAKTHROUGH also quiets RIPOSTE for the round; ELECTRONIC ATTACK is named as printed (trial cards and decks v0.9) \u00b7 engine 0ceb4bb8 (commit 8e0d43a3) \u00b7 trial cards v0.9 and decks v0.9, Basic Training on cards and decks v0.17.2 \u00b7 staged 27 Nov 2026, 2:16 PM EST",
+  "name": "Sprint 9 trial (SPECTRUM combined arms)",
+  "rules_line": "the Sprint 8 trial rules, unchanged (no new switch): SITREP readies a SUPPORT card; TACTICAL WITHDRAWAL\u2019s Reaction holds the enemy; ADVANCE may reach H-Hour; RIPOSTE answers Close attacks only; BREAKTHROUGH also quiets RIPOSTE for the round; ELECTRONIC ATTACK is named as printed (trial cards and decks v0.9)",
   "rules": {
    "as_printed": 1,
    "hits_frontline": 1,
@@ -73,8 +73,8 @@
   "engine": {
    "path": "03. Beta 3.5 (Current Development)/L. Merged Baseline (3.5 + Gemini)/merged_engine.py",
    "sha256": "0ceb4bb8b25cc6dd63e107c9b4810ddcf2bb9bca73c53715780a6da0b03273f0",
-   "commit": "8e0d43a",
-   "branch_head": "af10f4c"
+   "commit": "8e0d43a3",
+   "branch_head": "3f8c41ff"
   },
   "cards": "SS_Merged_Cards_v0.17.2.csv",
   "decks": "SS_Merged_Decks_v0.17.2.csv",
@@ -91,6 +91,7 @@
     "00_slice.py",
     "10_steps.py",
     "20_engine.py",
+    "50_mission.py",
     "50_trial.py",
     "60_provision.py"
    ],
@@ -102,6 +103,7 @@
     "40_brief.js",
     "40_nav.js",
     "50_library_short.js",
+    "50_mission.js",
     "50_r2_play.js",
     "50_trial.js",
     "60_provision.js"
@@ -119,23 +121,23 @@
   },
   "trial": {
    "key": "trial",
-   "cards": "SS_Merged_Cards_v0.17.2_TEST_s8_trial_v0.7.csv",
-   "decks": "SS_Merged_Decks_v0.17.2_TEST_s8_trial_v0.7.csv",
-   "cards_version": "0.7",
-   "decks_version": "0.7",
+   "cards": "SS_Merged_Cards_v0.17.2_TEST_s9_trial_v0.9.csv",
+   "decks": "SS_Merged_Decks_v0.17.2_TEST_s9_trial_v0.9.csv",
+   "cards_version": "0.9",
+   "decks_version": "0.9",
    "concepts": [
     "BULWARK",
     "KILL CHAIN",
     "SPEARHEAD",
     "SPECTRUM"
    ],
-   "cards_count": 93,
-   "label": "Trial cards v0.7, decks v0.7",
+   "cards_count": 96,
+   "label": "Trial cards v0.9, decks v0.9",
    "sources": {
-    "cards": "docs/plans/sprint8_rework/trial/SS_Merged_Cards_v0.17.2_TEST_s8_trial_v0.7.csv",
-    "decks": "docs/plans/sprint8_rework/trial/SS_Merged_Decks_v0.17.2_TEST_s8_trial_v0.7.csv",
-    "cards_sha256": "61ce0af911209a49c701ffe0fd8d5906a725600b02d6afe471ce9a04f7b52349",
-    "decks_sha256": "16ae29e1751afab6eb278d5088f0bceaa3a5c2c3def4bac4460ae8f3793f3dce"
+    "cards": "docs/plans/sprint9/trial/SS_Merged_Cards_v0.17.2_TEST_s9_trial_v0.9.csv",
+    "decks": "docs/plans/sprint9/trial/SS_Merged_Decks_v0.17.2_TEST_s9_trial_v0.9.csv",
+    "cards_sha256": "8b6152ba16cb3ab21ec45dbacd89b19693cc4c6f5d0b1ab7217d735b97973a69",
+    "decks_sha256": "3daa3c71dff780df988dfbc3c872c2877036233e7896062e8c9fa961574354c7"
    }
   }
  }

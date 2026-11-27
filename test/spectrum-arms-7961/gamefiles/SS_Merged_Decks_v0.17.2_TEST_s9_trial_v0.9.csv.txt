@@ -70,25 +70,27 @@ BULWARK,Stormwatch,Main Force,WRENCH,1
 BULWARK,Stormwatch,Main Force,BATTLE POSITION,1
 BULWARK,Stormwatch,Main Force,FENCE,1
 SPECTRUM,Stormwatch,Initial Entry,AUGUR,1
-SPECTRUM,Stormwatch,Initial Entry,WATCHTOWER,1
 SPECTRUM,Stormwatch,Initial Entry,GHOSTVOICE,2
-SPECTRUM,Stormwatch,Initial Entry,DEAD RECKONING,2
-SPECTRUM,Stormwatch,Initial Entry,BUSHWHACKER,1
-SPECTRUM,Stormwatch,Initial Entry,SHIELDWALL,1
-SPECTRUM,Stormwatch,Initial Entry,WIRETAP,1
+SPECTRUM,Stormwatch,Initial Entry,DEAD RECKONING,1
 SPECTRUM,Stormwatch,Initial Entry,STATIC NET,1
-SPECTRUM,Stormwatch,Main Force,POLTERGEIST,2
+SPECTRUM,Stormwatch,Initial Entry,BUSHWHACKER,1
+SPECTRUM,Stormwatch,Initial Entry,SLEEPERS,1
+SPECTRUM,Stormwatch,Initial Entry,HAILSTONE,2
+SPECTRUM,Stormwatch,Initial Entry,RELAY,1
+SPECTRUM,Stormwatch,Main Force,POLTERGEIST,1
 SPECTRUM,Stormwatch,Main Force,PUPPETEER,1
 SPECTRUM,Stormwatch,Main Force,THE SILENT,1
 SPECTRUM,Stormwatch,Main Force,GHOST ARMY,2
-SPECTRUM,Stormwatch,Main Force,ELECTRONIC ATTACK,2
+SPECTRUM,Stormwatch,Main Force,ELECTRONIC ATTACK,1
 SPECTRUM,Stormwatch,Main Force,PSYOP CAMPAIGN,2
-SPECTRUM,Stormwatch,Main Force,GRID COLLAPSE,1
-SPECTRUM,Stormwatch,Main Force,COLLAPSE OF WILL,1
-SPECTRUM,Stormwatch,Main Force,LISTENING POST,1
-SPECTRUM,Stormwatch,Main Force,LONGKNIFE HQ,1
-SPECTRUM,Stormwatch,Main Force,TACTICAL WITHDRAWAL,1
-SPECTRUM,Stormwatch,Main Force,AUGUR,1
+SPECTRUM,Stormwatch,Main Force,INFORMATION ADVANTAGE,1
+SPECTRUM,Stormwatch,Main Force,COLLAPSE OF WILL,2
 SPECTRUM,Stormwatch,Main Force,STALL,1
-SPECTRUM,Stormwatch,Main Force,INFORMATION ADVANTAGE,2
+SPECTRUM,Stormwatch,Main Force,GRID COLLAPSE,1
+SPECTRUM,Stormwatch,Main Force,LISTENING POST,1
+SPECTRUM,Stormwatch,Main Force,RELAY,1
+SPECTRUM,Stormwatch,Main Force,FERRYMAN,1
+SPECTRUM,Stormwatch,Main Force,PAPER TIGER,1
+SPECTRUM,Stormwatch,Main Force,HAILSTONE,1
 SPECTRUM,Stormwatch,Main Force,BUSHWHACKER,1
+SPECTRUM,Stormwatch,Main Force,TACTICAL WITHDRAWAL,1

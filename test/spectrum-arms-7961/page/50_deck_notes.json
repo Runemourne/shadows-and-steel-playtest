@@ -1,0 +1,77 @@
+{
+ "about": "What changed in each reworked deck, shown in the Card Library (Sprint 8, round two). Words for the trial's eighth version (v0.8; Sprint 9: SPECTRUM reworked, the other three decks as in v0.7), each line checked against the trial cards and decks files. Each deck: a title, two lines of identity, a short list of changes; about 170 words a deck at most, plain words. Lines that begin \"New:\" changed since the page of 26 November.",
+ "heading": "What changed",
+ "intro": "The four decks have been reworked so each plays its own way, and no pairing has a handicap. Lines that begin \"New:\" changed since the page of 26 November. Pick a deck.",
+ "decks": [
+  {
+   "deck": "SPEARHEAD",
+   "identity": [
+    "The attacker. It closes fast and breaks the line: its armor readies after a kill, and a won fight drives the enemy back.",
+    "A prepared defense or a cut Supply line stops it. BREAKTHROUGH is its tool against the first, RED BALL against the second."
+   ],
+   "changes": [
+    "One RED BALL starts in the Initial Entry. BREAKTHROUGH is Generation III, so it stays in the Main Force: an Initial Entry holds Generation I only. 2 copies, not 3.",
+    "BREAKTHROUGH ignores RIPOSTE as well as OBSTACLE for the round.",
+    "ROUGH RIDER scouts: ZONE RECONNAISSANCE (reveal 1 Hidden enemy card, gain 2 ISR) replaces CROSS-CUE.",
+    "WARLORD's HUNTER-KILLER readies when it destroys an enemy Frontline card, once per round.",
+    "LONGKNIFE HQ costs 1. Its SITREP readies a card that has a SUPPORT line.",
+    "REAVERS cost 2. FLYSWATTER moves to the Main Force.",
+    "REDLEG's FIRE SUPPORT now prints what the game plays: it adds to an attack at any range.",
+    "No balance provision. Every Skirmish starts level."
+   ]
+  },
+  {
+   "deck": "BULWARK",
+   "identity": [
+    "The defender. A Close attack on its line costs the attacker, and COUNTERATTACK hits back in Contact.",
+    "It wins late, on points, by outlasting the attack on its own line. It has no quick win of its own."
+   ],
+   "changes": [
+    "The Initial Entry is Generation I only. BACKTRACK and one STEEL RAIN start there; DRUMFIRE and SUNLANCE wait in the Main Force.",
+    "SHIELDWALL and BATTLE POSITION move to the Main Force. BATTLE POSITION and DCO now print how long they last.",
+    "BACKTRACK joins the deck: cannon artillery with a counterfire radar. FIRE SUPPORT 2, and COUNTERFIRE answers an enemy Fires attack.",
+    "TRENCHER prints two lines, DIG IN and RIPOSTE 1. Its COVER 1 is gone.",
+    "RIPOSTE 1 on TRENCHER and REDOUBT: a unit that makes a Close attack on your Frontline takes 1 damage. Only your highest RIPOSTE counts.",
+    "COUNTERATTACK costs 1, not 2, and needs only Contact.",
+    "WATCHTOWER, an observation post: SCAN gains 2 ISR. 1 copy.",
+    "REDOUBT's COVER is 1. BREAKWATER costs 8; its RIPOSTE action is renamed BREAK THE ASSAULT.",
+    "DEFENSIVE CYBERSPACE OPERATIONS is now DCO. LONGKNIFE HQ costs 1.",
+    "In: FENCE, a second TRENCHER. Out: FLYSWATTER, DEFENSE IN DEPTH, one MYRMIDON, one REDLEG, one DCO.",
+    "No balance provision. Every Skirmish starts level."
+   ]
+  },
+  {
+   "deck": "SPECTRUM",
+   "identity": [
+    "The information deck of a hybrid force, now with a card of its own in every class. It takes the ISR lead and makes the enemy pay for trailing.",
+    "Its jammers exhaust enemy cards; its rockets and irregulars strike them. It takes little ground and wins by draining Homefront."
+   ],
+   "changes": [
+    "New: HAILSTONE (new card), rockets on trucks, 3 copies, 2 of them in the opening: FIRE SUPPORT 2, and VOLLEY deals 2 damage to each Exhausted enemy Frontline Capability.",
+    "New: PAPER TIGER (new card), dummy command posts and false signals, 1 copy: FALSE TARGETS makes enemy attacks against your face-up cards cost 1 more ISR.",
+    "New: FERRYMAN (new card), a light helicopter, 1 copy: LIFT OUT removes 1 damage from the unit it backs; EXFIL returns a destroyed unit to hand for 1 Supply, no Homefront lost.",
+    "New: SLEEPERS, now Generation I and cost 2, open in place of WATCHTOWER. At H-Hour they gain 2 ISR, reveal every Hidden enemy card and cancel 1 enemy Mission Track card.",
+    "New: RELAY, 2 copies, replaces LONGKNIFE HQ. Each adds 1 to the Span of Control, up to 3.",
+    "New: the classes back each other: the jammers exhaust a card and HAILSTONE strikes it.",
+    "New: out: WATCHTOWER, SHIELDWALL, LONGKNIFE HQ, WIRETAP, the second AUGUR, and one copy each of DEAD RECKONING, ELECTRONIC ATTACK, INFORMATION ADVANTAGE and POLTERGEIST. In: a second COLLAPSE OF WILL.",
+    "Since the released deck, still in force: THE SILENT costs 6, not 7; POLTERGEIST's INJECT reaches either Mission Track; NAVIGATION WARFARE is renamed DEAD RECKONING; BUSHWHACKER and INFORMATION ADVANTAGE are in; GRAY ZONE, STRATEGIC NARRATIVE, SYSTEMS CASCADE, WAR WEARINESS, VELITES and one PUPPETEER are out.",
+    "DEAD RECKONING and INFORMATION ADVANTAGE print how long they last. TACTICAL WITHDRAWAL may be a Reaction outside your home Base Zone.",
+    "No balance provision. Every Skirmish starts level."
+   ]
+  },
+  {
+   "deck": "KILL CHAIN",
+   "identity": [
+    "The fires deck. It finds, strikes from range, confirms, and strikes again before the enemy can close.",
+    "It cannot hold ground: an enemy that reaches its line and stays there beats it."
+   ],
+   "changes": [
+    "One STEEL RAIN starts in the Initial Entry beside two JAEGER (it was two STEEL RAIN and one JAEGER). A second VELITES replaces one BLACK SAIL.",
+    "TACTICAL WITHDRAWAL joins the deck in place of CONVERGENCE. It may also be played as a Reaction when your Frontline is attacked in Contact outside your home Base Zone.",
+    "BLACK FALCON's HYPERSONIC is ATK 5, down from 6.",
+    "FIRE SUPPORT on REDLEG and DRUMFIRE now prints what the game plays: it adds to an attack at any range.",
+    "LONGKNIFE HQ costs 1. Its SITREP readies a card that has a SUPPORT line."
+   ]
+  }
+ ]
+}

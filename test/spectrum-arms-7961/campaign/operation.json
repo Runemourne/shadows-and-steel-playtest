@@ -18,13 +18,13 @@
       "scenario": {"sides": [{"isr": 8, "rear": ["RED BALL"]}, {}]},
       "handicap": "",
       "order": {
-        "situation": "Enemy SPECTRUM forces defend MOUNTAIN PASS with jamming, deception and decoys. They trade ground for time, drain our ISR and our Bases' Supply, and strike hardest at any Base left without Supply. Higher has given our attack priority of collection: we start with 8 ISR. Our Force Marker is in Zone 1.",
-        "mission": "SPEARHEAD attacks through MOUNTAIN PASS on a narrow front from round 1 and drives enemy forces off their home edge (Supremacy) by the end of round 8, to open the road to the capital.",
-        "execution": "A penetration in three phases. Close: reach Contact by round 3. Break: win the Frontline contest each Assessment with a full Frontline. Pursue: advance every round the enemy falls back. Main effort is the Frontline. Strike enemy Bases only when the Frontline is secure.",
-        "sustainment": "The Staging Base adds 5 Supply a round, the Hub 1; each working Base gives 2 Lift. A RED BALL convoy starts in our Rear Area and brings 2 more Supply to the Bases each Sustainment. Keep Supply on both Bases: the enemy strikes hardest at an empty one, and if both are devastated the enemy wins by Devastation.",
+        "situation": "Enemy SPECTRUM forces, irregulars backed by jammers and rockets, defend MOUNTAIN PASS with jamming, deception and decoys. They trade ground for time and drain our ISR and our Bases' Supply. Their jammers exhaust our Frontline cards, and their rockets strike every Exhausted one. They raid our Bases, the Staging Base first. Higher has given our attack priority of intelligence collection: we start with 8 ISR. Our Force Marker is in Zone 1.",
+        "mission": "SPEARHEAD attacks on a narrow front from round 1 to clear MOUNTAIN PASS by the end of round 8, driving enemy forces off their home edge (Supremacy), in order to open the road to the capital.",
+        "execution": "A penetration. Their front is thin and the walls of the pass guard our flanks, so the armor breaches and drives straight on to the far exit without stopping to widen the gap. Close: reach Contact by round 3. Breach: win the Frontline contest each Assessment with a full Frontline. Exploit: advance every round the enemy falls back. Main effort is the Frontline. Strike enemy Bases only when the Frontline is secure. Once their false targets are in play, each attack on their face-up cards costs 1 more ISR: spend ISR with care.",
+        "sustainment": "The Staging Base adds 5 Supply a round, the Hub 1; each working Base gives 2 Lift. A RED BALL convoy starts in our Rear Area and brings 2 more Supply to the Bases each Sustainment. Keep Supply on both Bases. The enemy drains it and raids the Staging Base first; if both Bases are devastated, the enemy meets its Devastation win condition.",
         "command": "The commander moves with the Frontline; the Hub is the main command post, the Staging Base the alternate. Signal: expect jamming on every net; report the far exit clear when the enemy is driven off its home edge."
       },
-      "intent": "Open the road to the capital before the enemy can wear us down, so that at the end state the enemy is driven off its home edge, the pass is open, and at least one of our Bases still works.",
+      "intent": "Take the pass fast, before the enemy's jamming and raids wear us down, so we can hold it for the relief force that follows. Key tasks: reach Contact early; win the Frontline contest every Assessment; keep Supply on both Bases. End state: the enemy driven off its home edge, the pass ours, and at least one of our Bases still working.",
       "learn": {
         "text": "A penetration is a form of maneuver in which a force attacks on a narrow front; destroying the continuity of a defense enables the enemy's isolation and defeat in detail.",
         "source": "FM 3-90, Tactics (May 2023), para 2-36"
@@ -82,7 +82,7 @@
         "sustainment": "The Hub holds 10 Supply. Enemy fires devastated our Staging Base: it holds at most 5 Supply, adds 1 a round and gives 1 Lift; the Hub adds 1. Alone, the Hub's Survivability is 2. If devastated, the enemy meets its Devastation win condition.",
         "command": "The commander stays on the crest with the Frontline; the Hub is the main command post. Signal: the Hub carries the force's links to higher; expect the enemy to hunt them."
       },
-      "intent": "Keep the pass open for the relief force by outlasting a counterattack the enemy cannot afford to prolong, so that at the end state, after round 6, we still hold the crest, the Hub still works, and the enemy's Homefront stands below ours.",
+      "intent": "Outlast a counterattack the enemy cannot afford to prolong, so the relief force can move through the pass to the capital. Key tasks: hold the crest; strike every round; keep the Hub working. End state: after round 6 we still hold the crest, the Hub still works, and the enemy's Homefront stands below ours.",
       "learn": {
         "text": "The culminating point is where a force can no longer continue its form of operations, offense or defense, often for lack of support. Operational reach, how far and how long a force can fight, rests in part on sustainment.",
         "source": "ADP 3-0, Operations (March 2025), paras 4-20 and 4-21"

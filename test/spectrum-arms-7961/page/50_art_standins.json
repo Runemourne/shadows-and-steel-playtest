@@ -4,6 +4,9 @@
   "CAP-130": {"card": "WATCHTOWER", "use": "EFF-111", "use_card": "BATTLE POSITION", "why": "an observer with binoculars behind sandbags, watching a valley: a prepared observation post"},
   "CAP-131": {"card": "BUSHWHACKER", "use": "CAP-102", "use_card": "VELITES", "why": "light infantry behind a village wall with an anti-armor launcher: fighters defending their own town"},
   "CAP-132": {"card": "BACKTRACK", "use": "CAP-103", "use_card": "REDLEG", "why": "a howitzer battery in action: BACKTRACK is cannon artillery with a counterfire radar, REDLEG's parallel card"},
-  "EFF-117": {"card": "BREACH", "use": "EFF-301", "use_card": "BREAKTHROUGH", "why": "armor going through a gap in an obstacle belt: BREACH is the breach half of BREAKTHROUGH"}
+  "EFF-117": {"card": "BREACH", "use": "EFF-301", "use_card": "BREAKTHROUGH", "why": "armor going through a gap in an obstacle belt: BREACH is the breach half of BREAKTHROUGH"},
+  "CAP-133": {"card": "HAILSTONE", "use": "CAP-104", "use_card": "STEEL RAIN", "why": "a rocket launcher on a wheeled truck firing on a dirt track: HAILSTONE is rockets on trucks, fired from hide sites and moved"},
+  "CAP-134": {"card": "PAPER TIGER", "use": "CAP-210", "use_card": "GHOST ARMY", "why": "soldiers laying out an inflatable decoy tank under netting beside a mast: PAPER TIGER's decoy positions and false signatures"},
+  "CAP-135": {"card": "FERRYMAN", "use": "CAP-114", "use_card": "DUSTOFF", "why": "a helicopter low in the dust while soldiers carry a casualty on a litter: FERRYMAN lifts fighters out of a lost fight"}
  }
 }

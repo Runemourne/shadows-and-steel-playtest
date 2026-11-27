@@ -55,6 +55,23 @@
     try { var b = body; b.dataset.mh = ""; b.style.maxHeight = ""; window.SS.unslice(b, 0); } catch (e) { }
   }
 
+  // ---------- (Sprint 9) More in the FIRST answer row only ----------
+  // As a column beside the answers, More took its width from every row, so answers that needed two rows needed three (the Move
+  // question with five buttons). When the answers wrap without it, More goes into the answers' own row, at the end of the first row
+  // (moving one answer down if it must), and the rows below keep the whole width. Called by setPrompt before the panel is measured.
+  R.placeMore = function (foot) {
+    var bs = foot && foot.querySelector(".btns"), pm = foot && foot.querySelector(".pmore"); if (!bs || !pm || pm.parentNode !== foot) return;
+    var top = function (e) { return e.getBoundingClientRect().top; };
+    foot.removeChild(pm);   // the rows as they fall at the full width
+    var items = Array.prototype.filter.call(bs.children, function (e) { return e.getBoundingClientRect().height > 0; });
+    if (items.length < 2) { foot.appendChild(pm); return; }
+    var t0 = top(items[0]), n1 = items.filter(function (e) { return Math.abs(top(e) - t0) < 4; }).length;
+    if (n1 === items.length) { foot.appendChild(pm); return; }   // one row: More beside it, as before
+    pm.classList.add("pin1");
+    for (var k = n1; k >= 1; k--) { bs.insertBefore(pm, items[k]); if (Math.abs(top(pm) - t0) < 4) { R.pinned = (R.pinned || 0) + 1; return; } }
+    pm.classList.remove("pin1"); foot.appendChild(pm);   // no room even beside the first answer: as before
+  };
+
   // ---------- the feedback form's build line ----------
   var base = window.SS_SITE && typeof window.SS_SITE.build === "string" ? window.SS_SITE.build : null;
   function setBuild(info) {
