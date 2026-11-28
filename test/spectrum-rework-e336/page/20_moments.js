@@ -51,11 +51,41 @@
     var pick = [];
     if (c.kind === "ability") pick = ls.filter(function (l) { return c.ability && l.name && l.name.toUpperCase() === c.ability; });
     if (c.kind === "reaction") { var want = /cancel|intercept/.test(c.verb) ? /INTERCEPT|Cancel/i : /cover/.test(c.verb) ? /COVER/i : /counterfire/.test(c.verb) ? /COUNTERFIRE/i : /evacuat/.test(c.verb) ? /CASEVAC|return it to hand/i : /./, rs = ls.filter(function (l) { return /^REACTION/.test(l.timing); }); pick = rs.filter(function (l) { return want.test(l.head + " " + l.body); }).slice(0, 1); if (!pick.length) pick = rs.slice(0, 1); }
+    if (c.kind === "ability" && !pick.length) pick = usedLine(c, ls);   // Sprint 9 round two: the ACTION or INFILTRATE line that was used, never a SUPPORT or ABILITY line beside it
     if (c.kind === "ability" && !pick.length) pick = ls.filter(function (l) { return !/^(ATTACK|REACTION|PASSIVE)/.test(l.timing); }).slice(0, 1);
     if (!pick.length) pick = ls.filter(function (l) { return !/^REACTION/.test(l.timing); });
     if (!pick.length) pick = ls;
-    return pick.slice(0, 3).map(function (l) { return { head: l.name || l.timing, body: l.body }; });
+    return pick.slice(0, 3).map(function (l) { return { head: l.name || l.timing, body: l.body, timing: l.timing }; });
   }
+  // Sprint 9 round two (mark 1): an "ability" moment ("You use AUGUR.") is always a card's ACTION or INFILTRATE line (the engine marks it only
+  // in do_ability). Which one: the choice that led to it, as the page holds it (the person's answer just given, or the bot's own pick in the
+  // frame's "why"): "Send X to infiltrate ..." is the INFILTRATE line, "Use X ..." an ACTION line. A card with two ACTION lines (THE SILENT)
+  // is told apart by the words of that choice, the question that follows and the next log lines (each line's name and words, by their first
+  // six letters). When the words still cannot tell, every such line is shown, never a line of another kind.
+  var stem = function (w) { return w.toLowerCase().slice(0, 6); };
+  function wordsOf(s) { return String(s || "").split(/[^A-Za-z]+/).filter(function (w) { return w.length >= 4; }).map(stem); }
+  function hintFor(c) {   // the words that say which line was used: {pick: the choice's label, more: what follows}
+    var g = G(), pick = "", more = [], nm = String(c.name || ""), own = sideOf(c.owner) === "own" && !spect();
+    var has = function (t) { return String(t || "").indexOf(nm) >= 0; };
+    if (own && g.lastChosen && has(g.lastChosen.label) && /^(Use|Send|Reveal) /.test(g.lastChosen.label)) pick = g.lastChosen.label;
+    else if (M.whyLast && M.cur && (M.cur.n || 0) - (M.whyLast.n || 0) <= 3 && has(M.whyLast.pick) && /^(Use|Send|Reveal) /.test(M.whyLast.pick)) pick = M.whyLast.pick;
+    (g.queue || []).slice(0, 6).some(function (f) { var t = f.text || ""; if (/^--- |\buses? /.test(t)) return true; more.push(t); return false; });
+    if (own && g.pend && g.pend.prompt) more.push(g.pend.prompt);
+    M.lastHint = { card: nm, pick: pick, more: more.slice() }; return { pick: pick, more: more.join(" ") };
+  }
+  function usedLine(c, ls) {
+    var act = ls.filter(function (l) { return /^(ACTION|INFILTRATE)\b/.test(l.timing); }); if (!act.length) return [];
+    var h = hintFor(c), p = h.pick.replace(/^Reveal .*?, then: /, "");
+    var kind = /^send .+ to infiltrate/i.test(p) ? "INFILTRATE" : /^use /i.test(p) ? "ACTION" : "";
+    var one = kind ? act.filter(function (l) { return l.timing.indexOf(kind) === 0; }) : act; if (!one.length) one = act;
+    if (one.length < 2) return one;
+    var hw = wordsOf(p + " " + h.more), set = {}; hw.forEach(function (w) { set[w] = 1; });
+    var score = one.map(function (l) { var n = wordsOf(l.name.replace(/\s+\d+$/, "")), b = wordsOf(l.body), sc = 0;
+      if (n.length && n.every(function (w) { return set[w]; })) sc += 10; b.forEach(function (w, i) { if (set[w] && b.indexOf(w) === i) sc++; }); return sc; });
+    var top = Math.max.apply(null, score), best = one.filter(function (l, i) { return score[i] === top; });
+    return top > 0 && best.length === 1 ? best : one;
+  }
+  function usedHead(c) { var ls = linesOf(c), l = ls[0]; return l && /^INFILTRATE/.test(l.timing || "") ? "Sent to infiltrate" : l && /^ACTION/.test(l.timing || "") ? "Action used" : "Ability used"; }
   function whose(owner) { var nm = names(), o = String(owner || "").replace(/'s$/, ""); if (spect()) return o === "Your" ? nm[0] : o; if (o === "You" || o === "Your" || o === nm[0]) return "You"; if (o === nm[1] || o === "The bot") return "Enemy"; return o; }
   function sideOf(owner) { var nm = names(), o = String(owner || "").replace(/'s$/, ""); return (o === "You" || o === "Your" || o === nm[0]) ? "own" : "foe"; }
   function words(s) { return String(s).split(/\s+/).filter(Boolean).length; }
@@ -118,7 +148,7 @@
     $("ssmHint").textContent = p === "tap" ? "Tap to go on · Settings: Card moments" : "Tap to go on · hold to keep it";
     P.className = "ssm " + sideOf(c.owner) + (hot ? " hot" : "") + (p === "tap" ? " tap" : ""); placePanel(); P.hidden = false;
     if (!rm()) { void P.offsetWidth; P.classList.add("in"); anim(); } else P.classList.add("in");
-    M.stats.shown[c.kind]++; record(c, label);
+    M.stats.shown[c.kind]++; record(c, label); (M.stats.log = M.stats.log || []).push({ kind: c.kind, name: c.name, label: label, lines: ls.map(function (l) { return l.head; }) }); M.stats.log = M.stats.log.slice(-60);
     M.active = { kind: c.kind, name: c.name, go: go, need: need * 1000, t0: Date.now(), frozenMs: 0, frozeAt: 0, pace: p, gen: g.pgen };
     var smooth = !rm(); if (smooth && isFinite(need)) anim();
     clock = setInterval(function () {
@@ -154,6 +184,7 @@
       overTop: !!(tb && pr.top < tb.bottom - .5), overHandle: !!(hr && hr.height && pr.bottom > hr.top + .5) };
     var bars = $("ssmMore"); P.hidden = true; return r; };
   M.lines = function (c) { return linesOf(c); };
+  M.usedHead = function (c) { return usedHead(c); };   // for the proof: the label an "ability" moment carries
   // ---------- the table: what happened to what ----------
   var marks = [];
   function objByName(name, side) { var O = SS.objs() || {}, r = null; Object.keys(O).forEach(function (k) { var o = O[k], u = o && o.u; if (r || !u) return; if ((u.name === name || u.kind === name) && (!side || o.side === side)) r = o; }); return r; }
@@ -197,7 +228,7 @@
   // every frame, before it is shown
   var lastText = "";
   if (window.SSHooks) SSHooks.on("frame", function (d) {
-    var f = d.frame; M.prev = M.cur; M.cur = f; M.pend = null; if (d.skipping) return;
+    var f = d.frame; M.prev = M.cur; M.cur = f; M.pend = null; if (f && f.why) M.whyLast = { pick: String(f.why.pick || ""), n: f.n }; if (d.skipping) return;
     var c = classify(f); if (c && !(c.puts && M.lastMoment === c.name)) M.stats.frames[c.kind]++;
   });
   // the end of each frame: hold it for its moment; draw what it did on the table
@@ -211,7 +242,7 @@
     if (!c) return false;
     if (c.puts && prevMom === c.name) { M.lastMoment = c.name; var r0 = M.recent[0]; if (r0 && r0.name === c.name) r0.label = "On the Mission Track: " + c.rounds + " round" + (c.rounds === "1" ? "" : "s") + " to H-Hour"; return false; }   // "plays X" then "puts X on the Mission Track": one moment
     var nm = M.pend && M.pend.name === c.name ? M.pend : null, sp = g.speed || 1;
-    var label = nm ? nm.label : c.kind === "ability" ? "Ability used" + (c.ability && c.ability !== c.name ? ": " + c.ability : "") : c.kind === "reaction" ? "Reaction" + (c.verb && c.verb !== "fires" ? ": " + c.verb : "") : c.kind === "hhour" ? "H-Hour: " + (c.verb === "ends" ? "ends" : "resolves now") : "Effect played";
+    var label = nm ? nm.label : c.kind === "ability" ? usedHead(c) + (c.ability && c.ability !== c.name ? ": " + c.ability : "") : c.kind === "reaction" ? "Reaction" + (c.verb && c.verb !== "fires" ? ": " + c.verb : "") : c.kind === "hhour" ? "H-Hour: " + (c.verb === "ends" ? "ends" : "resolves now") : "Effect played";
     if (label === "Played") label = "Effect played";
     if (c.kind === "effect") { var nx = g.queue && g.queue[0]; if (nx && new RegExp(" puts? " + c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + " on the Mission Track \\((\\d+) round").test(nx.text || "")) { var rr = (nx.text.match(/\((\d+) round/) || [])[1]; label = "On the Mission Track: " + rr + " round" + (rr === "1" ? "" : "s") + " to H-Hour"; } }
     M.lastMoment = c.name; if (c.kind === "effect" || c.kind === "hhour") M.card = { name: c.name }; else M.card = null;

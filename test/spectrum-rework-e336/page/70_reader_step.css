@@ -1,0 +1,5 @@
+/* Sprint 9 round two (ui-frontend, number 70), mark 2: the reader's Previous and Next row (page/70_reader_step.js). Composition only. */
+#zStep { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 10px 6px 10px; }
+#zStep[hidden] { display: none; }
+#zStep button { flex: 0 0 auto; width: auto; max-width: none; min-height: 44px; min-width: 96px; padding: 0 10px; font-size: 18px; white-space: nowrap; overflow: visible; }
+#zStepAt { flex: 1 1 auto; text-align: center; font-size: 18px; line-height: 1.25; opacity: .9; }

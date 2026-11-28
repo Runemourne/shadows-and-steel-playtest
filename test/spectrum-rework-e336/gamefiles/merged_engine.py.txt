@@ -1,5 +1,20 @@
 """[Candidate v0.16-SC: SPECTRUM control keys added by apply_sc_keys.py; RD-143]
 Shadows & Steel: Merged Baseline rules engine (Beta 3.5 structure + the Gemini v5.1 changes + the pieces kept from the Core Set).
+28 Nov 2026 (Sprint 9 round two, package 12c: two more values, OFF by default): draw_fire 2 = DRAW FIRE "must target it if able":
+an attack is bound only while its attacker can pay the usual price to target the card, and pays that price. retransmit_hhour 3 = as 1
+(1 ISR and an advance), but a person may answer "Do not advance a card" and is asked even with one card; the bot plays as at 1.
+28 Nov 2026 (Sprint 9 round two, package 12b: trial cards v0.10): retransmit_hhour 2 = RETRANSMIT as printed on v0.10, "Choose one:
+GAIN ISR 1, or ADVANCE 1 friendly Mission Track card by 1": a person is always asked; the bot advances a Plan or Operator on space 1,
+else gains 1 ISR. Three more switches, all OFF by default: draw_fire 1 = DRAW FIRE (key DRAW_FIRE): while a face-up card with it is in
+its owner's Frontline, an enemy attack that may target it may target no other Frontline card, and attacking it costs no ISR.
+sead_fires 1 = the E_SEAD Order may instead deal DAMAGE 2 to 1 enemy FIRES Capability (a person chooses; the bot prefers the first).
+collapse_track 1 = the E_COLLAPSE Order, with more ISR than the enemy, costs 1 Homefront per card on your Mission Track (at most 3).
+28 Nov 2026 (Sprint 9 round two: the lead's play of the test page, drafts entry B): two switches, both OFF by default, so the game is
+unchanged. retransmit_hhour 1 = RETRANSMIT may advance any of the player's Mission Track cards (any kind, any space); from space 1 it
+goes to H-Hour and resolves at once, as INJECT's may under inject_hhour; a person chooses the card when there is more than one; the bot
+never advances a Condition, and of its Plans and Operators advances the one closest to H-Hour, the costlier on a tie, and says so.
+more_conditions_win 1 = when both sides meet a win condition on equal Homefront, the side that met more of the three wins (NOT ruled:
+the rule of RD-274 that RD-278 withdrew, prepared off everywhere for the lead's answer); still equal, a Stalemate or Protraction.
 26 Nov 2026 (Sprint 8 round two, package 12: the trial's sixth version): one more switch, OFF by default: breach_order 1 = the
 E_BREACH Order ("Ignore enemy OBSTACLE and RIPOSTE this round") sets only E_BREAK's flag for ignoring OBSTACLE, none of its
 Frontline Strength, ATK or ROUT; with break_riposte 1 that flag also quiets RIPOSTE. The bot rates it as it rates E_BREAK.
@@ -222,6 +237,7 @@ TRIAL_TEXT = {   # the trial cards' keys (kept apart from ABILITY_TEXT, so the W
     "R_EVAC": ("Reaction", "EVACUATE", "When another of your cards is destroyed: pay 1 Supply. You lose no Homefront for it."),
     "A_REARM": ("Action", "REARM AND REFUEL {n}", "Ready up to {n} of your Exhausted cards that have an ATTACK line. The next attack of each this round gets +1 ATK (does not stack)."),
     "EXPOSED": ("Ability", "EXPOSED", "While this card is Exhausted, its Concealment is 0 and attacks on it gain DEEP FIRES."),
+    "DRAW_FIRE": ("Ability", "DRAW FIRE", "While this card is in your Frontline, enemy attacks on your Frontline must target it. Attacking it costs no ISR."),
     "PREDICT_FIX": ("Sustainment", "PREDICTIVE MAINTENANCE {n}", "RECOVER {n} damage on 1 of your other face-up cards."),
     "REFIT": ("Sustainment", "REFIT {n}", "{n} of your cards with an ATTACK line costs 1 less Supply to ready."),
     "RAIL": ("Ability", "RAIL TRANSFER {n}", "While your Staging Base has no damage, it restocks {n} more. Does not stack."),
@@ -275,7 +291,7 @@ class Card:
         """The name this card's ACTION line prints for the ability whose words hold `effect` ("ACTION [EXHAUST] · NAME 2: effect"), or otherwise."""
         for line in s.l:
             printed = re.match(r"ACTION\s*(?:\[[^\]]*\])*\s*·\s*([^:]*?)(?:\s+\d+)?:(.*)", line)
-            if printed and effect in printed.group(2): return printed.group(1)
+            if printed and effect.lower() in printed.group(2).lower(): return printed.group(1)   # "Exhausted" or "exhausted" (v0.10)
         return otherwise
     def cost_text(s):
         if s.cap: return "Deploy %d" % s.cost
@@ -860,6 +876,7 @@ class Game:
         for t in o.units:
             if not t.hidden and t.c.cap and c.targets != "ANY" and (t.c.air != (c.targets == "AIR")): continue
             if t.row == "F" or deep or t.spot or (s.exposed(t) and not s.contact()): out.append(("u", t))   # trial EXPOSED: attacks on it gain DEEP FIRES (out of Contact only)
+        if s.R.get("draw_fire", 0): out = s.bound_by_draw_fire(o, out, p, u)
         if c.targets != "AIR" and deep:
             for b in o.bases:
                 if b.dev: continue
@@ -944,6 +961,7 @@ class Game:
                 else: isr = s.tconc(p, o, t); sv = max(0, s.tsurv(o, t) - prec); need = t.c.dur - t.dmg; name = t.c.name + (" (Rear Area)" if t.row == "R" else "")
                 if c.range != "Close": isr += s.R["ranged_isr"]  # a long shot needs targeting data
                 if c.cls == "FIRES": isr = max(0, isr - max([x.k("SHOOTER") for x in p.units if not x.hidden] + [0]))   # KILL WEB: SENSOR-TO-SHOOTER
+                if kind == "u" and s.free_to_attack(o, t): isr = 0   # rule draw_fire 1: "Attacking it costs no ISR."
                 sup = s.supporters(p, u, isr, need + sv - a); fs = sum(x.k("FS") for x in sup); cue = sum(x.k("CUE") for x in sup)
                 kc = p.ben == "KILL CHAIN" and not p.fl.get("kc") and c.cls == "FIRES" and any(x.c.cls == "INTEL" for x in sup)
                 cost = 0 if kc else max(0, isr - cue)
@@ -957,6 +975,7 @@ class Game:
                 v -= 0.3 * cost + 0.35 * len(sup) + (0.4 if c.ready > 1 else 0)
                 if rev: u.hidden = True; u.fresh = False
                 lab = "%sttack %s with %s (ATK %d%s, costs %d ISR%s)" % ("Reveal %s for %d Supply and a" % (c.name, c.cost) if rev else "A", name, c.name, a + fs, " with support from " + " and ".join(x.c.name for x in sup) if sup else "", cost, ", should do %d damage" % hits if not (kind == "u" and t.hidden) else "")
+                lab += s.draw_fire_words(p, u, kind, t)   # a person only: why the other Frontline cards are not offered
                 opts.append((v + (0.3 if rev else 0), lab, ("attack", u, kind, t, sup, cost, kc, rev)))
                 if s.is_human(p):   # digital game: every legal set of supporters (different Classes, up to Span of Control), and alone
                     for alt in s.support_sets(p, u):
@@ -964,7 +983,7 @@ class Game:
                         fs2 = sum(x.k("FS") for x in alt); cue2 = sum(x.k("CUE") for x in alt); cost2 = max(0, isr - cue2)
                         if cost2 > p.isr: continue
                         h2 = max(0, a + fs2 - sv)
-                        opts.append((0, "%sttack %s with %s %s(ATK %d, costs %d ISR%s)" % ("Reveal %s for %d Supply and a" % (c.name, c.cost) if rev else "A", name, c.name, ("with support from " + " and ".join(x.c.name for x in alt) + " ") if alt else "alone ", a + fs2, cost2, ", should do %d damage" % h2 if not (kind == "u" and t.hidden) else ""), ("attack", u, kind, t, list(alt), cost2, False, rev)))
+                        opts.append((0, "%sttack %s with %s %s(ATK %d, costs %d ISR%s)" % ("Reveal %s for %d Supply and a" % (c.name, c.cost) if rev else "A", name, c.name, ("with support from " + " and ".join(x.c.name for x in alt) + " ") if alt else "alone ", a + fs2, cost2, ", should do %d damage" % h2 if not (kind == "u" and t.hidden) else "") + s.draw_fire_words(p, u, kind, t), ("attack", u, kind, t, list(alt), cost2, False, rev)))
         return opts
     def react(s, p, d, ctx):
         """One reaction by defender d to an action by p. ctx: dict(kind='attack'|'effect', unit=attacker, target=..., tkind, air=bool, ranged=bool, jam=n).
@@ -1071,7 +1090,7 @@ class Game:
         if s.cond(o, "E_KILLBOX"): s.say("KILL BOX:", c.name, "takes 1 damage."); s.hit_unit(p, u, 1)
         if kind == "u" and t.hidden:
             if not s.reveal(o, t): return
-            extra = s.tconc(p, o, t)
+            extra = 0 if s.free_to_attack(o, t) else s.tconc(p, o, t)   # rule draw_fire 1: revealed with DRAW FIRE, attacking it costs no ISR
             if extra > p.isr: s.say(s.who(p), "cannot pay %d more ISR to target it. The attack ends." % extra); return
             p.isr -= extra
         a = s.atk_value(p, u, kind, t) + sum(x.k("FS") for x in sup); prec = u.k("PREC") + (1 if kc else 0)
@@ -1245,7 +1264,7 @@ class Game:
             "E_FIREMISSION": 2.0 if (E(pred=lambda u: not u.c.air) and s.dist() <= s.R["tac_reach"]) else -1, "E_KILLBOX": 1.3 if o.units else 0.2,
             "E_GLIDE": 2.6, "E_DEPTH": 1.5 if s.dist() <= 2 else 0.4, "E_CLOAK": 1.0 if sum(u.dmg for u in p.units) >= 2 else -1, "E_FUSION": 1.0 if p.isr <= 6 else -1,
             "E_CODEBREAK": 1.8 if o.hand else 0.8, "E_PSYOP": 1.9, "E_GRID": 3.0, "E_FRAGO": 1.4 if myex else -1, "E_SYNC": 1.0 if p.mf else -1, "E_STOCKS": 1.3, "E_PREPO": 1.9 if any(x.cap and x.cost >= 4 for x in p.hand) else 1.0,
-            "E_DROP": 1.2 + 0.4 * len(myex), "E_SEAD": 2.0 if E(pred=lambda u: u.c.tags & {"DEFENSE", "AIR-DEFENSE", "SENSOR"}) else -1, "E_CRUISE": 2.4, "E_EYE": 1.4 + 0.7 * sum(1 for x in o.units if x.hidden) - (0.6 if p.isr >= 8 else 0), "E_DYNTGT": (2.0 if any(u.c.cls == "FIRES" for u in p.units if not u.hidden) else -1), "E_FASCAM": (2.1 if s.dist() <= 2 else 0.6), "E_BATTLEPOS": (1.9 if s.dist() <= 2 else 0.9), "E_DCO": 1.4, "E_COUNTERATK": (2.6 if s.req_ok(p, c) else -1), "E_INFOADV": 1.9, "E_NAVWAR": (2.2 if s.dist() >= 1 else 0.8), "E_NARR": 1.6, "E_MTC": (2.4 if s.dist() == 1 and any(not u.ex and not u.hidden and u.c.cls == "M2" and u.c.atk for u in p.units) else (1.0 if s.dist() >= 2 else -1)), "E_CONVERGE": 3.2,
+            "E_DROP": 1.2 + 0.4 * len(myex), "E_SEAD": s.sead_value(p, E), "E_CRUISE": 2.4, "E_EYE": 1.4 + 0.7 * sum(1 for x in o.units if x.hidden) - (0.6 if p.isr >= 8 else 0), "E_DYNTGT": (2.0 if any(u.c.cls == "FIRES" for u in p.units if not u.hidden) else -1), "E_FASCAM": (2.1 if s.dist() <= 2 else 0.6), "E_BATTLEPOS": (1.9 if s.dist() <= 2 else 0.9), "E_DCO": 1.4, "E_COUNTERATK": (2.6 if s.req_ok(p, c) else -1), "E_INFOADV": 1.9, "E_NAVWAR": (2.2 if s.dist() >= 1 else 0.8), "E_NARR": 1.6, "E_MTC": (2.4 if s.dist() == 1 and any(not u.ex and not u.hidden and u.c.cls == "M2" and u.c.atk for u in p.units) else (1.0 if s.dist() >= 2 else -1)), "E_CONVERGE": 3.2,
             "E_COMMS": (1.7 if len(o.hand) >= 2 else (0.6 if o.hand else -1)), "E_OVERLOAD": (1.6 if len(o.mf) <= 8 or s.cond(p, "E_WEARY") else 1.0) if (o.mf or o.discard) and not o.ie else -1, "E_COUNTERMAND": (1.2 + 0.25 * len(o.hand)) if len(o.hand) >= 3 and not o.ie else -1,
             "E_WEARY": (2.2 if len(o.mf) <= 9 and not o.ie else 1.0),
             "E_COLLAPSE": s.collapse_value(p), "E_CASCADE": s.cascade_value(p),
@@ -1257,7 +1276,9 @@ class Game:
         if k == "E_ARM" and s.tr("sust_jump") and not any(u.c.atk and not u.hidden for u in p.units): v = -1   # (both: never with no shooter face up on the table)
         if k == "E_URGENT" and s.tr("sust_urgent"): v = 1.0 if (any(s.upgrade_for(p, x) for x in p.mf) if s.R.get("bot_sust", 0) else p.mf) else -1   # trial URGENT NEED: rated as JOINT SYNC is; bot_sust rule 7, only with a legal target
         return v
-    def collapse_n(s, p): return max(0, min(s.R["collapse_cap"], p.isr - s.opp(p).isr))
+    def collapse_n(s, p):
+        if s.R.get("collapse_track", 0): return s.collapse_by_track_cards(p)
+        return max(0, min(s.R["collapse_cap"], p.isr - s.opp(p).isr))
     def collapse_value(s, p):   # the bot fires COLLAPSE OF WILL when it wins the game, at a gap of collapse_min or more, or late with a gap of 2 or more
         n = s.collapse_n(p); o = s.opp(p)
         if n <= 0: return -1
@@ -1413,7 +1434,9 @@ class Game:
             for b in p.bases: b.dmg = max(0, b.dmg - 2) if not b.dev else b.dmg
             s.draw(p, 2)
         elif k == "E_SEAD":
-            for t in E(p, 1, pred=lambda u: u.c.tags & {"DEFENSE", "AIR-DEFENSE", "SENSOR"}): s.strike(p, 4, t, dmg=True)
+            if s.R.get("sead_fires", 0): s.sead_strike(p, c)
+            else:
+                for t in E(p, 1, pred=s.air_defense_or_sensor): s.strike(p, 4, t, dmg=True)
             ready_bases = [base for base in o.bases if not base.ex]
             b = s.chosen_or(p, "%s: exhaust which enemy Base?" % c.name, ready_bases, lambda: next(iter(ready_bases), None))
             if b: b.ex = True
@@ -1456,7 +1479,7 @@ class Game:
             n = len(o.hand); o.discard += o.hand; o.hand = []; s.say(s.who(o), "discards its hand (%d) and draws that many." % n); s.draw(o, n)
         elif k == "E_WEARY": s.compromise(p, c.keys.get("COMP", 0), c.name)   # H-Hour
         elif k == "E_COLLAPSE":   # COLLAPSE OF WILL: Homefront loss equal to the ISR gap, up to the cap; then you lose all your ISR
-            n = s.collapse_n(p); s.say("%s: the ISR gap is %d." % (c.name, p.isr - o.isr)); s.ev(p, "COLLAPSE %d" % n); p.isr = 0 if s.R["collapse_all"] else p.isr - n; s.lose_hf(o, n, c.name)
+            n = s.collapse_n(p); s.say(s.collapse_counted(p, c)); s.ev(p, "COLLAPSE %d" % n); p.isr = 0 if s.R["collapse_all"] else p.isr - n; s.lose_hf(o, n, c.name)
         elif k == "E_CASCADE":   # SYSTEMS CASCADE: n damage to each enemy Base that is out of Supply
             n = c.keys[k] - (2 if s.cond(o, "E_DCO") else 0)
             if s.cond(o, "E_DCO"): s.say("%s: the damage is reduced by 2." % s.track_card_name(o, "E_DCO"))
@@ -1531,7 +1554,7 @@ class Game:
             if K("A_PRINT") and s.tr("sust_rebuild") and p.sup() - (u.c.cost if rev and not getattr(u, "paid", False) else 0) >= 2 and u.dmg + 1 < u.c.dur and any(c.cap and c.gi < 3 and (not s.R.get("bot_sust", 0) or s.is_human(p) or s.rebuild_ok(p, c, u.c.cost if rev and not getattr(u, "paid", False) else 0)) for c in p.ash): opts.append((1.8, "Use %s (2 Supply, 1 damage on it): REBUILD a Generation I or II Capability from your Ash Heap into your hand" % n, ("ab", u, "A_PRINT")))   # trial FORGEWORKS · REBUILD (bot_sust rule 11)
             if K("A_REPAIR") and not s.tr("sust_fm") and (any(x.dmg and not x.hidden for x in p.units) or any(b.dmg and not b.dev for b in p.bases)): opts.append((0.9 + 0.3 * K("A_REPAIR"), "Use %s: remove %d damage from 1 of your cards or Bases" % (n, K("A_REPAIR")), ("ab", u, "A_REPAIR")))
             if K("A_BRIEF") and p.isr >= 1 and any(x.ex and x is not u and not x.hidden and x.c.atk for x in p.units): opts.append((1.3, "Use %s (1 ISR): ready 1 of your other cards; it gets +1 ATK this round" % n, ("ab", u, "A_BRIEF")))
-            if K("A_RETRANS"): opts.append((0.6 + (0.7 if any(t["kind"] == "op" and t["t"] > 1 for t in p.track) else 0), "Use %s: advance 1 of your Mission Track cards and gain 1 ISR" % n, ("ab", u, "A_RETRANS")))
+            if K("A_RETRANS"): opts.append((0.6 + s.retransmit_worth(p), "Use %s: %s" % (n, s.retransmit_option_words()), ("ab", u, "A_RETRANS")))
             if K("A_UPLINK") and (p.mf or p.ie): opts.append((1.0, "Use %s: look at the top 3 cards of your deck and take 1" % n, ("ab", u, "A_UPLINK")))
             if K("A_PREDICT") and p.isr >= 1 and p.mf: opts.append((1.1, "Use %s (1 ISR): look at the top 3 Main Force cards and take 1" % n, ("ab", u, "A_PREDICT")))
             if K("A_PRINT") and not s.tr("sust_rebuild") and p.sup() >= 2 and s.table_room(p) > 0 and any(c.cap and c.gi < 3 for c in p.ash + p.discard): opts.append((1.8, "Use %s (2 Supply): return a destroyed Generation I or II card to your Rear Area" % n, ("ab", u, "A_PRINT")))
@@ -1636,6 +1659,9 @@ class Game:
         elif k == "A_SITREP":
             s.draw(p, 1); ex = s.sitrep_pool(p, u)
             if ex: x = s.decide(p, "target", "Ready which card?", [(s.unit_value(x) + x.c.atk, x.c.name, x) for x in ex]); x.ex = False
+        elif k == "A_RETRANS" and s.R.get("retransmit_hhour", 0) == 2: s.retransmit_choose_one(p)
+        elif k == "A_RETRANS" and s.R.get("retransmit_hhour", 0):
+            s.retransmit(p, may_decline=s.R["retransmit_hhour"] == 3); s.gain_isr(p, 1)
         elif k == "A_RETRANS":
             mt = [t for t in p.track if t["kind"] == "op" and t["t"] > 1]
             if s.is_human(p):   # printed: "ADVANCE 1 friendly Mission Track card by 1" (any kind; one already at 1 round has nowhere to go)
@@ -1876,11 +1902,113 @@ class Game:
         while passes < 2 and guard < 80:
             guard += 1; p = order[i % 2]; i += 1
             passes = 0 if s.take_action(p) else passes + 1
+    # Rule retransmit_hhour 1 (Sprint 9 round two; the lead's play of 28 Nov, drafts entry B (d)): RETRANSMIT, "ADVANCE 1 friendly
+    # Mission Track card by 1", may advance any of your track cards, of any kind and on any space; from space 1 it goes to H-Hour.
+    def retransmit(s, player, may_decline=False):
+        """RETRANSMIT: advance 1 of your Mission Track cards 1 round. A person chooses among all of them; the bot by bot_retransmit_choice.
+        Rule retransmit_hhour 3 (may_decline): "You may ADVANCE": a person is always asked, and may answer "Do not advance a card"."""
+        cards = list(player.track)
+        if s.is_human(player) and cards and (len(cards) > 1 or may_decline):
+            options = [(0, s.track_label(player, entry, -1), entry) for entry in cards]
+            if may_decline: options.append((0, "Do not advance a card", None))
+            cards = [s.decide(player, "target", "RETRANSMIT: advance which of your Mission Track cards 1 round?", options)]
+        elif not s.is_human(player): cards = s.bot_retransmit_choice(player)
+        if not cards or cards[0] is None: return
+        entry = cards[0]; entry["t"] -= 1; s.say(entry["c"].name, "is advanced 1 round.")
+        if entry["t"] <= 0: s.advanced_to_h_hour(player, entry)
+    def bot_retransmit_choice(s, player):
+        """The bot never advances a Condition (that ends it sooner); of its Plans and Operators it advances the one closest to
+        H-Hour, and of two equally close the one that cost more. Returns [the card] or []."""
+        plans_and_operators = [entry for entry in player.track if entry["kind"] != "cond"]
+        if not plans_and_operators: return []
+        return [min(plans_and_operators, key=lambda entry: (entry["t"], -entry["c"].cost))]
+    def retransmit_worth(s, player):   # how much the bot wants RETRANSMIT beyond its 1 ISR: something it would advance
+        if s.R.get("retransmit_hhour", 0) == 2: worth_advancing = bool(s.ready_for_h_hour(player))
+        elif s.R.get("retransmit_hhour", 0): worth_advancing = bool(s.bot_retransmit_choice(player))
+        else: worth_advancing = any(entry["kind"] == "op" and entry["t"] > 1 for entry in player.track)
+        return 0.7 if worth_advancing else 0
+    def retransmit_option_words(s):
+        if s.R.get("retransmit_hhour", 0) == 2: return "gain 1 ISR, or advance 1 of your Mission Track cards"
+        if s.R.get("retransmit_hhour", 0) == 3: return "gain 1 ISR, and you may advance 1 of your Mission Track cards"
+        return "advance 1 of your Mission Track cards and gain 1 ISR"
+    # Rule retransmit_hhour 2 (Sprint 9 round two, trial v0.10): RETRANSMIT as printed, "Choose one: GAIN ISR 1, or ADVANCE 1
+    # friendly Mission Track card by 1 (from space 1 it reaches H-Hour and resolves now)."
+    def ready_for_h_hour(s, player):   # the bot's pick under rule 2: its Plan or Operator on space 1, the costlier first; else none
+        on_space_one = [entry for entry in s.bot_retransmit_choice(player) if entry["t"] == 1]
+        return on_space_one
+    def retransmit_choose_one(s, player):
+        """A person is always asked: gain 1 ISR, or which track card to advance. The bot advances a Plan or Operator on space 1,
+        else gains 1 ISR."""
+        if s.is_human(player):
+            options = [(0, "GAIN ISR 1", None)] + [(0, s.track_label(player, entry, -1), entry) for entry in player.track]
+            question = "RETRANSMIT: Choose one: GAIN ISR 1, or ADVANCE 1 friendly Mission Track card by 1."
+            entry = s.decide(player, "target", question, options)
+        else: entry = next(iter(s.ready_for_h_hour(player)), None)
+        if entry is None: return s.gain_isr(player, 1)
+        entry["t"] -= 1; s.say(entry["c"].name, "is advanced 1 round.")
+        if entry["t"] <= 0: s.advanced_to_h_hour(player, entry)
+    # Rule draw_fire 1 (Sprint 9 round two, trial v0.10): DRAW FIRE, "While this card is in your Frontline, enemy attacks on your
+    # Frontline must target it. Attacking it costs no ISR." A face-down card has no lines, so it does not draw fire.
+    def draws_fire(s, defender, unit):
+        return bool(s.R.get("draw_fire", 0)) and unit in defender.units and unit.row == "F" and bool(unit.k("DRAW_FIRE"))
+    def draw_fire_words(s, player, unit, kind, target):
+        """For a person only (the bot's labels are untouched): the words after an attack option on a card whose DRAW FIRE binds this
+        attack (under draw_fire 2, only while the attacker can pay its price, as bound_by_draw_fire decides)."""
+        if not s.is_human(player) or kind != "u" or not s.draws_fire(s.opp(player), target): return ""
+        if s.R.get("draw_fire", 0) == 2 and s.targeting_price(player, unit, target) > player.isr: return ""
+        return ". DRAW FIRE: it must be the target."
+    def free_to_attack(s, defender, unit): return s.R.get("draw_fire", 0) == 1 and s.draws_fire(defender, unit)
+    def bound_by_draw_fire(s, defender, targets, attacker=None, unit=None):
+        """An attack that may target a card with DRAW FIRE must target it (or another) instead of any other Frontline card; one that
+        cannot target it is not bound. Rear Area cards and Bases are untouched. Rule draw_fire 2 ("must target it if able"): only
+        while the attacker can pay the usual price to target it (targeting_price, before support); else it is not bound."""
+        drawing = [target for kind, target in targets if kind == "u" and s.draws_fire(defender, target)]
+        if s.R.get("draw_fire", 0) == 2: drawing = [target for target in drawing if s.targeting_price(attacker, unit, target) <= attacker.isr]
+        if not drawing: return targets
+        return [(kind, target) for kind, target in targets if kind == "b" or target.row != "F" or target in drawing]
+    def targeting_price(s, player, unit, target):
+        """The ISR this unit pays to target a face-up enemy card before any supporter's CUE: its Concealment (with what adds to it),
+        +ranged_isr for a long shot, less SHOOTER for a Fires card (attack_options' own sum)."""
+        price = s.tconc(player, s.opp(player), target) + (s.R["ranged_isr"] if unit.c.range != "Close" else 0)
+        shooters = [own.k("SHOOTER") for own in player.units if not own.hidden]
+        if unit.c.cls == "FIRES": price = max(0, price - max(shooters + [0]))
+        return price
+    # Rule sead_fires 1 (Sprint 9 round two, trial v0.10): SEAD STRIKE, "Deal DAMAGE 4 to 1 enemy AIR-DEFENSE or SENSOR Capability,
+    # or DAMAGE 2 to 1 enemy FIRES Capability (ignoring Frontline protection)."
+    def air_defense_or_sensor(s, unit): return unit.c.tags & {"DEFENSE", "AIR-DEFENSE", "SENSOR"}
+    def sead_choices(s, player, card):
+        heavy = [(4, target) for target in s.legal_targets(player, card, s.air_defense_or_sensor)]
+        light = [(2, target) for target in s.legal_targets(player, card, lambda unit: unit.c.cls == "FIRES")]
+        return heavy + light
+    def sead_strike(s, player, card):
+        """A person chooses among every legal target of either kind; the bot takes the first, an AIR-DEFENSE or SENSOR one if any."""
+        choices = s.sead_choices(player, card)
+        if not choices: return
+        if s.is_human(player) and len(choices) > 1:
+            question = "%s: Deal DAMAGE 4 to 1 enemy AIR-DEFENSE or SENSOR Capability, or DAMAGE 2 to 1 enemy FIRES Capability." % card.name
+            options = [(amount, "Deal DAMAGE %d to %s" % (amount, s.target_label(target)), (amount, target)) for amount, target in choices]
+            choices = [s.decide(player, "target", question, options)]
+        amount, target = choices[0]; s.strike(player, amount, target, dmg=True)
+    def sead_value(s, player, find_enemy):
+        if find_enemy(pred=s.air_defense_or_sensor): return 2.0
+        if s.R.get("sead_fires", 0) and find_enemy(pred=lambda unit: unit.c.cls == "FIRES"): return 1.4
+        return -1
+    # Rule collapse_track 1 (Sprint 9 round two, trial v0.10): COLLAPSE OF WILL, "If you have more ISR than the enemy, they lose 1
+    # Homefront for each card on your Mission Track (at most 3)."
+    COLLAPSE_TRACK_MOST = 3   # the card's "at most 3"
+    def collapse_by_track_cards(s, player):
+        if player.isr <= s.opp(player).isr: return 0
+        return min(s.COLLAPSE_TRACK_MOST, len(player.track))
+    def collapse_counted(s, player, card):
+        if not s.R.get("collapse_track", 0): return "%s: the ISR gap is %d." % (card.name, player.isr - s.opp(player).isr)
+        count = len(player.track); cards = "card" if count == 1 else "cards"
+        return "%s: %d ISR against %d, and %d %s on the Mission Track." % (card.name, player.isr, s.opp(player).isr, count, cards)
     def advanced_to_h_hour(s, owner, card_on_track):
-        """Rule inject_hhour 1: ADVANCE moved a card from space 1 to H-Hour, where it resolves at once; no one may react at H-Hour."""
+        """Rules inject_hhour 1 and retransmit_hhour 1: an ADVANCE moved a card from space 1 to H-Hour, where it resolves at once; no one
+        may react at H-Hour."""
         action_in_hand = getattr(s, "act", None); s.one_act(None, hh=True)
         s.say("It reaches H-Hour now."); s.reach_h_hour(owner, card_on_track)
-        s.act = action_in_hand   # the INJECT action goes on
+        s.act = action_in_hand   # the action that advanced it goes on
     def reach_h_hour(s, player, entry):
         """A Mission Track card reaches H-Hour: it leaves the track and resolves (an Operator completes its mission)."""
         player.track.remove(entry); c = entry["c"]
@@ -2084,13 +2212,14 @@ class Game:
             return more, "Higher Homefront: a Pyrrhic victory; %s more Homefront, %s" % (s.spoken(more, "have", "has"), score)
         if more.hf != less.hf: return more, "Higher Homefront after round %d: %s more Homefront, %s" % (s.round, s.spoken(more, "have", "has"), score)
         if not qualified: return None, "Protraction: equal Homefront after round %d, %s" % (s.round, score)
+        if s.side_that_met_more(met): return s.side_that_met_more(met), s.more_win_conditions_words(met, score)
         if last_round: return None, "Protraction: both sides qualify on equal Homefront, %s, in round %d" % (score, s.round)
         return None, "Stalemate: both sides qualify on equal Homefront, %s" % score
     # Sprint 7: the result as data, and in plain words from no side's point of view (the contract, section 2)
     MET_CODE = {"Homefront collapse": "homefront", "Devastation": "devastation", "Supremacy": "supremacy"}
     def result_as_data(s, met, winner):
         codes = [[s.MET_CODE[name] for name in met[player.i]] for player in s.P]; kind = s.result_kind(met)
-        if kind in ("decisive", "pyrrhic"): reason = codes[winner.i][0]
+        if kind in ("decisive", "pyrrhic", "more_conditions"): reason = codes[winner.i][0]
         else: reason = "points" if kind == "points" or not any(met) else None
         names = s.neutral_names()
         return dict(kind=kind, winner=None if winner is None else winner.i, reason=reason, met=codes, round=s.round,
@@ -2099,7 +2228,9 @@ class Game:
         qualified = [player for player in s.P if met[player.i]]; equal = s.P[0].hf == s.P[1].hf
         if len(qualified) == 1: return "decisive"
         if not equal: return "pyrrhic" if qualified else "points"
-        if not qualified or s.round >= s.R["last"]: return "protraction"
+        if not qualified: return "protraction"
+        if s.side_that_met_more(met): return "more_conditions"
+        if s.round >= s.R["last"]: return "protraction"
         return "stalemate"
     def neutral_names(s):   # each side by its Concept; "(south)" and "(north)" when both play the same one, as the page names them
         concepts = [player.concept for player in s.P]
@@ -2127,9 +2258,22 @@ class Game:
             return "%s wins a Pyrrhic victory. %s Both sides met a win condition; %s has more Homefront, %s." % (names[winner.i], facts, names[winner.i], score)
         if kind == "points":
             return "%s wins on Homefront after round %d. Neither side met a win condition; %s has more Homefront, %s." % (names[winner.i], s.round, names[winner.i], score)
+        if kind == "more_conditions":
+            return "%s wins on more win conditions. %s Both sides met a win condition on equal Homefront, %s; %s met more of them." % (
+                names[winner.i], facts, score, names[winner.i])
         if kind == "stalemate": return "The game is a Stalemate. %s Both sides met a win condition on equal Homefront, %s." % (facts, score)
         if facts: return "The game is a Protraction. %s Both sides met a win condition on equal Homefront, %s, in round %d." % (facts, score, s.round)
         return "The game is a Protraction. Neither side met a win condition, and Homefront is equal, %s, after round %d." % (score, s.round)
+    # Rule more_conditions_win 1 (Sprint 9 round two; NOT RULED: the lead's RD-274 rule, withdrawn by RD-278, prepared off everywhere
+    # so his answer to drafts entry B (c) can take effect at once): both sides met a win condition on equal Homefront, and one met more.
+    def side_that_met_more(s, met):
+        """With rule more_conditions_win 1: the side that met more of the three win conditions when both met one; else None."""
+        if not s.R.get("more_conditions_win", 0) or not all(met) or len(met[0]) == len(met[1]): return None
+        return max(s.P, key=lambda player: len(met[player.i]))
+    def more_win_conditions_words(s, met, score):
+        winner = s.side_that_met_more(met); loser = s.opp(winner)
+        return "More win conditions: both sides qualify on equal Homefront, %s; %s %d win conditions to %d" % (
+            score, s.spoken(winner, "meet", "meets"), len(met[winner.i]), len(met[loser.i]))
     def decisive(s, words):   # the lead (drafts entry E): a win by a win condition against a side that met none
         name, _, detail = words.partition(": ")
         return "%s: a decisive victory%s" % (name, "; " + detail if detail else "")
